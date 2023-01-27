@@ -2,11 +2,7 @@ use std::ffi::CString;
 
 use crate::datetime_raw::{fsec_t, pg_tm, DateADT, DecodeDateTime, ParseDateTime};
 
-const MAXDATEFIELDS: usize = 25;
-const MAXDATELEN: usize = 128;
-
 #[derive(Debug)]
-#[repr(i32)]
 pub enum FieldType {
     Number,
     String,
@@ -47,25 +43,15 @@ pub enum FieldType {
 }
 
 pub fn parse(s: &str) -> Result<Vec<(String, FieldType)>, i32> {
-    let mut dterr = 0i32;
-    let mut fields = Vec::with_capacity(MAXDATEFIELDS);
-    let mut ftypes = Vec::with_capacity(MAXDATEFIELDS);
+    let mut fields = vec![];
+    let mut ftypes = vec![];
+
+    let dterr = ParseDateTime(s, &mut fields, &mut ftypes);
 
     if dterr != 0 {
         return Err(dterr);
     }
-
-    unsafe {
-        let workbuf = CString::from_vec_unchecked(vec![0; MAXDATELEN]);
-
-        dterr = ParseDateTime(s, &mut fields, &mut ftypes, MAXDATEFIELDS as i32);
-
-        let mut ret = Vec::with_capacity(fields.len());
-        for (field, typ) in fields.into_iter().zip(ftypes) {
-            ret.push((field, typ));
-        }
-        Ok(ret)
-    }
+    Ok(fields.into_iter().zip(ftypes).collect())
 }
 
 pub fn decode(fields: Vec<(String, FieldType)>) -> Result<(pg_tm, fsec_t, i32, i32), i32> {

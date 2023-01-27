@@ -3652,37 +3652,30 @@ unsafe extern "C" fn ParseFractionalSecond(
 ///  Returns 0 if successful, DTERR code if bogus input detected.
 ///
 /// timestr - the input string
-/// workbuf - workspace for field string storage. This must be
-///   larger than the largest legal input for this datetime type --
-///   some additional space will be needed to NUL terminate fields.
-/// buflen - the size of workbuf
-/// field[] - pointers to field strings are returned in this array
-/// ftype[] - field type indicators are returned in this array
-/// maxfields - dimensions of the above two arrays
-/// *numfields - set to the actual number of fields detected
+/// fields - field strings are pushed in this vector
+/// ftypes - field type indicators are pushed in this vector
 ///
 /// The fields extracted from the input are stored as separate,
 /// null-terminated strings in the workspace at workbuf. Any text is
 /// converted to lower case.
 ///
 /// Several field types are assigned:
-///  DTK_NUMBER - digits and (possibly) a decimal point
-///  DTK_DATE - digits and two delimiters, or digits and text
-///  DTK_TIME - digits, colon delimiters, and possibly a decimal point
-///  DTK_STRING - text (no digits or punctuation)
-///  DTK_SPECIAL - leading "+" or "-" followed by text
-///  DTK_TZ - leading "+" or "-" followed by digits (also eats ':', '.', '-')
+///  FieldType::Number - digits and (possibly) a decimal point
+///  FieldType::Date - digits and two delimiters, or digits and text
+///  FieldType::Time - digits, colon delimiters, and possibly a decimal point
+///  FieldType::String - text (no digits or punctuation)
+///  FieldType::Special - leading "+" or "-" followed by text
+///  FieldType::Tz - leading "+" or "-" followed by digits (also eats ':', '.', '-')
 ///
 /// Note that some field types can hold unexpected items:
-///  DTK_NUMBER can hold date fields (yy.ddd)
-///  DTK_STRING can hold months (January) and time zones (PST)
-///  DTK_DATE can hold time zone names (America/New_York, GMT-8)
+///  FieldType::Number can hold date fields (yy.ddd)
+///  FieldType::String can hold months (January) and time zones (PST)
+///  FieldType::Date can hold time zone names (America/New_York, GMT-8)
 #[no_mangle]
 pub fn ParseDateTime(
     mut timestr: &str,
     mut fields: &mut Vec<String>,
     mut ftypes: &mut Vec<FieldType>,
-    mut maxfields: libc::c_int,
 ) -> libc::c_int {
     let mut nf: libc::c_int = 0 as libc::c_int;
     let mut cp = timestr.chars().peekable();
@@ -3696,9 +3689,6 @@ pub fn ParseDateTime(
         }
 
         // Record start of current field
-        if nf >= maxfields {
-            return -(1 as libc::c_int);
-        }
         let mut fdata = String::new();
         let mut ftype = FieldType::Number;
 

@@ -2186,4 +2186,4 @@ Ok([("yesterday", String), ("12:34:56", Time)])
 parse
 +%y%j
 ----
-Ok([])
+Err(-1)
