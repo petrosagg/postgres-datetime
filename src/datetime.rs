@@ -43,15 +43,7 @@ pub enum FieldType {
 }
 
 pub fn parse(s: &str) -> Result<Vec<(String, FieldType)>, i32> {
-    let mut fields = vec![];
-    let mut ftypes = vec![];
-
-    let dterr = ParseDateTime(s, &mut fields, &mut ftypes);
-
-    if dterr != 0 {
-        return Err(dterr);
-    }
-    Ok(fields.into_iter().zip(ftypes).collect())
+    ParseDateTime(s)
 }
 
 pub fn decode(fields: Vec<(String, FieldType)>) -> Result<(pg_tm, fsec_t, i32, i32), i32> {

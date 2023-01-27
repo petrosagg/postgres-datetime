@@ -3671,12 +3671,8 @@ unsafe extern "C" fn ParseFractionalSecond(
 ///  FieldType::Number can hold date fields (yy.ddd)
 ///  FieldType::String can hold months (January) and time zones (PST)
 ///  FieldType::Date can hold time zone names (America/New_York, GMT-8)
-#[no_mangle]
-pub fn ParseDateTime(
-    mut timestr: &str,
-    mut fields: &mut Vec<String>,
-    mut ftypes: &mut Vec<FieldType>,
-) -> libc::c_int {
+pub fn ParseDateTime(mut timestr: &str) -> Result<Vec<(String, FieldType)>, i32> {
+    let mut ret = vec![];
     let mut nf: libc::c_int = 0 as libc::c_int;
     let mut cp = timestr.chars().peekable();
 
@@ -3805,7 +3801,7 @@ pub fn ParseDateTime(
                 }
             // otherwise something wrong...
             } else {
-                return -(1 as libc::c_int);
+                return Err(-1);
             }
         // ignore other punctuation but use as delimiter
         } else if cp.peek().unwrap().is_ascii_punctuation() {
@@ -3813,13 +3809,12 @@ pub fn ParseDateTime(
             continue;
         // otherwise, something is not right...
         } else {
-            return -(1 as libc::c_int);
+            return Err(-1);
         }
         nf += 1;
-        fields.push(fdata);
-        ftypes.push(ftype);
+        ret.push((fdata, ftype));
     }
-    return 0 as libc::c_int;
+    Ok(ret)
 }
 #[no_mangle]
 pub unsafe extern "C" fn DecodeDateTime(
