@@ -3676,7 +3676,7 @@ unsafe extern "C" fn ParseFractionalSecond(
 ///  DTK_STRING can hold months (January) and time zones (PST)
 ///  DTK_DATE can hold time zone names (America/New_York, GMT-8)
 #[no_mangle]
-pub unsafe extern "C" fn ParseDateTime(
+pub fn ParseDateTime(
     mut timestr: &str,
     mut fields: &mut Vec<String>,
     mut ftypes: &mut Vec<libc::c_int>,
@@ -3775,10 +3775,12 @@ pub unsafe extern "C" fn ParseDateTime(
             } else if *cp.peek().unwrap() == '+' || cp.peek().unwrap().is_ascii_digit() {
                 // we need search only the core token table, not TZ names
                 let cdata = std::ffi::CString::new(fdata.clone()).unwrap();
-                if (datebsearch(cdata.as_ptr(), datetktbl.as_ptr(), szdatetktbl))
-                    .is_null()
-                {
-                    is_date = 1 as libc::c_int as bool_0;
+                unsafe {
+                    if (datebsearch(cdata.as_ptr(), datetktbl.as_ptr(), szdatetktbl))
+                        .is_null()
+                    {
+                        is_date = 1 as libc::c_int as bool_0;
+                    }
                 }
             }
             if is_date != 0 {
