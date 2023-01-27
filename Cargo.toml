@@ -1,0 +1,9 @@
+[package]
+name = "postgres-datetime"
+authors = ["Petros Angelatos <petrosagg@gmail.com>"]
+version = "0.0.0"
+publish = false
+edition = "2021"
+
+[dependencies]
+libc= "0.2"
