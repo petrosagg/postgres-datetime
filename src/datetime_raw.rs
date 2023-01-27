@@ -1947,6 +1947,79 @@ pub static mut days: [*const libc::c_char; 8] = [
     b"Saturday\0" as *const u8 as *const libc::c_char,
     0 as *const libc::c_char,
 ];
+static DATE_TOKEN_TABLE: &'static [&'static str] = &[
+    "-infinity",
+    "ad",
+    "allballs",
+    "am",
+    "apr",
+    "april",
+    "at",
+    "aug",
+    "august",
+    "bc",
+    "d",
+    "dec",
+    "december",
+    "dow",
+    "doy",
+    "dst",
+    "epoch",
+    "feb",
+    "february",
+    "fri",
+    "friday",
+    "h",
+    "infinity",
+    "isodow",
+    "isoyear",
+    "j",
+    "jan",
+    "january",
+    "jd",
+    "jul",
+    "julian",
+    "july",
+    "jun",
+    "june",
+    "m",
+    "mar",
+    "march",
+    "may",
+    "mm",
+    "mon",
+    "monday",
+    "nov",
+    "november",
+    "now",
+    "oct",
+    "october",
+    "on",
+    "pm",
+    "s",
+    "sat",
+    "saturday",
+    "sep",
+    "sept",
+    "september",
+    "sun",
+    "sunday",
+    "t",
+    "thu",
+    "thur",
+    "thurs",
+    "thursday",
+    "today",
+    "tomorrow",
+    "tue",
+    "tues",
+    "tuesday",
+    "wed",
+    "wednesday",
+    "weds",
+    "y",
+    "yesterday",
+];
 static mut datetktbl: [datetkn; 71] = unsafe {
     [
         {
@@ -3755,11 +3828,8 @@ pub fn parse_datetime(input: &str) -> Result<Vec<(String, FieldType)>, i32> {
                 is_date = true;
             } else if *chars.peek().unwrap() == '+' || chars.peek().unwrap().is_ascii_digit() {
                 // we need search only the core token table, not TZ names
-                let cdata = std::ffi::CString::new(fdata.clone()).unwrap();
-                unsafe {
-                    if (datebsearch(cdata.as_ptr(), datetktbl.as_ptr(), szdatetktbl)).is_null() {
-                        is_date = true;
-                    }
+                if !DATE_TOKEN_TABLE.binary_search(&&*fdata).is_ok() {
+                    is_date = true;
                 }
             }
             if is_date {
@@ -6890,6 +6960,7 @@ unsafe extern "C" fn datebsearch(
     }
     return 0 as *const datetkn;
 }
+
 unsafe extern "C" fn EncodeTimezone(
     mut str: *mut libc::c_char,
     mut tz: libc::c_int,
