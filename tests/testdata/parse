@@ -31,17 +31,17 @@ Ok([("0001-01-01", Date)])
 parse
 0001-01-01 AD
 ----
-Ok([("0001-01-01", Date), ("AD", String)])
+Ok([("0001-01-01", Date), ("ad", String)])
 
 parse
 0001-01-01 BC
 ----
-Ok([("0001-01-01", Date), ("BC", String)])
+Ok([("0001-01-01", Date), ("bc", String)])
 
 parse
 0001-12-31 BC
 ----
-Ok([("0001-12-31", Date), ("BC", String)])
+Ok([("0001-12-31", Date), ("bc", String)])
 
 parse
 0002-02-04
@@ -51,7 +51,7 @@ Ok([("0002-02-04", Date)])
 parse
 0002-12-31 BC
 ----
-Ok([("0002-12-31", Date), ("BC", String)])
+Ok([("0002-12-31", Date), ("bc", String)])
 
 parse
 0004-12-25
@@ -71,12 +71,12 @@ Ok([("0010-01-01", Date)])
 parse
 0011-01-01 BC
 ----
-Ok([("0011-01-01", Date), ("BC", String)])
+Ok([("0011-01-01", Date), ("bc", String)])
 
 parse
 0012-12-31 BC
 ----
-Ok([("0012-12-31", Date), ("BC", String)])
+Ok([("0012-12-31", Date), ("bc", String)])
 
 parse
 00:30
@@ -86,17 +86,17 @@ Ok([("00:30", Time)])
 parse
 0055-06-17 BC
 ----
-Ok([("0055-06-17", Date), ("BC", String)])
+Ok([("0055-06-17", Date), ("bc", String)])
 
 parse
 0055-08-10 BC
 ----
-Ok([("0055-08-10", Date), ("BC", String)])
+Ok([("0055-08-10", Date), ("bc", String)])
 
 parse
 0055-6-10 15:44:17.71393 BC
 ----
-Ok([("0055-6-10", Date), ("15:44:17.71393", Time), ("BC", String)])
+Ok([("0055-6-10", Date), ("15:44:17.71393", Time), ("bc", String)])
 
 parse
 01:00
@@ -106,12 +106,12 @@ Ok([("01:00", Time)])
 parse
 0100-12-31 BC
 ----
-Ok([("0100-12-31", Date), ("BC", String)])
+Ok([("0100-12-31", Date), ("bc", String)])
 
 parse
 0101-12-31 BC
 ----
-Ok([("0101-12-31", Date), ("BC", String)])
+Ok([("0101-12-31", Date), ("bc", String)])
 
 parse
 01-01-1994
@@ -221,17 +221,17 @@ Ok([("05:00", Time)])
 parse
 07:46:45 GMT+2
 ----
-Ok([("07:46:45", Time), ("GMT+2", Date)])
+Ok([("07:46:45", Time), ("gmt+2", Date)])
 
 parse
 07:46:45 GMT+3
 ----
-Ok([("07:46:45", Time), ("GMT+3", Date)])
+Ok([("07:46:45", Time), ("gmt+3", Date)])
 
 parse
 07:46:45 GMT+4
 ----
-Ok([("07:46:45", Time), ("GMT+4", Date)])
+Ok([("07:46:45", Time), ("gmt+4", Date)])
 
 parse
 08 01 1999
@@ -281,27 +281,27 @@ Ok([("08:55:08", Time)])
 parse
 08:55:08 GMT+2
 ----
-Ok([("08:55:08", Time), ("GMT+2", Date)])
+Ok([("08:55:08", Time), ("gmt+2", Date)])
 
 parse
 08 Jan 1999
 ----
-Ok([("08", Number), ("Jan", String), ("1999", Number)])
+Ok([("08", Number), ("jan", String), ("1999", Number)])
 
 parse
 08-Jan-1999
 ----
-Ok([("08-Jan-1999", Date)])
+Ok([("08-jan-1999", Date)])
 
 parse
 08 Jan 99
 ----
-Ok([("08", Number), ("Jan", String), ("99", Number)])
+Ok([("08", Number), ("jan", String), ("99", Number)])
 
 parse
 08-Jan-99
 ----
-Ok([("08-Jan-99", Date)])
+Ok([("08-jan-99", Date)])
 
 parse
 10:00
@@ -496,7 +496,7 @@ Ok([("1973-07-15", Date), ("08:15:55.33", Time), ("+02", Tz)])
 parse
 1980-01-06 00:00 GMT
 ----
-Ok([("1980-01-06", Date), ("00:00", Time), ("GMT", String)])
+Ok([("1980-01-06", Date), ("00:00", Time), ("gmt", String)])
 
 parse
 1981-02-03
@@ -591,12 +591,12 @@ Ok([("1999-08-01", Date)])
 parse
 1999 08 Jan
 ----
-Ok([("1999", Number), ("08", Number), ("Jan", String)])
+Ok([("1999", Number), ("08", Number), ("jan", String)])
 
 parse
 1999-08-Jan
 ----
-Ok([("1999-08-", Date), ("Jan", String)])
+Ok([("1999-08-", Date), ("jan", String)])
 
 parse
 1999-12-01
@@ -606,12 +606,12 @@ Ok([("1999-12-01", Date)])
 parse
 1999 Jan 08
 ----
-Ok([("1999", Number), ("Jan", String), ("08", Number)])
+Ok([("1999", Number), ("jan", String), ("08", Number)])
 
 parse
 1999-Jan-08
 ----
-Ok([("1999-Jan-08", Date)])
+Ok([("1999-jan-08", Date)])
 
 parse
 2000-01-01
@@ -621,7 +621,7 @@ Ok([("2000-01-01", Date)])
 parse
 2000-01-01 BC
 ----
-Ok([("2000-01-01", Date), ("BC", String)])
+Ok([("2000-01-01", Date), ("bc", String)])
 
 parse
 2000-01-10
@@ -851,22 +851,22 @@ Ok([("20011227", Number), ("040506.789", Number), ("-08", Tz)])
 parse
 20011227T040506+08
 ----
-Ok([("20011227", Number), ("T040506+08", Date)])
+Ok([("20011227", Number), ("t", String), ("040506", Number), ("+08", Tz)])
 
 parse
 20011227T040506-08
 ----
-Ok([("20011227", Number), ("T040506-08", Date)])
+Ok([("20011227", Number), ("t", String), ("040506-08", Date)])
 
 parse
 20011227T040506.789+08
 ----
-Ok([("20011227", Number), ("T040506.789+08", Date)])
+Ok([("20011227", Number), ("t", String), ("040506.789", Number), ("+08", Tz)])
 
 parse
 20011227T040506.789-08
 ----
-Ok([("20011227", Number), ("T040506.789-08", Date)])
+Ok([("20011227", Number), ("t", String), ("040506.789", Number), ("-08", Tz)])
 
 parse
 2002-04-20 17:31:12.66
@@ -1106,32 +1106,32 @@ Ok([("2011-01-10", Date)])
 parse
 2011-03-26 21:00:00 UTC
 ----
-Ok([("2011-03-26", Date), ("21:00:00", Time), ("UTC", String)])
+Ok([("2011-03-26", Date), ("21:00:00", Time), ("utc", String)])
 
 parse
 2011-03-26 22:00:00 UTC
 ----
-Ok([("2011-03-26", Date), ("22:00:00", Time), ("UTC", String)])
+Ok([("2011-03-26", Date), ("22:00:00", Time), ("utc", String)])
 
 parse
 2011-03-26 22:59:59 UTC
 ----
-Ok([("2011-03-26", Date), ("22:59:59", Time), ("UTC", String)])
+Ok([("2011-03-26", Date), ("22:59:59", Time), ("utc", String)])
 
 parse
 2011-03-26 23:00:00 UTC
 ----
-Ok([("2011-03-26", Date), ("23:00:00", Time), ("UTC", String)])
+Ok([("2011-03-26", Date), ("23:00:00", Time), ("utc", String)])
 
 parse
 2011-03-26 23:00:01 UTC
 ----
-Ok([("2011-03-26", Date), ("23:00:01", Time), ("UTC", String)])
+Ok([("2011-03-26", Date), ("23:00:01", Time), ("utc", String)])
 
 parse
 2011-03-26 23:59:59 UTC
 ----
-Ok([("2011-03-26", Date), ("23:59:59", Time), ("UTC", String)])
+Ok([("2011-03-26", Date), ("23:59:59", Time), ("utc", String)])
 
 parse
 2011-03-27 00:00:00
@@ -1141,17 +1141,17 @@ Ok([("2011-03-27", Date), ("00:00:00", Time)])
 parse
 2011-03-27 00:00:00 Europe/Moscow
 ----
-Ok([("2011-03-27", Date), ("00:00:00", Time), ("Europe/Moscow", Date)])
+Ok([("2011-03-27", Date), ("00:00:00", Time), ("europe/moscow", Date)])
 
 parse
 2011-03-27 00:00:00 MSK
 ----
-Ok([("2011-03-27", Date), ("00:00:00", Time), ("MSK", String)])
+Ok([("2011-03-27", Date), ("00:00:00", Time), ("msk", String)])
 
 parse
 2011-03-27 00:00:00 UTC
 ----
-Ok([("2011-03-27", Date), ("00:00:00", Time), ("UTC", String)])
+Ok([("2011-03-27", Date), ("00:00:00", Time), ("utc", String)])
 
 parse
 2011-03-27 01:00:00
@@ -1161,12 +1161,12 @@ Ok([("2011-03-27", Date), ("01:00:00", Time)])
 parse
 2011-03-27 01:00:00 Europe/Moscow
 ----
-Ok([("2011-03-27", Date), ("01:00:00", Time), ("Europe/Moscow", Date)])
+Ok([("2011-03-27", Date), ("01:00:00", Time), ("europe/moscow", Date)])
 
 parse
 2011-03-27 01:00:00 MSK
 ----
-Ok([("2011-03-27", Date), ("01:00:00", Time), ("MSK", String)])
+Ok([("2011-03-27", Date), ("01:00:00", Time), ("msk", String)])
 
 parse
 2011-03-27 01:59:59
@@ -1176,12 +1176,12 @@ Ok([("2011-03-27", Date), ("01:59:59", Time)])
 parse
 2011-03-27 01:59:59 Europe/Moscow
 ----
-Ok([("2011-03-27", Date), ("01:59:59", Time), ("Europe/Moscow", Date)])
+Ok([("2011-03-27", Date), ("01:59:59", Time), ("europe/moscow", Date)])
 
 parse
 2011-03-27 01:59:59 MSK
 ----
-Ok([("2011-03-27", Date), ("01:59:59", Time), ("MSK", String)])
+Ok([("2011-03-27", Date), ("01:59:59", Time), ("msk", String)])
 
 parse
 2011-03-27 02:00:00
@@ -1191,12 +1191,12 @@ Ok([("2011-03-27", Date), ("02:00:00", Time)])
 parse
 2011-03-27 02:00:00 Europe/Moscow
 ----
-Ok([("2011-03-27", Date), ("02:00:00", Time), ("Europe/Moscow", Date)])
+Ok([("2011-03-27", Date), ("02:00:00", Time), ("europe/moscow", Date)])
 
 parse
 2011-03-27 02:00:00 MSK
 ----
-Ok([("2011-03-27", Date), ("02:00:00", Time), ("MSK", String)])
+Ok([("2011-03-27", Date), ("02:00:00", Time), ("msk", String)])
 
 parse
 2011-03-27 02:00:01
@@ -1206,12 +1206,12 @@ Ok([("2011-03-27", Date), ("02:00:01", Time)])
 parse
 2011-03-27 02:00:01 Europe/Moscow
 ----
-Ok([("2011-03-27", Date), ("02:00:01", Time), ("Europe/Moscow", Date)])
+Ok([("2011-03-27", Date), ("02:00:01", Time), ("europe/moscow", Date)])
 
 parse
 2011-03-27 02:00:01 MSK
 ----
-Ok([("2011-03-27", Date), ("02:00:01", Time), ("MSK", String)])
+Ok([("2011-03-27", Date), ("02:00:01", Time), ("msk", String)])
 
 parse
 2011-03-27 02:59:59
@@ -1221,12 +1221,12 @@ Ok([("2011-03-27", Date), ("02:59:59", Time)])
 parse
 2011-03-27 02:59:59 Europe/Moscow
 ----
-Ok([("2011-03-27", Date), ("02:59:59", Time), ("Europe/Moscow", Date)])
+Ok([("2011-03-27", Date), ("02:59:59", Time), ("europe/moscow", Date)])
 
 parse
 2011-03-27 02:59:59 MSK
 ----
-Ok([("2011-03-27", Date), ("02:59:59", Time), ("MSK", String)])
+Ok([("2011-03-27", Date), ("02:59:59", Time), ("msk", String)])
 
 parse
 2011-03-27 03:00:00
@@ -1236,12 +1236,12 @@ Ok([("2011-03-27", Date), ("03:00:00", Time)])
 parse
 2011-03-27 03:00:00 Europe/Moscow
 ----
-Ok([("2011-03-27", Date), ("03:00:00", Time), ("Europe/Moscow", Date)])
+Ok([("2011-03-27", Date), ("03:00:00", Time), ("europe/moscow", Date)])
 
 parse
 2011-03-27 03:00:00 MSK
 ----
-Ok([("2011-03-27", Date), ("03:00:00", Time), ("MSK", String)])
+Ok([("2011-03-27", Date), ("03:00:00", Time), ("msk", String)])
 
 parse
 2011-03-27 03:00:01
@@ -1251,12 +1251,12 @@ Ok([("2011-03-27", Date), ("03:00:01", Time)])
 parse
 2011-03-27 03:00:01 Europe/Moscow
 ----
-Ok([("2011-03-27", Date), ("03:00:01", Time), ("Europe/Moscow", Date)])
+Ok([("2011-03-27", Date), ("03:00:01", Time), ("europe/moscow", Date)])
 
 parse
 2011-03-27 03:00:01 MSK
 ----
-Ok([("2011-03-27", Date), ("03:00:01", Time), ("MSK", String)])
+Ok([("2011-03-27", Date), ("03:00:01", Time), ("msk", String)])
 
 parse
 2011-03-27 04:00:00
@@ -1266,12 +1266,12 @@ Ok([("2011-03-27", Date), ("04:00:00", Time)])
 parse
 2011-03-27 04:00:00 Europe/Moscow
 ----
-Ok([("2011-03-27", Date), ("04:00:00", Time), ("Europe/Moscow", Date)])
+Ok([("2011-03-27", Date), ("04:00:00", Time), ("europe/moscow", Date)])
 
 parse
 2011-03-27 04:00:00 MSK
 ----
-Ok([("2011-03-27", Date), ("04:00:00", Time), ("MSK", String)])
+Ok([("2011-03-27", Date), ("04:00:00", Time), ("msk", String)])
 
 parse
 2011-08-01
@@ -1296,7 +1296,7 @@ Ok([("2012-12-12", Date), ("12:00", Time)])
 parse
 2012-12-12 12:00 America/New_York
 ----
-Ok([("2012-12-12", Date), ("12:00", Time), ("America/New_York", Date)])
+Ok([("2012-12-12", Date), ("12:00", Time), ("america/new_york", Date)])
 
 parse
 2012-12-22
@@ -1341,27 +1341,27 @@ Ok([("2014-05-28", Date), ("12:22:35.614298", Time), ("-04", Tz)])
 parse
 2014-10-25 21:00:00 UTC
 ----
-Ok([("2014-10-25", Date), ("21:00:00", Time), ("UTC", String)])
+Ok([("2014-10-25", Date), ("21:00:00", Time), ("utc", String)])
 
 parse
 2014-10-25 21:59:59 UTC
 ----
-Ok([("2014-10-25", Date), ("21:59:59", Time), ("UTC", String)])
+Ok([("2014-10-25", Date), ("21:59:59", Time), ("utc", String)])
 
 parse
 2014-10-25 22:00:00 UTC
 ----
-Ok([("2014-10-25", Date), ("22:00:00", Time), ("UTC", String)])
+Ok([("2014-10-25", Date), ("22:00:00", Time), ("utc", String)])
 
 parse
 2014-10-25 22:00:01 UTC
 ----
-Ok([("2014-10-25", Date), ("22:00:01", Time), ("UTC", String)])
+Ok([("2014-10-25", Date), ("22:00:01", Time), ("utc", String)])
 
 parse
 2014-10-25 23:00:00 UTC
 ----
-Ok([("2014-10-25", Date), ("23:00:00", Time), ("UTC", String)])
+Ok([("2014-10-25", Date), ("23:00:00", Time), ("utc", String)])
 
 parse
 2014-10-26 00:00:00
@@ -1371,12 +1371,12 @@ Ok([("2014-10-26", Date), ("00:00:00", Time)])
 parse
 2014-10-26 00:00:00 Europe/Moscow
 ----
-Ok([("2014-10-26", Date), ("00:00:00", Time), ("Europe/Moscow", Date)])
+Ok([("2014-10-26", Date), ("00:00:00", Time), ("europe/moscow", Date)])
 
 parse
 2014-10-26 00:00:00 MSK
 ----
-Ok([("2014-10-26", Date), ("00:00:00", Time), ("MSK", String)])
+Ok([("2014-10-26", Date), ("00:00:00", Time), ("msk", String)])
 
 parse
 2014-10-26 00:59:59
@@ -1386,12 +1386,12 @@ Ok([("2014-10-26", Date), ("00:59:59", Time)])
 parse
 2014-10-26 00:59:59 Europe/Moscow
 ----
-Ok([("2014-10-26", Date), ("00:59:59", Time), ("Europe/Moscow", Date)])
+Ok([("2014-10-26", Date), ("00:59:59", Time), ("europe/moscow", Date)])
 
 parse
 2014-10-26 00:59:59 MSK
 ----
-Ok([("2014-10-26", Date), ("00:59:59", Time), ("MSK", String)])
+Ok([("2014-10-26", Date), ("00:59:59", Time), ("msk", String)])
 
 parse
 2014-10-26 01:00:00
@@ -1401,12 +1401,12 @@ Ok([("2014-10-26", Date), ("01:00:00", Time)])
 parse
 2014-10-26 01:00:00 Europe/Moscow
 ----
-Ok([("2014-10-26", Date), ("01:00:00", Time), ("Europe/Moscow", Date)])
+Ok([("2014-10-26", Date), ("01:00:00", Time), ("europe/moscow", Date)])
 
 parse
 2014-10-26 01:00:00 MSK
 ----
-Ok([("2014-10-26", Date), ("01:00:00", Time), ("MSK", String)])
+Ok([("2014-10-26", Date), ("01:00:00", Time), ("msk", String)])
 
 parse
 2014-10-26 01:00:01
@@ -1416,12 +1416,12 @@ Ok([("2014-10-26", Date), ("01:00:01", Time)])
 parse
 2014-10-26 01:00:01 Europe/Moscow
 ----
-Ok([("2014-10-26", Date), ("01:00:01", Time), ("Europe/Moscow", Date)])
+Ok([("2014-10-26", Date), ("01:00:01", Time), ("europe/moscow", Date)])
 
 parse
 2014-10-26 01:00:01 MSK
 ----
-Ok([("2014-10-26", Date), ("01:00:01", Time), ("MSK", String)])
+Ok([("2014-10-26", Date), ("01:00:01", Time), ("msk", String)])
 
 parse
 2014-10-26 02:00:00
@@ -1431,17 +1431,17 @@ Ok([("2014-10-26", Date), ("02:00:00", Time)])
 parse
 2014-10-26 02:00:00 Europe/Moscow
 ----
-Ok([("2014-10-26", Date), ("02:00:00", Time), ("Europe/Moscow", Date)])
+Ok([("2014-10-26", Date), ("02:00:00", Time), ("europe/moscow", Date)])
 
 parse
 2014-10-26 02:00:00 MSK
 ----
-Ok([("2014-10-26", Date), ("02:00:00", Time), ("MSK", String)])
+Ok([("2014-10-26", Date), ("02:00:00", Time), ("msk", String)])
 
 parse
 2014-12-10 00:00:00 Europe/Prague
 ----
-Ok([("2014-12-10", Date), ("00:00:00", Time), ("Europe/Prague", Date)])
+Ok([("2014-12-10", Date), ("00:00:00", Time), ("europe/prague", Date)])
 
 parse
 2015-04-01
@@ -1476,22 +1476,22 @@ Ok([("2018-11-04", Date), ("01:30", Time)])
 parse
 2018-11-04 01:30 EDT
 ----
-Ok([("2018-11-04", Date), ("01:30", Time), ("EDT", String)])
+Ok([("2018-11-04", Date), ("01:30", Time), ("edt", String)])
 
 parse
 2018-12-18 10:59:54 GMT+2
 ----
-Ok([("2018-12-18", Date), ("10:59:54", Time), ("GMT+2", Date)])
+Ok([("2018-12-18", Date), ("10:59:54", Time), ("gmt+2", Date)])
 
 parse
 2018-12-18 10:59:54 GMT+3
 ----
-Ok([("2018-12-18", Date), ("10:59:54", Time), ("GMT+3", Date)])
+Ok([("2018-12-18", Date), ("10:59:54", Time), ("gmt+3", Date)])
 
 parse
 2018-12-18 10:59:54 GMT+4
 ----
-Ok([("2018-12-18", Date), ("10:59:54", Time), ("GMT+4", Date)])
+Ok([("2018-12-18", Date), ("10:59:54", Time), ("gmt+4", Date)])
 
 parse
 2019-02-01
@@ -1576,7 +1576,7 @@ Ok([("2020-08-11", Date)])
 parse
 2020-08-11 BC
 ----
-Ok([("2020-08-11", Date), ("BC", String)])
+Ok([("2020-08-11", Date), ("bc", String)])
 
 parse
 2020-08-16
@@ -1626,22 +1626,22 @@ Ok([("2038-01-01", Date)])
 parse
 205000-01-10 17:32:01 Europe/Helsinki
 ----
-Ok([("205000-01-10", Date), ("17:32:01", Time), ("Europe/Helsinki", Date)])
+Ok([("205000-01-10", Date), ("17:32:01", Time), ("europe/helsinki", Date)])
 
 parse
 205000-07-10 17:32:01 Europe/Helsinki
 ----
-Ok([("205000-07-10", Date), ("17:32:01", Time), ("Europe/Helsinki", Date)])
+Ok([("205000-07-10", Date), ("17:32:01", Time), ("europe/helsinki", Date)])
 
 parse
 20500110 173201 Europe/Helsinki
 ----
-Ok([("20500110", Number), ("173201", Number), ("Europe/Helsinki", Date)])
+Ok([("20500110", Number), ("173201", Number), ("europe/helsinki", Date)])
 
 parse
 20500710 173201 Europe/Helsinki
 ----
-Ok([("20500710", Number), ("173201", Number), ("Europe/Helsinki", Date)])
+Ok([("20500710", Number), ("173201", Number), ("europe/helsinki", Date)])
 
 parse
 2099-12-31
@@ -1666,12 +1666,12 @@ Ok([("23:59:59.9999999", Time)])
 parse
 23:59:59.9999999 PDT
 ----
-Ok([("23:59:59.9999999", Time), ("PDT", String)])
+Ok([("23:59:59.9999999", Time), ("pdt", String)])
 
 parse
 23:59:59.999999 PDT
 ----
-Ok([("23:59:59.999999", Time), ("PDT", String)])
+Ok([("23:59:59.999999", Time), ("pdt", String)])
 
 parse
 23:59:60
@@ -1686,12 +1686,12 @@ Ok([("23:59:60.01", Time)])
 parse
 23:59:60.01 PDT
 ----
-Ok([("23:59:60.01", Time), ("PDT", String)])
+Ok([("23:59:60.01", Time), ("pdt", String)])
 
 parse
 23:59:60 PDT
 ----
-Ok([("23:59:60", Time), ("PDT", String)])
+Ok([("23:59:60", Time), ("pdt", String)])
 
 parse
 24:00:00
@@ -1706,12 +1706,12 @@ Ok([("24:00:00.01", Time)])
 parse
 24:00:00.01 PDT
 ----
-Ok([("24:00:00.01", Time), ("PDT", String)])
+Ok([("24:00:00.01", Time), ("pdt", String)])
 
 parse
 24:00:00 PDT
 ----
-Ok([("24:00:00", Time), ("PDT", String)])
+Ok([("24:00:00", Time), ("pdt", String)])
 
 parse
 24:01:00
@@ -1721,7 +1721,7 @@ Ok([("24:01:00", Time)])
 parse
 24:01:00 PDT
 ----
-Ok([("24:01:00", Time), ("PDT", String)])
+Ok([("24:01:00", Time), ("pdt", String)])
 
 parse
 25:00:00
@@ -1731,7 +1731,7 @@ Ok([("25:00:00", Time)])
 parse
 25:00:00 PDT
 ----
-Ok([("25:00:00", Time), ("PDT", String)])
+Ok([("25:00:00", Time), ("pdt", String)])
 
 parse
 27.12.2001 04:05:06.789+08
@@ -1791,37 +1791,37 @@ Ok([("294277-12-31", Date), ("16:00:00", Time), ("-08", Tz)])
 parse
 4714-11-23 16:00:00-08 BC
 ----
-Ok([("4714-11-23", Date), ("16:00:00", Time), ("-08", Tz), ("BC", String)])
+Ok([("4714-11-23", Date), ("16:00:00", Time), ("-08", Tz), ("bc", String)])
 
 parse
 4714-11-23 23:59:59+00 BC
 ----
-Ok([("4714-11-23", Date), ("23:59:59", Time), ("+00", Tz), ("BC", String)])
+Ok([("4714-11-23", Date), ("23:59:59", Time), ("+00", Tz), ("bc", String)])
 
 parse
 4714-11-23 23:59:59 BC
 ----
-Ok([("4714-11-23", Date), ("23:59:59", Time), ("BC", String)])
+Ok([("4714-11-23", Date), ("23:59:59", Time), ("bc", String)])
 
 parse
 4714-11-23 BC
 ----
-Ok([("4714-11-23", Date), ("BC", String)])
+Ok([("4714-11-23", Date), ("bc", String)])
 
 parse
 4714-11-24 00:00:00+00 BC
 ----
-Ok([("4714-11-24", Date), ("00:00:00", Time), ("+00", Tz), ("BC", String)])
+Ok([("4714-11-24", Date), ("00:00:00", Time), ("+00", Tz), ("bc", String)])
 
 parse
 4714-11-24 00:00:00 BC
 ----
-Ok([("4714-11-24", Date), ("00:00:00", Time), ("BC", String)])
+Ok([("4714-11-24", Date), ("00:00:00", Time), ("bc", String)])
 
 parse
 4714-11-24 BC
 ----
-Ok([("4714-11-24", Date), ("BC", String)])
+Ok([("4714-11-24", Date), ("bc", String)])
 
 parse
 5000-01-01 00:00:00
@@ -1871,22 +1871,22 @@ Ok([("99-08-01", Date)])
 parse
 99 08 Jan
 ----
-Ok([("99", Number), ("08", Number), ("Jan", String)])
+Ok([("99", Number), ("08", Number), ("jan", String)])
 
 parse
 99-08-Jan
 ----
-Ok([("99-08-", Date), ("Jan", String)])
+Ok([("99-08-", Date), ("jan", String)])
 
 parse
 99 Jan 08
 ----
-Ok([("99", Number), ("Jan", String), ("08", Number)])
+Ok([("99", Number), ("jan", String), ("08", Number)])
 
 parse
 99-Jan-08
 ----
-Ok([("99-Jan-08", Date)])
+Ok([("99-jan-08", Date)])
 
 parse
 empty
@@ -1901,7 +1901,7 @@ Ok([("epoch", String)])
 parse
 Fri Aug 01 00:00:00 2014 CEST
 ----
-Ok([("Fri", String), ("Aug", String), ("01", Number), ("00:00:00", Time), ("2014", Number), ("CEST", String)])
+Ok([("fri", String), ("aug", String), ("01", Number), ("00:00:00", Time), ("2014", Number), ("cest", String)])
 
 parse
 -infinity
@@ -1916,122 +1916,122 @@ Ok([("infinity", String)])
 parse
 -Infinity
 ----
-Ok([("-Infinity", Special)])
+Ok([("-infinity", Special)])
 
 parse
 Infinity
 ----
-Ok([("Infinity", String)])
+Ok([("infinity", String)])
 
 parse
 J0
 ----
-Ok([("J0", Date)])
+Ok([("j", String), ("0", Number)])
 
 parse
 J1520447
 ----
-Ok([("J1520447", Date)])
+Ok([("j", String), ("1520447", Number)])
 
 parse
 J2451187
 ----
-Ok([("J2451187", Date)])
+Ok([("j", String), ("2451187", Number)])
 
 parse
 J2452271 04:05:06+08
 ----
-Ok([("J2452271", Date), ("04:05:06", Time), ("+08", Tz)])
+Ok([("j", String), ("2452271", Number), ("04:05:06", Time), ("+08", Tz)])
 
 parse
 J2452271 04:05:06-08
 ----
-Ok([("J2452271", Date), ("04:05:06", Time), ("-08", Tz)])
+Ok([("j", String), ("2452271", Number), ("04:05:06", Time), ("-08", Tz)])
 
 parse
 J2452271+08
 ----
-Ok([("J2452271+08", Date)])
+Ok([("j", String), ("2452271", Number), ("+08", Tz)])
 
 parse
 J2452271-08
 ----
-Ok([("J2452271-08", Date)])
+Ok([("j", String), ("2452271-08", Date)])
 
 parse
 J2452271.5+08
 ----
-Ok([("J2452271.5+08", Date)])
+Ok([("j", String), ("2452271.5", Number), ("+08", Tz)])
 
 parse
 J2452271.5-08
 ----
-Ok([("J2452271.5-08", Date)])
+Ok([("j", String), ("2452271.5", Number), ("-08", Tz)])
 
 parse
 J2452271T040506+08
 ----
-Ok([("J2452271T040506+08", Date)])
+Ok([("j", String), ("2452271", Number), ("t", String), ("040506", Number), ("+08", Tz)])
 
 parse
 J2452271T040506-08
 ----
-Ok([("J2452271T040506-08", Date)])
+Ok([("j", String), ("2452271", Number), ("t", String), ("040506-08", Date)])
 
 parse
 J2452271T040506.789+08
 ----
-Ok([("J2452271T040506.789+08", Date)])
+Ok([("j", String), ("2452271", Number), ("t", String), ("040506.789", Number), ("+08", Tz)])
 
 parse
 J2452271T040506.789-08
 ----
-Ok([("J2452271T040506.789-08", Date)])
+Ok([("j", String), ("2452271", Number), ("t", String), ("040506.789", Number), ("-08", Tz)])
 
 parse
 Jan 08 1999
 ----
-Ok([("Jan", String), ("08", Number), ("1999", Number)])
+Ok([("jan", String), ("08", Number), ("1999", Number)])
 
 parse
 Jan-08-1999
 ----
-Ok([("Jan-08-1999", Date)])
+Ok([("jan-08-1999", Date)])
 
 parse
 Jan 08 99
 ----
-Ok([("Jan", String), ("08", Number), ("99", Number)])
+Ok([("jan", String), ("08", Number), ("99", Number)])
 
 parse
 Jan-08-99
 ----
-Ok([("Jan-08-99", Date)])
+Ok([("jan-08-99", Date)])
 
 parse
 Jan 1, 4713 BC
 ----
-Ok([("Jan", String), ("1", Number), ("4713", Number), ("BC", String)])
+Ok([("jan", String), ("1", Number), ("4713", Number), ("bc", String)])
 
 parse
 January 8, 1999
 ----
-Ok([("January", String), ("8", Number), ("1999", Number)])
+Ok([("january", String), ("8", Number), ("1999", Number)])
 
 parse
 January 8, 99 BC
 ----
-Ok([("January", String), ("8", Number), ("99", Number), ("BC", String)])
+Ok([("january", String), ("8", Number), ("99", Number), ("bc", String)])
 
 parse
 Mon Aug 04 00:00:00 2014 CEST
 ----
-Ok([("Mon", String), ("Aug", String), ("04", Number), ("00:00:00", Time), ("2014", Number), ("CEST", String)])
+Ok([("mon", String), ("aug", String), ("04", Number), ("00:00:00", Time), ("2014", Number), ("cest", String)])
 
 parse
 Mon Aug 05 00:00:00 2014 CEST
 ----
-Ok([("Mon", String), ("Aug", String), ("05", Number), ("00:00:00", Time), ("2014", Number), ("CEST", String)])
+Ok([("mon", String), ("aug", String), ("05", Number), ("00:00:00", Time), ("2014", Number), ("cest", String)])
 
 parse
 now
@@ -2046,22 +2046,22 @@ Ok([("pear", String)])
 parse
 Sat Aug 02 00:00:00 2014 CEST
 ----
-Ok([("Sat", String), ("Aug", String), ("02", Number), ("00:00:00", Time), ("2014", Number), ("CEST", String)])
+Ok([("sat", String), ("aug", String), ("02", Number), ("00:00:00", Time), ("2014", Number), ("cest", String)])
 
 parse
 Sun Nov 23 16:00:00 4714 PST BC
 ----
-Ok([("Sun", String), ("Nov", String), ("23", Number), ("16:00:00", Time), ("4714", Number), ("PST", String), ("BC", String)])
+Ok([("sun", String), ("nov", String), ("23", Number), ("16:00:00", Time), ("4714", Number), ("pst", String), ("bc", String)])
 
 parse
 Thu Jan 01 00:00:00 2009
 ----
-Ok([("Thu", String), ("Jan", String), ("01", Number), ("00:00:00", Time), ("2009", Number)])
+Ok([("thu", String), ("jan", String), ("01", Number), ("00:00:00", Time), ("2009", Number)])
 
 parse
 Thu Jul 31 00:00:00 2014 CEST
 ----
-Ok([("Thu", String), ("Jul", String), ("31", Number), ("00:00:00", Time), ("2014", Number), ("CEST", String)])
+Ok([("thu", String), ("jul", String), ("31", Number), ("00:00:00", Time), ("2014", Number), ("cest", String)])
 
 parse
 today
@@ -2086,7 +2086,7 @@ Ok([("tomorrow", String), ("16:00:00", Time)])
 parse
 tomorrow EST
 ----
-Ok([("tomorrow", String), ("EST", String)])
+Ok([("tomorrow", String), ("est", String)])
 
 parse
 tomorrow zulu
@@ -2096,82 +2096,82 @@ Ok([("tomorrow", String), ("zulu", String)])
 parse
 Tue Dec 18 04:59:54 2018 PST
 ----
-Ok([("Tue", String), ("Dec", String), ("18", Number), ("04:59:54", Time), ("2018", Number), ("PST", String)])
+Ok([("tue", String), ("dec", String), ("18", Number), ("04:59:54", Time), ("2018", Number), ("pst", String)])
 
 parse
 Tue Feb 01 00:00:00 2000
 ----
-Ok([("Tue", String), ("Feb", String), ("01", Number), ("00:00:00", Time), ("2000", Number)])
+Ok([("tue", String), ("feb", String), ("01", Number), ("00:00:00", Time), ("2000", Number)])
 
 parse
 {"Tue Feb 01 00:00:00 2000","Fri Jan 01 00:00:00 2010"}
 ----
-Ok([("Tue", String), ("Feb", String), ("01", Number), ("00:00:00", Time), ("2000", Number), ("Fri", String), ("Jan", String), ("01", Number), ("00:00:00", Time), ("2010", Number)])
+Ok([("tue", String), ("feb", String), ("01", Number), ("00:00:00", Time), ("2000", Number), ("fri", String), ("jan", String), ("01", Number), ("00:00:00", Time), ("2010", Number)])
 
 parse
 Tue Feb 01 00:00:00 2000 PST
 ----
-Ok([("Tue", String), ("Feb", String), ("01", Number), ("00:00:00", Time), ("2000", Number), ("PST", String)])
+Ok([("tue", String), ("feb", String), ("01", Number), ("00:00:00", Time), ("2000", Number), ("pst", String)])
 
 parse
 {"Tue Feb 01 00:00:00 2000 PST","Fri Jan 01 00:00:00 2010 PST"}
 ----
-Ok([("Tue", String), ("Feb", String), ("01", Number), ("00:00:00", Time), ("2000", Number), ("PST", String), ("Fri", String), ("Jan", String), ("01", Number), ("00:00:00", Time), ("2010", Number), ("PST", String)])
+Ok([("tue", String), ("feb", String), ("01", Number), ("00:00:00", Time), ("2000", Number), ("pst", String), ("fri", String), ("jan", String), ("01", Number), ("00:00:00", Time), ("2010", Number), ("pst", String)])
 
 parse
 Tue Oct 26 08:55:08 2004
 ----
-Ok([("Tue", String), ("Oct", String), ("26", Number), ("08:55:08", Time), ("2004", Number)])
+Ok([("tue", String), ("oct", String), ("26", Number), ("08:55:08", Time), ("2004", Number)])
 
 parse
 Wed Jan 18 00:00:00 2017
 ----
-Ok([("Wed", String), ("Jan", String), ("18", Number), ("00:00:00", Time), ("2017", Number)])
+Ok([("wed", String), ("jan", String), ("18", Number), ("00:00:00", Time), ("2017", Number)])
 
 parse
 Wed Jul 11 10:51:14 America/New_York 2001
 ----
-Ok([("Wed", String), ("Jul", String), ("11", Number), ("10:51:14", Time), ("America/New_York", Date), ("2001", Number)])
+Ok([("wed", String), ("jul", String), ("11", Number), ("10:51:14", Time), ("america/new_york", Date), ("2001", Number)])
 
 parse
 Wed Jul 11 10:51:14 GMT+4 2001
 ----
-Ok([("Wed", String), ("Jul", String), ("11", Number), ("10:51:14", Time), ("GMT+4", Date), ("2001", Number)])
+Ok([("wed", String), ("jul", String), ("11", Number), ("10:51:14", Time), ("gmt+4", Date), ("2001", Number)])
 
 parse
 Wed Jul 11 10:51:14 GMT-4 2001
 ----
-Ok([("Wed", String), ("Jul", String), ("11", Number), ("10:51:14", Time), ("GMT-4", Date), ("2001", Number)])
+Ok([("wed", String), ("jul", String), ("11", Number), ("10:51:14", Time), ("gmt-4", Date), ("2001", Number)])
 
 parse
 Wed Jul 11 10:51:14 PST+03:00 2001
 ----
-Ok([("Wed", String), ("Jul", String), ("11", Number), ("10:51:14", Time), ("PST+03:00", Date), ("2001", Number)])
+Ok([("wed", String), ("jul", String), ("11", Number), ("10:51:14", Time), ("pst+03:00", Date), ("2001", Number)])
 
 parse
 Wed Jul 11 10:51:14 PST-03:00 2001
 ----
-Ok([("Wed", String), ("Jul", String), ("11", Number), ("10:51:14", Time), ("PST-03:00", Date), ("2001", Number)])
+Ok([("wed", String), ("jul", String), ("11", Number), ("10:51:14", Time), ("pst-03:00", Date), ("2001", Number)])
 
 parse
 Y2001M12D27H04M05S06.789+08
 ----
-Ok([("Y2001M12D27H04M05S06.789+08", Date)])
+Ok([("y", String), ("2001", Number), ("m", String), ("12", Number), ("d", String), ("27", Number), ("h", String), ("04", Number), ("m", String), ("05", Number), ("s", String), ("06.789", Number), ("+08", Tz)])
 
 parse
 Y2001M12D27H04M05S06.789-08
 ----
-Ok([("Y2001M12D27H04M05S06.789-08", Date)])
+Ok([("y", String), ("2001", Number), ("m", String), ("12", Number), ("d", String), ("27", Number), ("h", String), ("04", Number), ("m", String), ("05", Number), ("s", String), ("06.789", Number), ("-08", Tz)])
 
 parse
 Y2001M12D27H04MM05S06.789+08
 ----
-Ok([("Y2001M12D27H04MM05S06.789+08", Date)])
+Ok([("y", String), ("2001", Number), ("m", String), ("12", Number), ("d", String), ("27", Number), ("h", String), ("04", Number), ("mm", String), ("05", Number), ("s", String), ("06.789", Number), ("+08", Tz)])
 
 parse
 Y2001M12D27H04MM05S06.789-08
 ----
-Ok([("Y2001M12D27H04MM05S06.789-08", Date)])
+Ok([("y", String), ("2001", Number), ("m", String), ("12", Number), ("d", String), ("27", Number), ("h", String), ("04", Number), ("mm", String), ("05", Number), ("s", String), ("06.789", Number), ("-08", Tz)])
 
 parse
 yesterday

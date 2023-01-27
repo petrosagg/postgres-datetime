@@ -1,4 +1,297 @@
 use ::libc;
+
+const HOURS_PER_DAY: libc::c_int = 24;
+const MINS_PER_HOUR: libc::c_int = 60;
+const SECS_PER_DAY: libc::c_int = 86400;
+const SECS_PER_MINUTE: libc::c_int = 60;
+const USECS_PER_DAY: libc::c_long = 86400000000;
+const USECS_PER_HOUR: libc::c_long = 3600000000;
+const USECS_PER_MINUTE: libc::c_long = 60000000;
+const USECS_PER_SEC: libc::c_long = 1000000;
+const POSTGRES_EPOCH_JDATE: libc::c_long = 2451545; /* == date2j(2000, 1, 1) */
+const UNIX_EPOCH_JDATE: libc::c_long = 2440588; /* == date2j(1970, 1, 1) */
+
+fn pg_tolower(mut ch: libc::c_uchar) -> libc::c_uchar {
+    ch.make_ascii_lowercase();
+    ch
+}
+fn pg_toupper(mut ch: libc::c_uchar) -> libc::c_uchar {
+    ch.make_ascii_uppercase();
+    ch
+}
+static DateOrder: libc::c_int = 0;
+fn dt2time(
+    jd: Timestamp,
+    hour: *mut libc::c_int,
+    min: *mut libc::c_int,
+    sec: *mut libc::c_int,
+    fsec: *mut fsec_t,
+) {
+    unsafe {
+        let mut time: TimeOffset;
+
+        time = jd;
+
+        *hour = (time / USECS_PER_HOUR).try_into().unwrap();
+        time -= (*hour as i64) * USECS_PER_HOUR;
+        *min = (time / USECS_PER_MINUTE).try_into().unwrap();
+        time -= (*min as i64) * USECS_PER_MINUTE;
+        *sec = (time / USECS_PER_SEC).try_into().unwrap();
+        *fsec = (time - (*sec as i64 * USECS_PER_SEC)).try_into().unwrap();
+    }
+}
+fn errstart(elevel: libc::c_int, domain: *const libc::c_char) -> bool_0 {
+    0
+}
+fn errstart_cold(elevel: libc::c_int, domain: *const libc::c_char) -> bool_0 {
+    0
+}
+fn errfinish(
+    filename: *const libc::c_char,
+    lineno: libc::c_int,
+    funcname: *const libc::c_char,
+) {}
+fn errcode(sqlerrcode: libc::c_int) -> libc::c_int {
+    0
+}
+fn errmsg0(fmt: *const libc::c_char) -> libc::c_int {
+    0
+}
+fn errmsg(fmt: *const libc::c_char, arg: *mut libc::c_void) -> libc::c_int {
+    0
+}
+fn errmsg2(fmt: *const libc::c_char, arg1: *mut libc::c_void, arg2: *mut libc::c_void) -> libc::c_int {
+    0
+}
+fn errdetail(fmt: *const libc::c_char, arg: *mut libc::c_void) -> libc::c_int {
+    0
+}
+fn GetCurrentTransactionStartTimestamp() -> TimestampTz {
+    11223344
+}
+
+fn pg_localtime(timep: *const pg_time_t, tz: *const pg_tz) -> *mut pg_tm {
+    Box::into_raw(Box::new(pg_tm {
+        tm_sec: 0,
+        tm_min: 0,
+        tm_hour: 0,
+        tm_mday: 0,
+        tm_mon: 0,
+        tm_year: 0,
+        tm_wday: 0,
+        tm_yday: 0,
+        tm_isdst: 0,
+        tm_gmtoff: 0,
+        tm_zone: std::ptr::null(),
+    }))
+}
+
+fn pg_interpret_timezone_abbrev(
+    abbrev: *const libc::c_char,
+    timep: *const pg_time_t,
+    gmtoff: *mut libc::c_long,
+    isdst: *mut libc::c_int,
+    tz: *const pg_tz,
+) -> bool_0 {
+    unimplemented!()
+}
+fn pg_next_dst_boundary(
+    timep: *const pg_time_t,
+    before_gmtoff: *mut libc::c_long,
+    before_isdst: *mut libc::c_int,
+    boundary: *mut pg_time_t,
+    after_gmtoff: *mut libc::c_long,
+    after_isdst: *mut libc::c_int,
+    tz: *const pg_tz,
+) -> libc::c_int {
+    0
+}
+fn pg_tzset(tzname: *const libc::c_char) -> *mut pg_tz {
+    std::ptr::null_mut()
+}
+static mut session_timezone: *mut pg_tz = 0 as *mut _;
+
+fn strlcpy(
+    dst: *mut libc::c_char,
+    src: *const libc::c_char,
+    siz: libc::c_ulong,
+) -> libc::c_ulong {
+    unsafe {
+        let mut d: *mut libc::c_char = dst;
+        let mut s: *const libc::c_char = src;
+        let mut n: libc::c_ulong = siz;
+
+        /* Copy as many bytes as will fit */
+        if n != 0 {
+            loop {
+                n -= 1;
+                if n == 0 {
+                    break;
+                }
+                *d = *s;
+                s = s.offset(1);
+                d = d.offset(1);
+                if *s == 0 {
+                    break;
+                }
+            }
+        }
+
+        /* Not enough room in dst, add NUL and traverse rest of src */
+        if n == 0 {
+            if siz != 0 {
+                *d = 0;          /* NUL-terminate dst */
+            }
+            while *s != 0 {
+                s = s.offset(1);
+            }
+        }
+
+        return (s as isize - src as isize - 1) as u64;       /* count does not include NUL */
+    }
+}
+fn strtoint(
+    str: *const libc::c_char,
+    endptr: *mut *mut libc::c_char,
+    base: libc::c_int,
+) -> libc::c_int {
+    unsafe {
+        let val = libc::strtol(str, endptr, base);
+        return val.try_into().unwrap();
+    }
+}
+fn time_overflows(
+    hour: libc::c_int,
+    min: libc::c_int,
+    sec: libc::c_int,
+    fsec: fsec_t,
+) -> bool_0 {
+    /* Range-check the fields individually. */
+    if hour < 0 || hour > HOURS_PER_DAY ||
+        min < 0 || min >= MINS_PER_HOUR ||
+        sec < 0 || sec > SECS_PER_MINUTE ||
+        fsec < 0 || fsec as i64 > USECS_PER_SEC {
+        return 1;
+    }
+
+    /*
+     * Because we allow, eg, hour = 24 or sec = 60, we must check separately
+     * that the total time value doesn't exceed 24:00:00.
+     */
+    if (((((hour as i64 * MINS_PER_HOUR as i64 + min as i64) * SECS_PER_MINUTE as i64)
+           + sec as i64) * USECS_PER_SEC as i64) + fsec as i64) > USECS_PER_DAY {
+        return 1;
+    }
+
+    return 0;
+}
+
+/// TMODULO()
+/// Like FMODULO(), but work on the timestamp datatype (now always int64).
+/// We assume that int64 follows the C99 semantics for division (negative
+/// quotients truncate towards zero).
+fn TMODULO(t: &mut i64, q: &mut i64, u: i64) {
+    *q = *t / u;
+    if *q != 0 {
+       *t -= *q * u;
+    }
+}
+
+fn timestamp2tm(
+    mut dt: Timestamp,
+    tzp: *mut libc::c_int,
+    tm: *mut pg_tm,
+    fsec: *mut fsec_t,
+    tzn: *mut *const libc::c_char,
+    mut attimezone: *mut pg_tz,
+) -> libc::c_int {
+    unsafe {
+        let mut date: Timestamp = 0;
+        let mut time: Timestamp;
+        let utime: pg_time_t;
+
+        /* Use session timezone if caller asks for default */
+        if attimezone.is_null() {
+            attimezone = session_timezone;
+        }
+
+        time = dt;
+        TMODULO(&mut time, &mut date, USECS_PER_DAY);
+
+        if time < 0 {
+            time += USECS_PER_DAY;
+            date -= 1;
+        }
+
+        /* add offset to go from J2000 back to standard Julian date */
+        date += POSTGRES_EPOCH_JDATE;
+
+        /* Julian day routine does not work for negative Julian days */
+        if date < 0 || date > libc::INT_MAX.into() {
+            return -1;
+        }
+
+        j2date(date.try_into().unwrap(), &mut (*tm).tm_year, &mut (*tm).tm_mon, &mut (*tm).tm_mday);
+        dt2time(time, &mut (*tm).tm_hour, &mut (*tm).tm_min, &mut (*tm).tm_sec, fsec);
+
+        /* Done if no TZ conversion wanted */
+        if tzp.is_null() {
+            (*tm).tm_isdst = -1;
+            (*tm).tm_gmtoff = 0;
+            (*tm).tm_zone = std::ptr::null_mut();
+            if tzn != std::ptr::null_mut() {
+                *tzn = std::ptr::null_mut();
+            }
+            return 0;
+        }
+
+        /*
+         * If the time falls within the range of pg_time_t, use pg_localtime() to
+         * rotate to the local time zone.
+         *
+         * First, convert to an integral timestamp, avoiding possibly
+         * platform-specific roundoff-in-wrong-direction errors, and adjust to
+         * Unix epoch.  Then see if we can convert to pg_time_t without loss. This
+         * coding avoids hardwiring any assumptions about the width of pg_time_t,
+         * so it should behave sanely on machines without int64.
+         */
+        dt = (dt - *fsec as i64) / USECS_PER_SEC +
+            (POSTGRES_EPOCH_JDATE - UNIX_EPOCH_JDATE) * SECS_PER_DAY as i64;
+        utime = dt;
+        if utime == dt {
+            let tx = pg_localtime(&utime, attimezone);
+
+            (*tm).tm_year = (*tx).tm_year + 1900;
+            (*tm).tm_mon = (*tx).tm_mon + 1;
+            (*tm).tm_mday = (*tx).tm_mday;
+            (*tm).tm_hour = (*tx).tm_hour;
+            (*tm).tm_min = (*tx).tm_min;
+            (*tm).tm_sec = (*tx).tm_sec;
+            (*tm).tm_isdst = (*tx).tm_isdst;
+            (*tm).tm_gmtoff = (*tx).tm_gmtoff;
+            (*tm).tm_zone = (*tx).tm_zone;
+            *tzp = (-(*tm).tm_gmtoff).try_into().unwrap();
+            if !tzn.is_null() {
+                *tzn = (*tm).tm_zone;
+            }
+        } else {
+            /*
+             * When out of range of pg_time_t, treat as GMT
+             */
+            *tzp = 0;
+            /* Mark this as *no* time zone available */
+            (*tm).tm_isdst = -1;
+            (*tm).tm_gmtoff = 0;
+            (*tm).tm_zone = std::ptr::null_mut();
+            if !tzn.is_null() {
+                *tzn = std::ptr::null_mut();
+            }
+        }
+
+        return 0;
+    }
+}
+
 extern "C" {
     pub type AttrMissing;
     pub type PartitionDirectoryData;
@@ -16,17 +309,7 @@ extern "C" {
     pub type Tuplestorestate;
     pub type pg_tz;
     pub type pg_tzenum;
-    fn errstart(elevel: libc::c_int, domain: *const libc::c_char) -> bool_0;
-    fn errstart_cold(elevel: libc::c_int, domain: *const libc::c_char) -> bool_0;
-    fn errfinish(
-        filename: *const libc::c_char,
-        lineno: libc::c_int,
-        funcname: *const libc::c_char,
-    );
-    fn errcode(sqlerrcode: libc::c_int) -> libc::c_int;
-    fn errmsg(fmt: *const libc::c_char, _: ...) -> libc::c_int;
     fn errmsg_internal(fmt: *const libc::c_char, _: ...) -> libc::c_int;
-    fn errdetail(fmt: *const libc::c_char, _: ...) -> libc::c_int;
     fn errhint(fmt: *const libc::c_char, _: ...) -> libc::c_int;
     fn atoi(__nptr: *const libc::c_char) -> libc::c_int;
     fn strtod(_: *const libc::c_char, _: *mut *mut libc::c_char) -> libc::c_double;
@@ -55,7 +338,6 @@ extern "C" {
     fn strlen(_: *const libc::c_char) -> libc::c_ulong;
     fn __errno_location() -> *mut libc::c_int;
     fn __ctype_b_loc() -> *mut *const libc::c_ushort;
-    fn pg_toupper(ch: libc::c_uchar) -> libc::c_uchar;
     fn pg_sprintf(
         str: *mut libc::c_char,
         fmt: *const libc::c_char,
@@ -63,11 +345,6 @@ extern "C" {
     ) -> libc::c_int;
     fn palloc(size: Size) -> *mut libc::c_void;
     static mut CurrentMemoryContext: MemoryContext;
-    fn strlcpy(
-        _: *mut libc::c_char,
-        _: *const libc::c_char,
-        _: libc::c_ulong,
-    ) -> libc::c_ulong;
     fn floor(_: libc::c_double) -> libc::c_double;
     fn rint(_: libc::c_double) -> libc::c_double;
     fn CreateTemplateTupleDesc(natts: libc::c_int) -> TupleDesc;
@@ -84,12 +361,6 @@ extern "C" {
         values: *mut Datum,
         isnull: *mut bool_0,
     ) -> HeapTuple;
-    fn GetCurrentTransactionStartTimestamp() -> TimestampTz;
-    fn strtoint(
-        str: *const libc::c_char,
-        endptr: *mut *mut libc::c_char,
-        base: libc::c_int,
-    ) -> libc::c_int;
     fn tuplestore_begin_heap(
         randomAccess: bool_0,
         interXact: bool_0,
@@ -111,29 +382,10 @@ extern "C" {
         resultTypeId: *mut Oid,
         resultTupleDesc: *mut TupleDesc,
     ) -> TypeFuncClass;
-    static mut DateOrder: libc::c_int;
     static mut IntervalStyle: libc::c_int;
     static mut work_mem: libc::c_int;
-    fn pg_next_dst_boundary(
-        timep: *const pg_time_t,
-        before_gmtoff: *mut libc::c_long,
-        before_isdst: *mut libc::c_int,
-        boundary: *mut pg_time_t,
-        after_gmtoff: *mut libc::c_long,
-        after_isdst: *mut libc::c_int,
-        tz: *const pg_tz,
-    ) -> libc::c_int;
-    fn pg_interpret_timezone_abbrev(
-        abbrev: *const libc::c_char,
-        timep: *const pg_time_t,
-        gmtoff: *mut libc::c_long,
-        isdst: *mut libc::c_int,
-        tz: *const pg_tz,
-    ) -> bool_0;
     fn pg_get_timezone_offset(tz: *const pg_tz, gmtoff: *mut libc::c_long) -> bool_0;
     fn pg_get_timezone_name(tz: *mut pg_tz) -> *const libc::c_char;
-    static mut session_timezone: *mut pg_tz;
-    fn pg_tzset(tzname: *const libc::c_char) -> *mut pg_tz;
     fn pg_tzenumerate_start() -> *mut pg_tzenum;
     fn pg_tzenumerate_next(dir: *mut pg_tzenum) -> *mut pg_tz;
     fn pg_tzenumerate_end(dir: *mut pg_tzenum);
@@ -146,33 +398,8 @@ extern "C" {
     ) -> *mut libc::c_char;
     fn pg_ultostr(str: *mut libc::c_char, value: uint32) -> *mut libc::c_char;
     fn cstring_to_text(s: *const libc::c_char) -> *mut text;
-    fn time_overflows(
-        hour: libc::c_int,
-        min: libc::c_int,
-        sec: libc::c_int,
-        fsec: fsec_t,
-    ) -> bool_0;
     fn timestamptz_to_time_t(t: TimestampTz) -> pg_time_t;
-    fn timestamp2tm(
-        dt: Timestamp,
-        tzp: *mut libc::c_int,
-        tm: *mut pg_tm,
-        fsec: *mut fsec_t,
-        tzn: *mut *const libc::c_char,
-        attimezone: *mut pg_tz,
-    ) -> libc::c_int;
-    fn dt2time(
-        dt: Timestamp,
-        hour: *mut libc::c_int,
-        min: *mut libc::c_int,
-        sec: *mut libc::c_int,
-        fsec: *mut fsec_t,
-    );
     fn tm2interval(tm: *mut pg_tm, fsec: fsec_t, span: *mut Interval) -> libc::c_int;
-}
-
-fn pg_tolower(ch: libc::c_uchar) -> libc::c_uchar {
-    ch
 }
 
 pub type Oid = libc::c_uint;
@@ -1639,7 +1866,7 @@ pub const TYPEFUNC_COMPOSITE_DOMAIN: TypeFuncClass = 2;
 pub const TYPEFUNC_COMPOSITE: TypeFuncClass = 1;
 pub const TYPEFUNC_SCALAR: TypeFuncClass = 0;
 pub type pg_time_t = int64;
-#[derive(Copy, Clone)]
+#[derive(Debug, Copy, Clone)]
 #[repr(C)]
 pub struct pg_tm {
     pub tm_sec: libc::c_int,
@@ -1654,6 +1881,7 @@ pub struct pg_tm {
     pub tm_gmtoff: libc::c_long,
     pub tm_zone: *const libc::c_char,
 }
+
 #[derive(Copy, Clone)]
 #[repr(C)]
 pub struct datetkn {
@@ -3447,7 +3675,7 @@ pub unsafe extern "C" fn GetCurrentTimeUsec(
                         + (('8' as i32 - '0' as i32 & 0x3f as libc::c_int)
                             << 24 as libc::c_int),
                 );
-                errmsg(b"timestamp out of range\0" as *const u8 as *const libc::c_char);
+                errmsg0(b"timestamp out of range\0" as *const u8 as *const libc::c_char);
                 errfinish(
                     b"/home/petrosagg/projects/postgres-datetime/src/datetime.c\0"
                         as *const u8 as *const libc::c_char,
@@ -4163,7 +4391,7 @@ pub unsafe extern "C" fn DecodeDateTime(
                                 errmsg(
                                     b"time zone \"%s\" not recognized\0" as *const u8
                                         as *const libc::c_char,
-                                    *field.offset(i as isize),
+                                    *field.offset(i as isize) as *mut _,
                                 );
                                 errfinish(
                                     b"/home/petrosagg/projects/postgres-datetime/src/datetime.c\0"
@@ -4886,7 +5114,7 @@ pub unsafe extern "C" fn DetermineTimeZoneAbbrevOffsetTS(
                     + (('8' as i32 - '0' as i32 & 0x3f as libc::c_int)
                         << 24 as libc::c_int),
             );
-            errmsg(b"timestamp out of range\0" as *const u8 as *const libc::c_char);
+            errmsg0(b"timestamp out of range\0" as *const u8 as *const libc::c_char);
             errfinish(
                 b"/home/petrosagg/projects/postgres-datetime/src/datetime.c\0"
                     as *const u8 as *const libc::c_char,
@@ -5065,7 +5293,7 @@ pub unsafe extern "C" fn DecodeTimeOnly(
                             errmsg(
                                 b"time zone \"%s\" not recognized\0" as *const u8
                                     as *const libc::c_char,
-                                *field.offset(i as isize),
+                                *field.offset(i as isize) as *mut _,
                             );
                             errfinish(
                                 b"/home/petrosagg/projects/postgres-datetime/src/datetime.c\0"
@@ -6928,7 +7156,7 @@ pub unsafe extern "C" fn DateTimeParseError(
                 errmsg(
                     b"date/time field value out of range: \"%s\"\0" as *const u8
                         as *const libc::c_char,
-                    str,
+                    str as *mut _,
                 );
                 errfinish(
                     b"/home/petrosagg/projects/postgres-datetime/src/datetime.c\0"
@@ -6967,7 +7195,7 @@ pub unsafe extern "C" fn DateTimeParseError(
                 errmsg(
                     b"date/time field value out of range: \"%s\"\0" as *const u8
                         as *const libc::c_char,
-                    str,
+                    str as *mut _,
                 );
                 errhint(
                     b"Perhaps you need a different \"datestyle\" setting.\0" as *const u8
@@ -7010,7 +7238,7 @@ pub unsafe extern "C" fn DateTimeParseError(
                 errmsg(
                     b"interval field value out of range: \"%s\"\0" as *const u8
                         as *const libc::c_char,
-                    str,
+                    str as *mut _,
                 );
                 errfinish(
                     b"/home/petrosagg/projects/postgres-datetime/src/datetime.c\0"
@@ -7049,7 +7277,7 @@ pub unsafe extern "C" fn DateTimeParseError(
                 errmsg(
                     b"time zone displacement out of range: \"%s\"\0" as *const u8
                         as *const libc::c_char,
-                    str,
+                    str as *mut _,
                 );
                 errfinish(
                     b"/home/petrosagg/projects/postgres-datetime/src/datetime.c\0"
@@ -7085,11 +7313,11 @@ pub unsafe extern "C" fn DateTimeParseError(
                         + (('7' as i32 - '0' as i32 & 0x3f as libc::c_int)
                             << 24 as libc::c_int),
                 );
-                errmsg(
+                errmsg2(
                     b"invalid input syntax for type %s: \"%s\"\0" as *const u8
                         as *const libc::c_char,
-                    datatype,
-                    str,
+                    datatype as *mut _,
+                    str as *mut _,
                 );
                 errfinish(
                     b"/home/petrosagg/projects/postgres-datetime/src/datetime.c\0"
@@ -8220,12 +8448,12 @@ unsafe extern "C" fn FetchDynamicTimeZone(
                 errmsg(
                     b"time zone \"%s\" not recognized\0" as *const u8
                         as *const libc::c_char,
-                    ((*dtza).zone).as_mut_ptr(),
+                    ((*dtza).zone).as_mut_ptr() as *mut _,
                 );
                 errdetail(
                     b"This time zone name appears in the configuration file for time zone abbreviation \"%s\".\0"
                         as *const u8 as *const libc::c_char,
-                    ((*tp).token).as_ptr(),
+                    ((*tp).token).as_ptr() as *mut _,
                 );
                 errfinish(
                     b"/home/petrosagg/projects/postgres-datetime/src/datetime.c\0"
@@ -8522,7 +8750,7 @@ pub unsafe extern "C" fn pg_timezone_names(mut fcinfo: FunctionCallInfo) -> Datu
                     + (('0' as i32 - '0' as i32 & 0x3f as libc::c_int)
                         << 24 as libc::c_int),
             );
-            errmsg(
+            errmsg0(
                 b"set-valued function called in context that cannot accept a set\0"
                     as *const u8 as *const libc::c_char,
             );
@@ -8560,7 +8788,7 @@ pub unsafe extern "C" fn pg_timezone_names(mut fcinfo: FunctionCallInfo) -> Datu
                     + (('1' as i32 - '0' as i32 & 0x3f as libc::c_int)
                         << 24 as libc::c_int),
             );
-            errmsg(
+            errmsg0(
                 b"materialize mode required, but it is not allowed in this context\0"
                     as *const u8 as *const libc::c_char,
             );
