@@ -1,5 +1,7 @@
 use ::libc;
 
+use crate::datetime::FieldType;
+
 const HOURS_PER_DAY: libc::c_int = 24;
 const MINS_PER_HOUR: libc::c_int = 60;
 const SECS_PER_DAY: libc::c_int = 86400;
@@ -3679,7 +3681,7 @@ unsafe extern "C" fn ParseFractionalSecond(
 pub fn ParseDateTime(
     mut timestr: &str,
     mut fields: &mut Vec<String>,
-    mut ftypes: &mut Vec<libc::c_int>,
+    mut ftypes: &mut Vec<FieldType>,
     mut maxfields: libc::c_int,
 ) -> libc::c_int {
     let mut nf: libc::c_int = 0 as libc::c_int;
@@ -3698,7 +3700,7 @@ pub fn ParseDateTime(
             return -(1 as libc::c_int);
         }
         let mut fdata = String::new();
-        let mut ftype = 0;
+        let mut ftype = FieldType::Number;
 
         // leading digit? then date or time
         if cp.peek().unwrap().is_ascii_digit() {
@@ -3708,7 +3710,7 @@ pub fn ParseDateTime(
 
             // time field?
             if *cp.peek().unwrap() == ':' {
-                ftype = 3;
+                ftype = FieldType::Time;
 
                 while let Some(c) = cp.next_if(|&c| c.is_ascii_digit() || c == ':' || c == '.') {
                     fdata.push(c);
@@ -3723,8 +3725,8 @@ pub fn ParseDateTime(
                 // second field is all digits? then no embedded text month
                 if cp.peek().unwrap().is_ascii_digit() {
                     ftype = match delim {
-                        '.' => 0,
-                        _ => 2,
+                        '.' => FieldType::Number,
+                        _ => FieldType::Date,
                     };
                     while let Some(c) = cp.next_if(|c| c.is_ascii_digit()) {
                         fdata.push(c);
@@ -3732,7 +3734,7 @@ pub fn ParseDateTime(
 
                     // insist that the delimiters match to get a three-field date.
                     if *cp.peek().unwrap() == delim {
-                        ftype = 2;
+                        ftype = FieldType::Date;
 
                         fdata.push(cp.next().unwrap());
                         while let Some(c) = cp.next_if(|&c| c.is_ascii_digit() || c == delim) {
@@ -3740,7 +3742,7 @@ pub fn ParseDateTime(
                         }
                     }
                 } else {
-                    ftype = 2;
+                    ftype = FieldType::Date;
                     while let Some(c) = cp.next_if(|&c| c.is_ascii_alphanumeric() || c == delim) {
                         fdata.push(c.to_ascii_lowercase());
                     }
@@ -3748,7 +3750,7 @@ pub fn ParseDateTime(
             // otherwise, number only and will determine year, month, day, or concatenated fields
             // later..
             } else {
-                ftype = 0;
+                ftype = FieldType::Number;
             }
         // Leading decimal point? Then fractional seconds...
         } else if *cp.peek().unwrap() == '.' {
@@ -3756,11 +3758,11 @@ pub fn ParseDateTime(
             while let Some(c) = cp.next_if(|&c| c.is_ascii_digit()) {
                 fdata.push(c);
             }
-            ftype = 0;
+            ftype = FieldType::Number;
         // text? then date string, month, day of week, special, or timezone
         } else if cp.peek().unwrap().is_ascii_alphabetic() {
             let mut is_date: bool_0 = 0;
-            ftype = 1;
+            ftype = FieldType::String;
             while let Some(c) = cp.next_if(|&c| c.is_ascii_alphabetic()) {
                 fdata.push(c.to_ascii_lowercase());
             }
@@ -3776,15 +3778,13 @@ pub fn ParseDateTime(
                 // we need search only the core token table, not TZ names
                 let cdata = std::ffi::CString::new(fdata.clone()).unwrap();
                 unsafe {
-                    if (datebsearch(cdata.as_ptr(), datetktbl.as_ptr(), szdatetktbl))
-                        .is_null()
-                    {
+                    if (datebsearch(cdata.as_ptr(), datetktbl.as_ptr(), szdatetktbl)).is_null() {
                         is_date = 1 as libc::c_int as bool_0;
                     }
                 }
             }
             if is_date != 0 {
-                ftype = 2;
+                ftype = FieldType::Date;
                 fdata.push(cp.next().unwrap().to_ascii_lowercase());
                 while let Some(c) = cp.next_if(|&c| {
                     c.is_ascii_alphanumeric() || matches!(c, '+' | '-' | '/' | '_' | '.' | ':')
@@ -3800,7 +3800,7 @@ pub fn ParseDateTime(
             // numeric timezone?
             // note that "DTK_TZ" could also be a signed float or yyyy-mm
             if cp.peek().unwrap().is_ascii_digit() {
-                ftype = 4;
+                ftype = FieldType::Tz;
                 fdata.push(cp.next().unwrap());
                 while let Some(c) =
                     cp.next_if(|&c| c.is_ascii_digit() || matches!(c, ':' | '.' | '-'))
@@ -3809,7 +3809,7 @@ pub fn ParseDateTime(
                 }
             // special?
             } else if cp.peek().unwrap().is_ascii_alphabetic() {
-                ftype = 6;
+                ftype = FieldType::Special;
                 while let Some(c) = cp.next_if(|&c| c.is_ascii_alphabetic()) {
                     fdata.push(c.to_ascii_lowercase());
                 }
