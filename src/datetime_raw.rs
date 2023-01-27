@@ -1,6 +1,6 @@
 use ::libc;
 
-use crate::datetime::FieldType;
+use crate::datetime::{FieldMask, RealFieldType, TokenFieldType, FIELD_MASK_DATE, FIELD_MASK_TIME, FIELD_MASK_ALL_SECS};
 
 const HOURS_PER_DAY: libc::c_int = 24;
 const MINS_PER_HOUR: libc::c_int = 60;
@@ -2026,9 +2026,9 @@ const UNKNOWN_FIELD: i32 = 31;
 /// abbrevs[] field has the same format as the static DATE_TOKEN_TABLE.
 static DATE_TOKEN_TABLE: &'static [(&'static str, i32, i32)] = &[
     /* token, type, value */
-    (EARLY, RESERV, FieldType::Early as i32), /* "-infinity" reserved for "early time" */
+    (EARLY, RESERV, TokenFieldType::Early as i32), /* "-infinity" reserved for "early time" */
     (DA_D, ADBC, AD),                         /* "ad" for years > 0 */
-    ("allballs", RESERV, FieldType::Zulu as i32), /* 00:00:00 */
+    ("allballs", RESERV, TokenFieldType::Zulu as i32), /* 00:00:00 */
     ("am", AMPM, AM),
     ("apr", MONTH, 4),
     ("april", MONTH, 4),
@@ -2036,45 +2036,45 @@ static DATE_TOKEN_TABLE: &'static [(&'static str, i32, i32)] = &[
     ("aug", MONTH, 8),
     ("august", MONTH, 8),
     (DB_C, ADBC, BC),                    /* "bc" for years <= 0 */
-    ("d", UNITS, FieldType::Day as i32), /* "day of month" for ISO input */
+    ("d", UNITS, TokenFieldType::Day as i32), /* "day of month" for ISO input */
     ("dec", MONTH, 12),
     ("december", MONTH, 12),
-    ("dow", UNITS, FieldType::Dow as i32), /* day of week */
-    ("doy", UNITS, FieldType::Doy as i32), /* day of year */
+    ("dow", UNITS, TokenFieldType::Dow as i32), /* day of week */
+    ("doy", UNITS, TokenFieldType::Doy as i32), /* day of year */
     ("dst", DTZMOD, SECS_PER_HOUR),
-    (EPOCH, RESERV, FieldType::Epoch as i32), /* "epoch" reserved for system epoch time */
+    (EPOCH, RESERV, TokenFieldType::Epoch as i32), /* "epoch" reserved for system epoch time */
     ("feb", MONTH, 2),
     ("february", MONTH, 2),
     ("fri", DOW, 5),
     ("friday", DOW, 5),
-    ("h", UNITS, FieldType::Hour as i32),          /* "hour" */
-    (LATE, RESERV, FieldType::Late as i32),        /* "infinity" reserved for "late time" */
-    ("isodow", UNITS, FieldType::IsoDow as i32),   /* ISO day of week, Sunday == 7 */
-    ("isoyear", UNITS, FieldType::IsoYear as i32), /* year in terms of the ISO week date */
-    ("j", UNITS, FieldType::Julian as i32),
+    ("h", UNITS, TokenFieldType::Hour as i32),          /* "hour" */
+    (LATE, RESERV, TokenFieldType::Late as i32),        /* "infinity" reserved for "late time" */
+    ("isodow", UNITS, TokenFieldType::IsoDow as i32),   /* ISO day of week, Sunday == 7 */
+    ("isoyear", UNITS, TokenFieldType::IsoYear as i32), /* year in terms of the ISO week date */
+    ("j", UNITS, TokenFieldType::Julian as i32),
     ("jan", MONTH, 1),
     ("january", MONTH, 1),
-    ("jd", UNITS, FieldType::Julian as i32),
+    ("jd", UNITS, TokenFieldType::Julian as i32),
     ("jul", MONTH, 7),
-    ("julian", UNITS, FieldType::Julian as i32),
+    ("julian", UNITS, TokenFieldType::Julian as i32),
     ("july", MONTH, 7),
     ("jun", MONTH, 6),
     ("june", MONTH, 6),
-    ("m", UNITS, FieldType::Month as i32), /* "month" for ISO input */
+    ("m", UNITS, TokenFieldType::Month as i32), /* "month" for ISO input */
     ("mar", MONTH, 3),
     ("march", MONTH, 3),
     ("may", MONTH, 5),
-    ("mm", UNITS, FieldType::Minute as i32), /* "minute" for ISO input */
+    ("mm", UNITS, TokenFieldType::Minute as i32), /* "minute" for ISO input */
     ("mon", DOW, 1),
     ("monday", DOW, 1),
     ("nov", MONTH, 11),
     ("november", MONTH, 11),
-    (NOW, RESERV, FieldType::Now as i32), /* current transaction time */
+    (NOW, RESERV, TokenFieldType::Now as i32), /* current transaction time */
     ("oct", MONTH, 10),
     ("october", MONTH, 10),
     ("on", IGNORE_DTF, 0), /* "on" (throwaway) */
     ("pm", AMPM, PM),
-    ("s", UNITS, FieldType::Second as i32), /* "seconds" for ISO input */
+    ("s", UNITS, TokenFieldType::Second as i32), /* "seconds" for ISO input */
     ("sat", DOW, 6),
     ("saturday", DOW, 6),
     ("sep", MONTH, 9),
@@ -2082,21 +2082,21 @@ static DATE_TOKEN_TABLE: &'static [(&'static str, i32, i32)] = &[
     ("september", MONTH, 9),
     ("sun", DOW, 0),
     ("sunday", DOW, 0),
-    ("t", ISOTIME, FieldType::Time as i32), /* Filler for ISO time fields */
+    ("t", ISOTIME, TokenFieldType::Time as i32), /* Filler for ISO time fields */
     ("thu", DOW, 4),
     ("thur", DOW, 4),
     ("thurs", DOW, 4),
     ("thursday", DOW, 4),
-    (TODAY, RESERV, FieldType::Today as i32), /* midnight */
-    (TOMORROW, RESERV, FieldType::Tomorrow as i32), /* tomorrow midnight */
+    (TODAY, RESERV, TokenFieldType::Today as i32), /* midnight */
+    (TOMORROW, RESERV, TokenFieldType::Tomorrow as i32), /* tomorrow midnight */
     ("tue", DOW, 2),
     ("tues", DOW, 2),
     ("tuesday", DOW, 2),
     ("wed", DOW, 3),
     ("wednesday", DOW, 3),
     ("weds", DOW, 3),
-    ("y", UNITS, FieldType::Year as i32), /* "year" for ISO input */
-    (YESTERDAY, RESERV, FieldType::Yesterday as i32), /* yesterday midnight */
+    ("y", UNITS, TokenFieldType::Year as i32), /* "year" for ISO input */
+    (YESTERDAY, RESERV, TokenFieldType::Yesterday as i32), /* yesterday midnight */
 ];
 
 static mut datetktbl: [datetkn; 71] = unsafe {
@@ -3806,18 +3806,18 @@ unsafe extern "C" fn ParseFractionalSecond(
 /// text is converted to lower case.
 ///
 /// Several field types are assigned:
-///   * FieldType::Number - digits and (possibly) a decimal point
-///   * FieldType::Date - digits and two delimiters, or digits and text
-///   * FieldType::Time - digits, colon delimiters, and possibly a decimal point
-///   * FieldType::String - text (no digits or punctuation)
-///   * FieldType::Special - leading "+" or "-" followed by text
-///   * FieldType::Tz - leading "+" or "-" followed by digits (also eats ':', '.', '-')
+///   * TokenFieldType::Number - digits and (possibly) a decimal point
+///   * TokenFieldType::Date - digits and two delimiters, or digits and text
+///   * TokenFieldType::Time - digits, colon delimiters, and possibly a decimal point
+///   * TokenFieldType::String - text (no digits or punctuation)
+///   * TokenFieldType::Special - leading "+" or "-" followed by text
+///   * TokenFieldType::Tz - leading "+" or "-" followed by digits (also eats ':', '.', '-')
 ///
 /// Note that some field types can hold unexpected items:
-///   * FieldType::Number can hold date fields (yy.ddd)
-///   * FieldType::String can hold months (January) and time zones (PST)
-///   * FieldType::Date can hold time zone names (America/New_York, GMT-8)
-pub fn parse_datetime(input: &str) -> Result<Vec<(String, FieldType)>, i32> {
+///   * TokenFieldType::Number can hold date fields (yy.ddd)
+///   * TokenFieldType::String can hold months (January) and time zones (PST)
+///   * TokenFieldType::Date can hold time zone names (America/New_York, GMT-8)
+pub fn parse_datetime(input: &str) -> Result<Vec<(String, TokenFieldType)>, i32> {
     let mut ret = vec![];
     let mut chars = input.chars().peekable();
 
@@ -3831,7 +3831,7 @@ pub fn parse_datetime(input: &str) -> Result<Vec<(String, FieldType)>, i32> {
 
         // Record start of current field
         let mut fdata = String::new();
-        let mut ftype: FieldType;
+        let mut ftype: TokenFieldType;
 
         // leading digit? then date or time
         if chars.peek().unwrap().is_ascii_digit() {
@@ -3841,7 +3841,7 @@ pub fn parse_datetime(input: &str) -> Result<Vec<(String, FieldType)>, i32> {
 
             // time field?
             if *chars.peek().unwrap() == ':' {
-                ftype = FieldType::Time;
+                ftype = TokenFieldType::Time;
 
                 while let Some(c) = chars.next_if(|&c| c.is_ascii_digit() || c == ':' || c == '.') {
                     fdata.push(c);
@@ -3856,8 +3856,8 @@ pub fn parse_datetime(input: &str) -> Result<Vec<(String, FieldType)>, i32> {
                 // second field is all digits? then no embedded text month
                 if chars.peek().unwrap().is_ascii_digit() {
                     ftype = match delim {
-                        '.' => FieldType::Number,
-                        _ => FieldType::Date,
+                        '.' => TokenFieldType::Number,
+                        _ => TokenFieldType::Date,
                     };
                     while let Some(c) = chars.next_if(|c| c.is_ascii_digit()) {
                         fdata.push(c);
@@ -3865,7 +3865,7 @@ pub fn parse_datetime(input: &str) -> Result<Vec<(String, FieldType)>, i32> {
 
                     // insist that the delimiters match to get a three-field date.
                     if *chars.peek().unwrap() == delim {
-                        ftype = FieldType::Date;
+                        ftype = TokenFieldType::Date;
 
                         fdata.push(chars.next().unwrap());
                         while let Some(c) = chars.next_if(|&c| c.is_ascii_digit() || c == delim) {
@@ -3873,7 +3873,7 @@ pub fn parse_datetime(input: &str) -> Result<Vec<(String, FieldType)>, i32> {
                         }
                     }
                 } else {
-                    ftype = FieldType::Date;
+                    ftype = TokenFieldType::Date;
                     while let Some(c) = chars.next_if(|&c| c.is_ascii_alphanumeric() || c == delim)
                     {
                         fdata.push(c.to_ascii_lowercase());
@@ -3882,7 +3882,7 @@ pub fn parse_datetime(input: &str) -> Result<Vec<(String, FieldType)>, i32> {
             // otherwise, number only and will determine year, month, day, or concatenated fields
             // later..
             } else {
-                ftype = FieldType::Number;
+                ftype = TokenFieldType::Number;
             }
         // Leading decimal point? Then fractional seconds...
         } else if *chars.peek().unwrap() == '.' {
@@ -3890,10 +3890,10 @@ pub fn parse_datetime(input: &str) -> Result<Vec<(String, FieldType)>, i32> {
             while let Some(c) = chars.next_if(|&c| c.is_ascii_digit()) {
                 fdata.push(c);
             }
-            ftype = FieldType::Number;
+            ftype = TokenFieldType::Number;
         // text? then date string, month, day of week, special, or timezone
         } else if chars.peek().unwrap().is_ascii_alphabetic() {
-            ftype = FieldType::String;
+            ftype = TokenFieldType::String;
             while let Some(c) = chars.next_if(|&c| c.is_ascii_alphabetic()) {
                 fdata.push(c.to_ascii_lowercase());
             }
@@ -3915,7 +3915,7 @@ pub fn parse_datetime(input: &str) -> Result<Vec<(String, FieldType)>, i32> {
                 }
             }
             if is_date {
-                ftype = FieldType::Date;
+                ftype = TokenFieldType::Date;
                 fdata.push(chars.next().unwrap().to_ascii_lowercase());
                 while let Some(c) = chars.next_if(|&c| {
                     c.is_ascii_alphanumeric() || matches!(c, '+' | '-' | '/' | '_' | '.' | ':')
@@ -3931,7 +3931,7 @@ pub fn parse_datetime(input: &str) -> Result<Vec<(String, FieldType)>, i32> {
             // numeric timezone?
             // note that "DTK_TZ" could also be a signed float or yyyy-mm
             if chars.peek().unwrap().is_ascii_digit() {
-                ftype = FieldType::Tz;
+                ftype = TokenFieldType::Tz;
                 fdata.push(chars.next().unwrap());
                 while let Some(c) =
                     chars.next_if(|&c| c.is_ascii_digit() || matches!(c, ':' | '.' | '-'))
@@ -3940,7 +3940,7 @@ pub fn parse_datetime(input: &str) -> Result<Vec<(String, FieldType)>, i32> {
                 }
             // special?
             } else if chars.peek().unwrap().is_ascii_alphabetic() {
-                ftype = FieldType::Special;
+                ftype = TokenFieldType::Special;
                 while let Some(c) = chars.next_if(|&c| c.is_ascii_alphabetic()) {
                     fdata.push(c.to_ascii_lowercase());
                 }
@@ -3960,6 +3960,29 @@ pub fn parse_datetime(input: &str) -> Result<Vec<(String, FieldType)>, i32> {
     }
     Ok(ret)
 }
+
+/// Interprets previously parsed fields for general date and time.
+/// Return 0 if full date, 1 if only time, and negative DTERR code if problems.
+/// (Currently, all callers treat 1 as an error return too.)
+///
+///  	External format(s):
+///  			"<weekday> <month>-<day>-<year> <hour>:<minute>:<second>"
+///  			"Fri Feb-7-1997 15:23:27"
+///  			"Feb-7-1997 15:23:27"
+///  			"2-7-1997 15:23:27"
+///  			"1997-2-7 15:23:27"
+///  			"1997.038 15:23:27"		(day of year 1-366)
+///  	Also supports input in compact time:
+///  			"970207 152327"
+///  			"97038 152327"
+///  			"20011225T040506.789-07"
+///
+/// Use the system-provided functions to get the current time zone
+/// if not specified in the input string.
+///
+/// If the date is outside the range of pg_time_t (in practice that could only
+/// happen if pg_time_t is just 32 bits), then assume UTC time zone - thomas
+/// 1997-05-27
 #[no_mangle]
 pub unsafe extern "C" fn DecodeDateTime(
     mut field: *mut *mut libc::c_char,
@@ -3970,11 +3993,11 @@ pub unsafe extern "C" fn DecodeDateTime(
     mut fsec: *mut fsec_t,
     mut tzp: *mut libc::c_int,
 ) -> libc::c_int {
-    let mut fmask: libc::c_int = 0 as libc::c_int;
-    let mut tmask: libc::c_int = 0;
+    let mut fmask = FieldMask::none();
+    let mut tmask = FieldMask::none();
     let mut type_0: libc::c_int = 0;
-    let mut ptype: libc::c_int = 0 as libc::c_int;
     let mut i: libc::c_int = 0;
+    let mut ptype: libc::c_int = 0 as libc::c_int; // "prefix type" for ISO y2001m02d04 format
     let mut val: libc::c_int = 0;
     let mut dterr: libc::c_int = 0;
     let mut mer: libc::c_int = 2 as libc::c_int;
@@ -3999,11 +4022,16 @@ pub unsafe extern "C" fn DecodeDateTime(
         tm_gmtoff: 0,
         tm_zone: 0 as *const libc::c_char,
     };
+
+	// We'll insist on at least all of the date fields, but initialize the
+	// remaining fields in case they are not set later...
     *dtype = 2 as libc::c_int;
     (*tm).tm_hour = 0 as libc::c_int;
     (*tm).tm_min = 0 as libc::c_int;
     (*tm).tm_sec = 0 as libc::c_int;
     *fsec = 0 as libc::c_int;
+
+	// don't know daylight savings time status apriori
     (*tm).tm_isdst = -(1 as libc::c_int);
     if !tzp.is_null() {
         *tzp = 0 as libc::c_int;
@@ -4035,25 +4063,20 @@ pub unsafe extern "C" fn DecodeDateTime(
                     if dterr != 0 {
                         return dterr;
                     }
-                    tmask = (0x1 as libc::c_int) << 2 as libc::c_int
-                        | (0x1 as libc::c_int) << 1 as libc::c_int
-                        | (0x1 as libc::c_int) << 3 as libc::c_int
-                        | ((0x1 as libc::c_int) << 10 as libc::c_int
-                            | (0x1 as libc::c_int) << 11 as libc::c_int
-                            | ((0x1 as libc::c_int) << 12 as libc::c_int
-                                | (0x1 as libc::c_int) << 13 as libc::c_int
-                                | (0x1 as libc::c_int) << 14 as libc::c_int))
-                        | (0x1 as libc::c_int) << 5 as libc::c_int;
-                    ptype = 0 as libc::c_int;
-                } else if ptype != 0 as libc::c_int
-                    || fmask
-                        & ((0x1 as libc::c_int) << 1 as libc::c_int
-                            | (0x1 as libc::c_int) << 3 as libc::c_int)
-                        == (0x1 as libc::c_int) << 1 as libc::c_int
-                            | (0x1 as libc::c_int) << 3 as libc::c_int
-                {
+                    tmask = *FIELD_MASK_DATE | *FIELD_MASK_TIME | RealFieldType::Tz;
+                    ptype = 0;
+				// Already have a date? Then this might be a time zone name
+				// with embedded punctuation (e.g. "America/New_York") or a
+				// run-together time with trailing time zone (e.g. hhmmss-zz).
+				// - thomas 2001-12-25
+				//
+				// We consider it a time zone if we already have month & day.
+				// This is to allow the form "mmm dd hhmmss tz year", which
+				// we've historically accepted.
+                } else if ptype != 0 || fmask.contains(RealFieldType::Month | RealFieldType::Day) {
+					// No time zone accepted? Then quit...
                     if tzp.is_null() {
-                        return -(1 as libc::c_int);
+                        return -1;
                     }
                     if *(*__ctype_b_loc())
                         .offset(**field.offset(i as isize) as libc::c_uchar as libc::c_int as isize)
@@ -4067,21 +4090,13 @@ pub unsafe extern "C" fn DecodeDateTime(
                             if ptype != 3 as libc::c_int {
                                 return -(1 as libc::c_int);
                             }
-                            ptype = 0 as libc::c_int;
+                            ptype = 0;
                         }
-                        if fmask
-                            & ((0x1 as libc::c_int) << 10 as libc::c_int
-                                | (0x1 as libc::c_int) << 11 as libc::c_int
-                                | ((0x1 as libc::c_int) << 12 as libc::c_int
-                                    | (0x1 as libc::c_int) << 13 as libc::c_int
-                                    | (0x1 as libc::c_int) << 14 as libc::c_int))
-                            == (0x1 as libc::c_int) << 10 as libc::c_int
-                                | (0x1 as libc::c_int) << 11 as libc::c_int
-                                | ((0x1 as libc::c_int) << 12 as libc::c_int
-                                    | (0x1 as libc::c_int) << 13 as libc::c_int
-                                    | (0x1 as libc::c_int) << 14 as libc::c_int)
-                        {
-                            return -(1 as libc::c_int);
+						// Starts with a digit but we already have a time
+						// field? Then we are in trouble with a date and time
+						// already...
+                        if fmask.contains(*FIELD_MASK_TIME) {
+                            return -1;
                         }
                         cp_0 = strchr(*field.offset(i as isize), '-' as i32);
                         if cp_0.is_null() {
@@ -4104,7 +4119,8 @@ pub unsafe extern "C" fn DecodeDateTime(
                         if dterr < 0 as libc::c_int {
                             return dterr;
                         }
-                        tmask |= (0x1 as libc::c_int) << 5 as libc::c_int;
+						// modify tmask after returning from DecodeNumberField()
+                        tmask.set(RealFieldType::Tz);
                     } else {
                         namedTz = pg_tzset(*field.offset(i as isize));
                         if namedTz.is_null() {
@@ -4147,7 +4163,8 @@ pub unsafe extern "C" fn DecodeDateTime(
                                 unreachable!();
                             }
                         }
-                        tmask = (0x1 as libc::c_int) << 5 as libc::c_int;
+						// we'll apply the zone setting below
+                        tmask = FieldMask::from(RealFieldType::Tz);
                     }
                 } else {
                     dterr = DecodeDate(
@@ -4196,7 +4213,7 @@ pub unsafe extern "C" fn DecodeDateTime(
                     return dterr;
                 }
                 *tzp = tz;
-                tmask = (0x1 as libc::c_int) << 5 as libc::c_int;
+                tmask = FieldMask::from(RealFieldType::Tz);
                 current_block_236 = 13797367574128857302;
             }
             0 => {
@@ -4219,47 +4236,43 @@ pub unsafe extern "C" fn DecodeDateTime(
                     match ptype {
                         25 => {
                             (*tm).tm_year = val_1;
-                            tmask = (0x1 as libc::c_int) << 2 as libc::c_int;
+                            tmask = FieldMask::from(RealFieldType::Year);
                         }
                         23 => {
-                            if fmask & (0x1 as libc::c_int) << 1 as libc::c_int != 0 as libc::c_int
-                                && fmask & (0x1 as libc::c_int) << 10 as libc::c_int
-                                    != 0 as libc::c_int
-                            {
+							// already have a month and hour? then assume minutes
+                            if fmask.contains(RealFieldType::Month | RealFieldType::Hour) {
                                 (*tm).tm_min = val_1;
-                                tmask = (0x1 as libc::c_int) << 11 as libc::c_int;
+                                tmask = FieldMask::from(RealFieldType::Minute);
                             } else {
                                 (*tm).tm_mon = val_1;
-                                tmask = (0x1 as libc::c_int) << 1 as libc::c_int;
+                                tmask = FieldMask::from(RealFieldType::Month);
                             }
                         }
                         21 => {
                             (*tm).tm_mday = val_1;
-                            tmask = (0x1 as libc::c_int) << 3 as libc::c_int;
+                            tmask = FieldMask::from(RealFieldType::Day);
                         }
                         20 => {
                             (*tm).tm_hour = val_1;
-                            tmask = (0x1 as libc::c_int) << 10 as libc::c_int;
+                            tmask = FieldMask::from(RealFieldType::Hour);
                         }
                         19 => {
                             (*tm).tm_min = val_1;
-                            tmask = (0x1 as libc::c_int) << 11 as libc::c_int;
+                            tmask = FieldMask::from(RealFieldType::Minute);
                         }
                         18 => {
                             (*tm).tm_sec = val_1;
-                            tmask = (0x1 as libc::c_int) << 12 as libc::c_int;
+                            tmask = FieldMask::from(RealFieldType::Second);
                             if *cp_1 as libc::c_int == '.' as i32 {
                                 dterr = ParseFractionalSecond(cp_1, fsec);
                                 if dterr != 0 {
                                     return dterr;
                                 }
-                                tmask = (0x1 as libc::c_int) << 12 as libc::c_int
-                                    | (0x1 as libc::c_int) << 13 as libc::c_int
-                                    | (0x1 as libc::c_int) << 14 as libc::c_int;
+                                tmask = *FIELD_MASK_ALL_SECS;
                             }
                         }
                         4 => {
-                            tmask = (0x1 as libc::c_int) << 5 as libc::c_int;
+                            tmask = FieldMask::from(RealFieldType::Tz);
                             dterr = DecodeTimezone(*field.offset(i as isize), tzp);
                             if dterr != 0 {
                                 return dterr;
@@ -4269,9 +4282,7 @@ pub unsafe extern "C" fn DecodeDateTime(
                             if val_1 < 0 as libc::c_int {
                                 return -(2 as libc::c_int);
                             }
-                            tmask = (0x1 as libc::c_int) << 2 as libc::c_int
-                                | (0x1 as libc::c_int) << 1 as libc::c_int
-                                | (0x1 as libc::c_int) << 3 as libc::c_int;
+                            tmask = *FIELD_MASK_DATE;
                             j2date(
                                 val_1,
                                 &mut (*tm).tm_year,
@@ -4296,21 +4307,14 @@ pub unsafe extern "C" fn DecodeDateTime(
                                     &mut (*tm).tm_sec,
                                     fsec,
                                 );
-                                tmask |= (0x1 as libc::c_int) << 10 as libc::c_int
-                                    | (0x1 as libc::c_int) << 11 as libc::c_int
-                                    | ((0x1 as libc::c_int) << 12 as libc::c_int
-                                        | (0x1 as libc::c_int) << 13 as libc::c_int
-                                        | (0x1 as libc::c_int) << 14 as libc::c_int);
+                                tmask.set(*FIELD_MASK_TIME);
                             }
                         }
                         3 => {
                             dterr = DecodeNumberField(
                                 strlen(*field.offset(i as isize)) as libc::c_int,
                                 *field.offset(i as isize),
-                                fmask
-                                    | ((0x1 as libc::c_int) << 2 as libc::c_int
-                                        | (0x1 as libc::c_int) << 1 as libc::c_int
-                                        | (0x1 as libc::c_int) << 3 as libc::c_int),
+                                fmask | *FIELD_MASK_DATE,
                                 &mut tmask,
                                 tm,
                                 fsec,
@@ -4319,13 +4323,7 @@ pub unsafe extern "C" fn DecodeDateTime(
                             if dterr < 0 as libc::c_int {
                                 return dterr;
                             }
-                            if tmask
-                                != (0x1 as libc::c_int) << 10 as libc::c_int
-                                    | (0x1 as libc::c_int) << 11 as libc::c_int
-                                    | ((0x1 as libc::c_int) << 12 as libc::c_int
-                                        | (0x1 as libc::c_int) << 13 as libc::c_int
-                                        | (0x1 as libc::c_int) << 14 as libc::c_int)
-                            {
+                            if tmask != *FIELD_MASK_TIME {
                                 return -(1 as libc::c_int);
                             }
                         }
@@ -4338,13 +4336,7 @@ pub unsafe extern "C" fn DecodeDateTime(
                     let mut flen: libc::c_int = 0;
                     flen = strlen(*field.offset(i as isize)) as libc::c_int;
                     cp_2 = strchr(*field.offset(i as isize), '.' as i32);
-                    if !cp_2.is_null()
-                        && fmask
-                            & ((0x1 as libc::c_int) << 2 as libc::c_int
-                                | (0x1 as libc::c_int) << 1 as libc::c_int
-                                | (0x1 as libc::c_int) << 3 as libc::c_int)
-                            == 0
-                    {
+                    if !cp_2.is_null() && !fmask.intersects(*FIELD_MASK_DATE) {
                         dterr = DecodeDate(
                             *field.offset(i as isize),
                             fmask,
@@ -4371,20 +4363,7 @@ pub unsafe extern "C" fn DecodeDateTime(
                         if dterr < 0 as libc::c_int {
                             return dterr;
                         }
-                    } else if flen >= 6 as libc::c_int
-                        && (fmask
-                            & ((0x1 as libc::c_int) << 2 as libc::c_int
-                                | (0x1 as libc::c_int) << 1 as libc::c_int
-                                | (0x1 as libc::c_int) << 3 as libc::c_int)
-                            == 0
-                            || fmask
-                                & ((0x1 as libc::c_int) << 10 as libc::c_int
-                                    | (0x1 as libc::c_int) << 11 as libc::c_int
-                                    | ((0x1 as libc::c_int) << 12 as libc::c_int
-                                        | (0x1 as libc::c_int) << 13 as libc::c_int
-                                        | (0x1 as libc::c_int) << 14 as libc::c_int))
-                                == 0)
-                    {
+                    } else if flen >= 6 && (!fmask.intersects(*FIELD_MASK_DATE) || !fmask.intersects(*FIELD_MASK_TIME)) {
                         dterr = DecodeNumberField(
                             flen,
                             *field.offset(i as isize),
@@ -4423,26 +4402,17 @@ pub unsafe extern "C" fn DecodeDateTime(
                 if type_0 == 8 as libc::c_int {
                     current_block_236 = 12209867499936983673;
                 } else {
-                    tmask = (0x1 as libc::c_int) << type_0;
+                    let typ: RealFieldType = None.expect("convert type_0 to RealFieldType");
+                    tmask = FieldMask::from(typ);
                     match type_0 {
                         0 => match val {
                             12 => {
-                                tmask = (0x1 as libc::c_int) << 2 as libc::c_int
-                                    | (0x1 as libc::c_int) << 1 as libc::c_int
-                                    | (0x1 as libc::c_int) << 3 as libc::c_int
-                                    | ((0x1 as libc::c_int) << 10 as libc::c_int
-                                        | (0x1 as libc::c_int) << 11 as libc::c_int
-                                        | ((0x1 as libc::c_int) << 12 as libc::c_int
-                                            | (0x1 as libc::c_int) << 13 as libc::c_int
-                                            | (0x1 as libc::c_int) << 14 as libc::c_int))
-                                    | (0x1 as libc::c_int) << 5 as libc::c_int;
+                                tmask = *FIELD_MASK_DATE | *FIELD_MASK_TIME | RealFieldType::Tz;
                                 *dtype = 2 as libc::c_int;
                                 GetCurrentTimeUsec(tm, fsec, tzp);
                             }
                             13 => {
-                                tmask = (0x1 as libc::c_int) << 2 as libc::c_int
-                                    | (0x1 as libc::c_int) << 1 as libc::c_int
-                                    | (0x1 as libc::c_int) << 3 as libc::c_int;
+                                tmask = *FIELD_MASK_DATE;
                                 *dtype = 2 as libc::c_int;
                                 GetCurrentDateTime(&mut cur_tm);
                                 j2date(
@@ -4454,9 +4424,7 @@ pub unsafe extern "C" fn DecodeDateTime(
                                 );
                             }
                             14 => {
-                                tmask = (0x1 as libc::c_int) << 2 as libc::c_int
-                                    | (0x1 as libc::c_int) << 1 as libc::c_int
-                                    | (0x1 as libc::c_int) << 3 as libc::c_int;
+                                tmask = *FIELD_MASK_DATE;
                                 *dtype = 2 as libc::c_int;
                                 GetCurrentDateTime(&mut cur_tm);
                                 (*tm).tm_year = cur_tm.tm_year;
@@ -4464,9 +4432,7 @@ pub unsafe extern "C" fn DecodeDateTime(
                                 (*tm).tm_mday = cur_tm.tm_mday;
                             }
                             15 => {
-                                tmask = (0x1 as libc::c_int) << 2 as libc::c_int
-                                    | (0x1 as libc::c_int) << 1 as libc::c_int
-                                    | (0x1 as libc::c_int) << 3 as libc::c_int;
+                                tmask = *FIELD_MASK_DATE;
                                 *dtype = 2 as libc::c_int;
                                 GetCurrentDateTime(&mut cur_tm);
                                 j2date(
@@ -4478,12 +4444,7 @@ pub unsafe extern "C" fn DecodeDateTime(
                                 );
                             }
                             16 => {
-                                tmask = (0x1 as libc::c_int) << 10 as libc::c_int
-                                    | (0x1 as libc::c_int) << 11 as libc::c_int
-                                    | ((0x1 as libc::c_int) << 12 as libc::c_int
-                                        | (0x1 as libc::c_int) << 13 as libc::c_int
-                                        | (0x1 as libc::c_int) << 14 as libc::c_int)
-                                    | (0x1 as libc::c_int) << 5 as libc::c_int;
+                                tmask = *FIELD_MASK_TIME | RealFieldType::Tz;
                                 *dtype = 2 as libc::c_int;
                                 (*tm).tm_hour = 0 as libc::c_int;
                                 (*tm).tm_min = 0 as libc::c_int;
@@ -4497,20 +4458,21 @@ pub unsafe extern "C" fn DecodeDateTime(
                             }
                         },
                         1 => {
-                            if fmask & (0x1 as libc::c_int) << 1 as libc::c_int != 0
+                            // already have a (numeric) month? then see if we can substitute...
+                            if fmask.contains(RealFieldType::Month)
                                 && haveTextMonth == 0
-                                && fmask & (0x1 as libc::c_int) << 3 as libc::c_int == 0
+                                && !fmask.contains(RealFieldType::Day)
                                 && (*tm).tm_mon >= 1 as libc::c_int
                                 && (*tm).tm_mon <= 31 as libc::c_int
                             {
                                 (*tm).tm_mday = (*tm).tm_mon;
-                                tmask = (0x1 as libc::c_int) << 3 as libc::c_int;
+                                tmask = FieldMask::from(RealFieldType::Day);
                             }
                             haveTextMonth = 1 as libc::c_int as bool_0;
                             (*tm).tm_mon = val;
                         }
                         28 => {
-                            tmask |= (0x1 as libc::c_int) << 6 as libc::c_int;
+                            tmask.set(RealFieldType::DTz);
                             (*tm).tm_isdst = 1 as libc::c_int;
                             if tzp.is_null() {
                                 return -(1 as libc::c_int);
@@ -4518,7 +4480,7 @@ pub unsafe extern "C" fn DecodeDateTime(
                             *tzp -= val;
                         }
                         6 => {
-                            tmask |= (0x1 as libc::c_int) << 5 as libc::c_int;
+                            tmask.set(RealFieldType::Tz);
                             (*tm).tm_isdst = 1 as libc::c_int;
                             if tzp.is_null() {
                                 return -(1 as libc::c_int);
@@ -4533,7 +4495,7 @@ pub unsafe extern "C" fn DecodeDateTime(
                             *tzp = -val;
                         }
                         7 => {
-                            tmask |= (0x1 as libc::c_int) << 5 as libc::c_int;
+                            tmask.set(RealFieldType::Tz);
                             if tzp.is_null() {
                                 return -(1 as libc::c_int);
                             }
@@ -4550,21 +4512,23 @@ pub unsafe extern "C" fn DecodeDateTime(
                             (*tm).tm_wday = val;
                         }
                         17 => {
-                            tmask = 0 as libc::c_int;
+                            tmask = FieldMask::none();
                             ptype = val;
                         }
                         23 => {
-                            tmask = 0 as libc::c_int;
-                            if fmask
-                                & ((0x1 as libc::c_int) << 2 as libc::c_int
-                                    | (0x1 as libc::c_int) << 1 as libc::c_int
-                                    | (0x1 as libc::c_int) << 3 as libc::c_int)
-                                != (0x1 as libc::c_int) << 2 as libc::c_int
-                                    | (0x1 as libc::c_int) << 1 as libc::c_int
-                                    | (0x1 as libc::c_int) << 3 as libc::c_int
-                            {
+                            // This is a filler field "t" indicating that the next
+                            // field is time. Try to verify that this is sensible.
+                            tmask = FieldMask::none();
+
+                            // No preceding date? Then quit...
+                            if !fmask.contains(*FIELD_MASK_DATE) {
                                 return -(1 as libc::c_int);
                             }
+
+                            // We will need one of the following fields:
+                            //	DTK_NUMBER should be hhmmss.fff
+                            //	DTK_TIME should be hh:mm:ss.fff
+                            //	DTK_DATE should be hhmmss-zz
                             if i >= nf - 1 as libc::c_int
                                 || *ftype.offset((i + 1 as libc::c_int) as isize)
                                     != 0 as libc::c_int
@@ -4578,11 +4542,13 @@ pub unsafe extern "C" fn DecodeDateTime(
                             ptype = val;
                         }
                         31 => {
+                            // Before giving up and declaring error, check to see
+                            // if it is an all-alpha timezone name.
                             namedTz = pg_tzset(*field.offset(i as isize));
                             if namedTz.is_null() {
                                 return -(1 as libc::c_int);
                             }
-                            tmask = (0x1 as libc::c_int) << 5 as libc::c_int;
+                            tmask = FieldMask::from(RealFieldType::Tz);
                         }
                         _ => return -(1 as libc::c_int),
                     }
@@ -4593,7 +4559,7 @@ pub unsafe extern "C" fn DecodeDateTime(
         }
         match current_block_236 {
             13797367574128857302 => {
-                if tmask & fmask != 0 {
+                if tmask.intersects(fmask) {
                     return -(1 as libc::c_int);
                 }
                 fmask |= tmask;
@@ -4602,10 +4568,12 @@ pub unsafe extern "C" fn DecodeDateTime(
         }
         i += 1;
     }
+	// do final checking/adjustment of Y/M/D fields
     dterr = ValidateDate(fmask, isjulian, is2digits, bc, tm);
     if dterr != 0 {
         return dterr;
     }
+	// handle AM/PM
     if mer != 2 as libc::c_int && (*tm).tm_hour > 24 as libc::c_int / 2 as libc::c_int {
         return -(2 as libc::c_int);
     }
@@ -4614,45 +4582,35 @@ pub unsafe extern "C" fn DecodeDateTime(
     } else if mer == 1 as libc::c_int && (*tm).tm_hour != 24 as libc::c_int / 2 as libc::c_int {
         (*tm).tm_hour += 24 as libc::c_int / 2 as libc::c_int;
     }
+	// do additional checking for full date specs...
     if *dtype == 2 as libc::c_int {
-        if fmask
-            & ((0x1 as libc::c_int) << 2 as libc::c_int
-                | (0x1 as libc::c_int) << 1 as libc::c_int
-                | (0x1 as libc::c_int) << 3 as libc::c_int)
-            != (0x1 as libc::c_int) << 2 as libc::c_int
-                | (0x1 as libc::c_int) << 1 as libc::c_int
-                | (0x1 as libc::c_int) << 3 as libc::c_int
-        {
-            if fmask
-                & ((0x1 as libc::c_int) << 10 as libc::c_int
-                    | (0x1 as libc::c_int) << 11 as libc::c_int
-                    | ((0x1 as libc::c_int) << 12 as libc::c_int
-                        | (0x1 as libc::c_int) << 13 as libc::c_int
-                        | (0x1 as libc::c_int) << 14 as libc::c_int))
-                == (0x1 as libc::c_int) << 10 as libc::c_int
-                    | (0x1 as libc::c_int) << 11 as libc::c_int
-                    | ((0x1 as libc::c_int) << 12 as libc::c_int
-                        | (0x1 as libc::c_int) << 13 as libc::c_int
-                        | (0x1 as libc::c_int) << 14 as libc::c_int)
-            {
+        if !fmask.contains(*FIELD_MASK_DATE) {
+            if fmask.contains(*FIELD_MASK_TIME) {
+                // TODO(petrosagg): this is actually success, as noted in the function doc
                 return 1 as libc::c_int;
             }
             return -(1 as libc::c_int);
         }
+		// If we had a full timezone spec, compute the offset (we could not do
+		// it before, because we need the date to resolve DST status).
         if !namedTz.is_null() {
-            if fmask & (0x1 as libc::c_int) << 28 as libc::c_int != 0 {
+			// daylight savings time modifier disallowed with full TZ
+            if fmask.contains(RealFieldType::DtzMod) {
                 return -(1 as libc::c_int);
             }
             *tzp = DetermineTimeZoneOffset(tm, namedTz);
         }
+		// Likewise, if we had a dynamic timezone abbreviation, resolve it now.
         if !abbrevTz.is_null() {
-            if fmask & (0x1 as libc::c_int) << 28 as libc::c_int != 0 {
+            if fmask.contains(RealFieldType::DtzMod) {
                 return -(1 as libc::c_int);
             }
             *tzp = DetermineTimeZoneAbbrevOffset(tm, abbrev, abbrevTz);
         }
-        if !tzp.is_null() && fmask & (0x1 as libc::c_int) << 5 as libc::c_int == 0 {
-            if fmask & (0x1 as libc::c_int) << 28 as libc::c_int != 0 {
+		// timezone not specified? then use session timezone
+        if !tzp.is_null() && !fmask.contains(RealFieldType::Tz) {
+			// daylight savings time modifier but no standard timezone? then error
+            if fmask.contains(RealFieldType::DtzMod) {
                 return -(1 as libc::c_int);
             }
             *tzp = DetermineTimeZoneOffset(tm, session_timezone);
@@ -4877,6 +4835,17 @@ unsafe extern "C" fn DetermineTimeZoneAbbrevOffsetInternal(
     }
     return 0 as libc::c_int as bool_0;
 }
+
+// Interpret parsed string as time fields only.
+// Returns 0 if successful, DTERR code if bogus input detected.
+//
+// Note that support for time zone is here for
+// SQL TIME WITH TIME ZONE, but it reveals
+// bogosity with SQL date/time standards, since
+// we must infer a time zone from current time.
+// - thomas 2000-03-10
+// Allow specifying date to get a better time zone,
+// if time zones are allowed. - thomas 2001-12-26
 #[no_mangle]
 pub unsafe extern "C" fn DecodeTimeOnly(
     mut field: *mut *mut libc::c_char,
@@ -4887,8 +4856,8 @@ pub unsafe extern "C" fn DecodeTimeOnly(
     mut fsec: *mut fsec_t,
     mut tzp: *mut libc::c_int,
 ) -> libc::c_int {
-    let mut fmask: libc::c_int = 0 as libc::c_int;
-    let mut tmask: libc::c_int = 0;
+    let mut fmask = FieldMask::none();
+    let mut tmask = FieldMask::none();
     let mut type_0: libc::c_int = 0;
     let mut ptype: libc::c_int = 0 as libc::c_int;
     let mut i: libc::c_int = 0;
@@ -4941,18 +4910,9 @@ pub unsafe extern "C" fn DecodeTimeOnly(
                     != 0
                 {
                     let mut cp: *mut libc::c_char = 0 as *mut libc::c_char;
-                    if fmask
-                        & ((0x1 as libc::c_int) << 10 as libc::c_int
-                            | (0x1 as libc::c_int) << 11 as libc::c_int
-                            | ((0x1 as libc::c_int) << 12 as libc::c_int
-                                | (0x1 as libc::c_int) << 13 as libc::c_int
-                                | (0x1 as libc::c_int) << 14 as libc::c_int))
-                        == (0x1 as libc::c_int) << 10 as libc::c_int
-                            | (0x1 as libc::c_int) << 11 as libc::c_int
-                            | ((0x1 as libc::c_int) << 12 as libc::c_int
-                                | (0x1 as libc::c_int) << 13 as libc::c_int
-                                | (0x1 as libc::c_int) << 14 as libc::c_int)
-                    {
+                    // Starts with a digit but we already have a time
+                    // field? Then we are in trouble with time already...
+                    if fmask.contains(*FIELD_MASK_TIME) {
                         return -(1 as libc::c_int);
                     }
                     cp = strchr(*field.offset(i as isize), '-' as i32);
@@ -4967,10 +4927,7 @@ pub unsafe extern "C" fn DecodeTimeOnly(
                     dterr = DecodeNumberField(
                         strlen(*field.offset(i as isize)) as libc::c_int,
                         *field.offset(i as isize),
-                        fmask
-                            | ((0x1 as libc::c_int) << 2 as libc::c_int
-                                | (0x1 as libc::c_int) << 1 as libc::c_int
-                                | (0x1 as libc::c_int) << 3 as libc::c_int),
+                        fmask | *FIELD_MASK_DATE,
                         &mut tmask,
                         tm,
                         fsec,
@@ -4980,10 +4937,13 @@ pub unsafe extern "C" fn DecodeTimeOnly(
                         return dterr;
                     }
                     *ftype.offset(i as isize) = dterr;
-                    tmask |= (0x1 as libc::c_int) << 5 as libc::c_int;
+                    tmask.set(RealFieldType::Tz);
                 } else {
                     namedTz = pg_tzset(*field.offset(i as isize));
                     if namedTz.is_null() {
+                        // We should return an error code instead of
+                        // ereport'ing directly, but then there is no way
+                        // to report the bad time zone name.
                         let mut __errno_location_0: libc::c_int = 0;
                         if if 0 != 0 && 21 as libc::c_int >= 21 as libc::c_int {
                             errstart_cold(21 as libc::c_int, 0 as *const libc::c_char)
@@ -5024,17 +4984,14 @@ pub unsafe extern "C" fn DecodeTimeOnly(
                         }
                     }
                     *ftype.offset(i as isize) = 4 as libc::c_int;
-                    tmask = (0x1 as libc::c_int) << 5 as libc::c_int;
+                    tmask = FieldMask::from(RealFieldType::Tz);
                 }
                 current_block_201 = 18009804086567542307;
             }
             3 => {
                 dterr = DecodeTime(
                     *field.offset(i as isize),
-                    fmask
-                        | ((0x1 as libc::c_int) << 2 as libc::c_int
-                            | (0x1 as libc::c_int) << 1 as libc::c_int
-                            | (0x1 as libc::c_int) << 3 as libc::c_int),
+                    fmask | *FIELD_MASK_DATE,
                     0x7fff as libc::c_int,
                     &mut tmask,
                     tm,
@@ -5055,7 +5012,7 @@ pub unsafe extern "C" fn DecodeTimeOnly(
                     return dterr;
                 }
                 *tzp = tz;
-                tmask = (0x1 as libc::c_int) << 5 as libc::c_int;
+                tmask = FieldMask::from(RealFieldType::Tz);
                 current_block_201 = 18009804086567542307;
             }
             0 => {
@@ -5086,47 +5043,43 @@ pub unsafe extern "C" fn DecodeTimeOnly(
                     match ptype {
                         25 => {
                             (*tm).tm_year = val_0;
-                            tmask = (0x1 as libc::c_int) << 2 as libc::c_int;
+                            tmask = FieldMask::from(RealFieldType::Year);
                         }
                         23 => {
-                            if fmask & (0x1 as libc::c_int) << 1 as libc::c_int != 0 as libc::c_int
-                                && fmask & (0x1 as libc::c_int) << 10 as libc::c_int
-                                    != 0 as libc::c_int
-                            {
+							// already have a month and hour? then assume minutes
+                            if fmask.contains(RealFieldType::Month | RealFieldType::Hour) {
                                 (*tm).tm_min = val_0;
-                                tmask = (0x1 as libc::c_int) << 11 as libc::c_int;
+                                tmask = FieldMask::from(RealFieldType::Minute);
                             } else {
                                 (*tm).tm_mon = val_0;
-                                tmask = (0x1 as libc::c_int) << 1 as libc::c_int;
+                                tmask = FieldMask::from(RealFieldType::Month);
                             }
                         }
                         21 => {
                             (*tm).tm_mday = val_0;
-                            tmask = (0x1 as libc::c_int) << 3 as libc::c_int;
+                            tmask = FieldMask::from(RealFieldType::Day);
                         }
                         20 => {
                             (*tm).tm_hour = val_0;
-                            tmask = (0x1 as libc::c_int) << 10 as libc::c_int;
+                            tmask = FieldMask::from(RealFieldType::Hour);
                         }
                         19 => {
                             (*tm).tm_min = val_0;
-                            tmask = (0x1 as libc::c_int) << 11 as libc::c_int;
+                            tmask = FieldMask::from(RealFieldType::Minute);
                         }
                         18 => {
                             (*tm).tm_sec = val_0;
-                            tmask = (0x1 as libc::c_int) << 12 as libc::c_int;
+                            tmask = FieldMask::from(RealFieldType::Second);
                             if *cp_0 as libc::c_int == '.' as i32 {
                                 dterr = ParseFractionalSecond(cp_0, fsec);
                                 if dterr != 0 {
                                     return dterr;
                                 }
-                                tmask = (0x1 as libc::c_int) << 12 as libc::c_int
-                                    | (0x1 as libc::c_int) << 13 as libc::c_int
-                                    | (0x1 as libc::c_int) << 14 as libc::c_int;
+                                tmask = *FIELD_MASK_ALL_SECS;
                             }
                         }
                         4 => {
-                            tmask = (0x1 as libc::c_int) << 5 as libc::c_int;
+                            tmask = FieldMask::from(RealFieldType::Tz);
                             dterr = DecodeTimezone(*field.offset(i as isize), tzp);
                             if dterr != 0 {
                                 return dterr;
@@ -5136,9 +5089,7 @@ pub unsafe extern "C" fn DecodeTimeOnly(
                             if val_0 < 0 as libc::c_int {
                                 return -(2 as libc::c_int);
                             }
-                            tmask = (0x1 as libc::c_int) << 2 as libc::c_int
-                                | (0x1 as libc::c_int) << 1 as libc::c_int
-                                | (0x1 as libc::c_int) << 3 as libc::c_int;
+                            tmask = *FIELD_MASK_DATE;
                             j2date(
                                 val_0,
                                 &mut (*tm).tm_year,
@@ -5163,21 +5114,14 @@ pub unsafe extern "C" fn DecodeTimeOnly(
                                     &mut (*tm).tm_sec,
                                     fsec,
                                 );
-                                tmask |= (0x1 as libc::c_int) << 10 as libc::c_int
-                                    | (0x1 as libc::c_int) << 11 as libc::c_int
-                                    | ((0x1 as libc::c_int) << 12 as libc::c_int
-                                        | (0x1 as libc::c_int) << 13 as libc::c_int
-                                        | (0x1 as libc::c_int) << 14 as libc::c_int);
+                                tmask.set(*FIELD_MASK_TIME);
                             }
                         }
                         3 => {
                             dterr = DecodeNumberField(
                                 strlen(*field.offset(i as isize)) as libc::c_int,
                                 *field.offset(i as isize),
-                                fmask
-                                    | ((0x1 as libc::c_int) << 2 as libc::c_int
-                                        | (0x1 as libc::c_int) << 1 as libc::c_int
-                                        | (0x1 as libc::c_int) << 3 as libc::c_int),
+                                fmask | *FIELD_MASK_DATE,
                                 &mut tmask,
                                 tm,
                                 fsec,
@@ -5187,13 +5131,7 @@ pub unsafe extern "C" fn DecodeTimeOnly(
                                 return dterr;
                             }
                             *ftype.offset(i as isize) = dterr;
-                            if tmask
-                                != (0x1 as libc::c_int) << 10 as libc::c_int
-                                    | (0x1 as libc::c_int) << 11 as libc::c_int
-                                    | ((0x1 as libc::c_int) << 12 as libc::c_int
-                                        | (0x1 as libc::c_int) << 13 as libc::c_int
-                                        | (0x1 as libc::c_int) << 14 as libc::c_int)
-                            {
+                            if tmask != *FIELD_MASK_TIME {
                                 return -(1 as libc::c_int);
                             }
                         }
@@ -5227,10 +5165,7 @@ pub unsafe extern "C" fn DecodeTimeOnly(
                             dterr = DecodeNumberField(
                                 flen,
                                 *field.offset(i as isize),
-                                fmask
-                                    | ((0x1 as libc::c_int) << 2 as libc::c_int
-                                        | (0x1 as libc::c_int) << 1 as libc::c_int
-                                        | (0x1 as libc::c_int) << 3 as libc::c_int),
+                                fmask | *FIELD_MASK_DATE,
                                 &mut tmask,
                                 tm,
                                 fsec,
@@ -5247,10 +5182,7 @@ pub unsafe extern "C" fn DecodeTimeOnly(
                         dterr = DecodeNumberField(
                             flen,
                             *field.offset(i as isize),
-                            fmask
-                                | ((0x1 as libc::c_int) << 2 as libc::c_int
-                                    | (0x1 as libc::c_int) << 1 as libc::c_int
-                                    | (0x1 as libc::c_int) << 3 as libc::c_int),
+                            fmask | *FIELD_MASK_DATE,
                             &mut tmask,
                             tm,
                             fsec,
@@ -5265,10 +5197,7 @@ pub unsafe extern "C" fn DecodeTimeOnly(
                             flen,
                             *field.offset(i as isize),
                             0 as libc::c_int as bool_0,
-                            fmask
-                                | ((0x1 as libc::c_int) << 2 as libc::c_int
-                                    | (0x1 as libc::c_int) << 1 as libc::c_int
-                                    | (0x1 as libc::c_int) << 3 as libc::c_int),
+                            fmask | *FIELD_MASK_DATE,
                             &mut tmask,
                             tm,
                             fsec,
@@ -5289,25 +5218,17 @@ pub unsafe extern "C" fn DecodeTimeOnly(
                 if type_0 == 8 as libc::c_int {
                     current_block_201 = 13536709405535804910;
                 } else {
-                    tmask = (0x1 as libc::c_int) << type_0;
+                    let typ: RealFieldType = None.expect("convert type to RealFieldType");
+                    tmask = FieldMask::from(typ);
                     match type_0 {
                         0 => match val {
                             12 => {
-                                tmask = (0x1 as libc::c_int) << 10 as libc::c_int
-                                    | (0x1 as libc::c_int) << 11 as libc::c_int
-                                    | ((0x1 as libc::c_int) << 12 as libc::c_int
-                                        | (0x1 as libc::c_int) << 13 as libc::c_int
-                                        | (0x1 as libc::c_int) << 14 as libc::c_int);
+                                tmask = *FIELD_MASK_TIME;
                                 *dtype = 3 as libc::c_int;
                                 GetCurrentTimeUsec(tm, fsec, 0 as *mut libc::c_int);
                             }
                             16 => {
-                                tmask = (0x1 as libc::c_int) << 10 as libc::c_int
-                                    | (0x1 as libc::c_int) << 11 as libc::c_int
-                                    | ((0x1 as libc::c_int) << 12 as libc::c_int
-                                        | (0x1 as libc::c_int) << 13 as libc::c_int
-                                        | (0x1 as libc::c_int) << 14 as libc::c_int)
-                                    | (0x1 as libc::c_int) << 5 as libc::c_int;
+                                tmask = *FIELD_MASK_TIME | RealFieldType::Tz;
                                 *dtype = 3 as libc::c_int;
                                 (*tm).tm_hour = 0 as libc::c_int;
                                 (*tm).tm_min = 0 as libc::c_int;
@@ -5317,7 +5238,8 @@ pub unsafe extern "C" fn DecodeTimeOnly(
                             _ => return -(1 as libc::c_int),
                         },
                         28 => {
-                            tmask |= (0x1 as libc::c_int) << 6 as libc::c_int;
+                            // daylight savings time modifier (solves "MET DST" syntax)
+                            tmask.set(RealFieldType::DTz);
                             (*tm).tm_isdst = 1 as libc::c_int;
                             if tzp.is_null() {
                                 return -(1 as libc::c_int);
@@ -5325,7 +5247,8 @@ pub unsafe extern "C" fn DecodeTimeOnly(
                             *tzp -= val;
                         }
                         6 => {
-                            tmask |= (0x1 as libc::c_int) << 5 as libc::c_int;
+                            // set mask for TZ here _or_ check for DTZ later when getting default timezone
+                            tmask.set(RealFieldType::Tz);
                             (*tm).tm_isdst = 1 as libc::c_int;
                             if tzp.is_null() {
                                 return -(1 as libc::c_int);
@@ -5342,10 +5265,11 @@ pub unsafe extern "C" fn DecodeTimeOnly(
                             *ftype.offset(i as isize) = 4 as libc::c_int;
                         }
                         7 => {
-                            tmask |= (0x1 as libc::c_int) << 5 as libc::c_int;
+                            tmask.set(RealFieldType::Tz);
                             if tzp.is_null() {
                                 return -(1 as libc::c_int);
                             }
+                            // we'll determine the actual offset later
                             abbrevTz = valtz;
                             abbrev = *field.offset(i as isize);
                             *ftype.offset(i as isize) = 4 as libc::c_int;
@@ -5357,11 +5281,15 @@ pub unsafe extern "C" fn DecodeTimeOnly(
                             bc = (val == 1 as libc::c_int) as libc::c_int as bool_0;
                         }
                         17 => {
-                            tmask = 0 as libc::c_int;
+                            tmask = FieldMask::none();
                             ptype = val;
                         }
                         23 => {
-                            tmask = 0 as libc::c_int;
+                            tmask = FieldMask::none();
+                            // We will need one of the following fields:
+                            //	DTK_NUMBER should be hhmmss.fff
+                            //	DTK_TIME should be hh:mm:ss.fff
+                            //	DTK_DATE should be hhmmss-zz
                             if i >= nf - 1 as libc::c_int
                                 || *ftype.offset((i + 1 as libc::c_int) as isize)
                                     != 0 as libc::c_int
@@ -5379,7 +5307,7 @@ pub unsafe extern "C" fn DecodeTimeOnly(
                             if namedTz.is_null() {
                                 return -(1 as libc::c_int);
                             }
-                            tmask = (0x1 as libc::c_int) << 5 as libc::c_int;
+                            tmask = FieldMask::from(RealFieldType::Tz);
                         }
                         _ => return -(1 as libc::c_int),
                     }
@@ -5390,7 +5318,7 @@ pub unsafe extern "C" fn DecodeTimeOnly(
         }
         match current_block_201 {
             18009804086567542307 => {
-                if tmask & fmask != 0 {
+                if tmask.intersects(fmask) {
                     return -(1 as libc::c_int);
                 }
                 fmask |= tmask;
@@ -5399,10 +5327,13 @@ pub unsafe extern "C" fn DecodeTimeOnly(
         }
         i += 1;
     }
+	// do final checking/adjustment of Y/M/D fields
     dterr = ValidateDate(fmask, isjulian, is2digits, bc, tm);
     if dterr != 0 {
         return dterr;
     }
+
+	// handle AM/PM
     if mer != 2 as libc::c_int && (*tm).tm_hour > 24 as libc::c_int / 2 as libc::c_int {
         return -(2 as libc::c_int);
     }
@@ -5411,44 +5342,34 @@ pub unsafe extern "C" fn DecodeTimeOnly(
     } else if mer == 1 as libc::c_int && (*tm).tm_hour != 24 as libc::c_int / 2 as libc::c_int {
         (*tm).tm_hour += 24 as libc::c_int / 2 as libc::c_int;
     }
+
+	// check for time overflow
     if time_overflows((*tm).tm_hour, (*tm).tm_min, (*tm).tm_sec, *fsec) != 0 {
         return -(2 as libc::c_int);
     }
-    if fmask
-        & ((0x1 as libc::c_int) << 10 as libc::c_int
-            | (0x1 as libc::c_int) << 11 as libc::c_int
-            | ((0x1 as libc::c_int) << 12 as libc::c_int
-                | (0x1 as libc::c_int) << 13 as libc::c_int
-                | (0x1 as libc::c_int) << 14 as libc::c_int))
-        != (0x1 as libc::c_int) << 10 as libc::c_int
-            | (0x1 as libc::c_int) << 11 as libc::c_int
-            | ((0x1 as libc::c_int) << 12 as libc::c_int
-                | (0x1 as libc::c_int) << 13 as libc::c_int
-                | (0x1 as libc::c_int) << 14 as libc::c_int)
-    {
+    if !fmask.contains(*FIELD_MASK_TIME) {
         return -(1 as libc::c_int);
     }
+	// If we had a full timezone spec, compute the offset (we could not do it
+	// before, because we may need the date to resolve DST status).
     if !namedTz.is_null() {
         let mut gmtoff: libc::c_long = 0;
-        if fmask & (0x1 as libc::c_int) << 28 as libc::c_int != 0 {
+		// daylight savings time modifier disallowed with full TZ
+        if fmask.contains(RealFieldType::DtzMod) {
             return -(1 as libc::c_int);
         }
+		// if non-DST zone, we do not need to know the date
         if pg_get_timezone_offset(namedTz, &mut gmtoff) != 0 {
             *tzp = -(gmtoff as libc::c_int);
         } else {
-            if fmask
-                & ((0x1 as libc::c_int) << 2 as libc::c_int
-                    | (0x1 as libc::c_int) << 1 as libc::c_int
-                    | (0x1 as libc::c_int) << 3 as libc::c_int)
-                != (0x1 as libc::c_int) << 2 as libc::c_int
-                    | (0x1 as libc::c_int) << 1 as libc::c_int
-                    | (0x1 as libc::c_int) << 3 as libc::c_int
-            {
+			// a date has to be specified
+            if !fmask.contains(*FIELD_MASK_DATE) {
                 return -(1 as libc::c_int);
             }
             *tzp = DetermineTimeZoneOffset(tm, namedTz);
         }
     }
+	// Likewise, if we had a dynamic timezone abbreviation, resolve it now.
     if !abbrevTz.is_null() {
         let mut tt: pg_tm = pg_tm {
             tm_sec: 0,
@@ -5464,25 +5385,16 @@ pub unsafe extern "C" fn DecodeTimeOnly(
             tm_zone: 0 as *const libc::c_char,
         };
         let mut tmp: *mut pg_tm = &mut tt;
-        if fmask & (0x1 as libc::c_int) << 28 as libc::c_int != 0 {
+
+		// daylight savings time modifier but no standard timezone? then error
+        if fmask.contains(RealFieldType::DtzMod) {
             return -(1 as libc::c_int);
         }
-        if fmask
-            & ((0x1 as libc::c_int) << 2 as libc::c_int
-                | (0x1 as libc::c_int) << 1 as libc::c_int
-                | (0x1 as libc::c_int) << 3 as libc::c_int)
-            == 0 as libc::c_int
-        {
+        if !fmask.intersects(*FIELD_MASK_DATE) {
             GetCurrentDateTime(tmp);
         } else {
-            if fmask
-                & ((0x1 as libc::c_int) << 2 as libc::c_int
-                    | (0x1 as libc::c_int) << 1 as libc::c_int
-                    | (0x1 as libc::c_int) << 3 as libc::c_int)
-                != (0x1 as libc::c_int) << 2 as libc::c_int
-                    | (0x1 as libc::c_int) << 1 as libc::c_int
-                    | (0x1 as libc::c_int) << 3 as libc::c_int
-            {
+			/* a date has to be specified */
+            if !fmask.contains(*FIELD_MASK_DATE) {
                 return -(1 as libc::c_int);
             }
             (*tmp).tm_year = (*tm).tm_year;
@@ -5495,7 +5407,8 @@ pub unsafe extern "C" fn DecodeTimeOnly(
         *tzp = DetermineTimeZoneAbbrevOffset(tmp, abbrev, abbrevTz);
         (*tm).tm_isdst = (*tmp).tm_isdst;
     }
-    if !tzp.is_null() && fmask & (0x1 as libc::c_int) << 5 as libc::c_int == 0 {
+	// timezone not specified? then use session timezone
+    if !tzp.is_null() && !fmask.contains(RealFieldType::Tz) {
         let mut tt_0: pg_tm = pg_tm {
             tm_sec: 0,
             tm_min: 0,
@@ -5510,25 +5423,13 @@ pub unsafe extern "C" fn DecodeTimeOnly(
             tm_zone: 0 as *const libc::c_char,
         };
         let mut tmp_0: *mut pg_tm = &mut tt_0;
-        if fmask & (0x1 as libc::c_int) << 28 as libc::c_int != 0 {
+        if fmask.contains(RealFieldType::DtzMod) {
             return -(1 as libc::c_int);
         }
-        if fmask
-            & ((0x1 as libc::c_int) << 2 as libc::c_int
-                | (0x1 as libc::c_int) << 1 as libc::c_int
-                | (0x1 as libc::c_int) << 3 as libc::c_int)
-            == 0 as libc::c_int
-        {
+        if !fmask.intersects(*FIELD_MASK_DATE) {
             GetCurrentDateTime(tmp_0);
         } else {
-            if fmask
-                & ((0x1 as libc::c_int) << 2 as libc::c_int
-                    | (0x1 as libc::c_int) << 1 as libc::c_int
-                    | (0x1 as libc::c_int) << 3 as libc::c_int)
-                != (0x1 as libc::c_int) << 2 as libc::c_int
-                    | (0x1 as libc::c_int) << 1 as libc::c_int
-                    | (0x1 as libc::c_int) << 3 as libc::c_int
-            {
+            if !fmask.contains(*FIELD_MASK_DATE) {
                 return -(1 as libc::c_int);
             }
             (*tmp_0).tm_year = (*tm).tm_year;
@@ -5545,8 +5446,8 @@ pub unsafe extern "C" fn DecodeTimeOnly(
 }
 unsafe extern "C" fn DecodeDate(
     mut str: *mut libc::c_char,
-    mut fmask: libc::c_int,
-    mut tmask: *mut libc::c_int,
+    mut fmask: FieldMask,
+    mut tmask: &mut FieldMask,
     mut is2digits: *mut bool_0,
     mut tm: *mut pg_tm,
 ) -> libc::c_int {
@@ -5558,9 +5459,9 @@ unsafe extern "C" fn DecodeDate(
     let mut haveTextMonth: bool_0 = 0 as libc::c_int as bool_0;
     let mut type_0: libc::c_int = 0;
     let mut val: libc::c_int = 0;
-    let mut dmask: libc::c_int = 0 as libc::c_int;
+    let mut dmask = FieldMask::none();
     let mut field: [*mut libc::c_char; 25] = [0 as *mut libc::c_char; 25];
-    *tmask = 0 as libc::c_int;
+    *tmask = FieldMask::none();
     while *str as libc::c_int != '\0' as i32 && nf < 25 as libc::c_int {
         while *str as libc::c_int != '\0' as i32
             && *(*__ctype_b_loc()).offset(*str as libc::c_uchar as libc::c_int as isize)
@@ -5614,7 +5515,8 @@ unsafe extern "C" fn DecodeDate(
         {
             type_0 = DecodeSpecial(i, field[i as usize], &mut val);
             if !(type_0 == 8 as libc::c_int) {
-                dmask = (0x1 as libc::c_int) << type_0;
+                let typ: RealFieldType = None.expect("convert type_0 to RealFieldType");
+                dmask = FieldMask::from(typ);
                 match type_0 {
                     1 => {
                         (*tm).tm_mon = val;
@@ -5622,7 +5524,7 @@ unsafe extern "C" fn DecodeDate(
                     }
                     _ => return -(1 as libc::c_int),
                 }
-                if fmask & dmask != 0 {
+                if fmask.intersects(dmask) {
                     return -(1 as libc::c_int);
                 }
                 fmask |= dmask;
@@ -5652,7 +5554,7 @@ unsafe extern "C" fn DecodeDate(
             if dterr != 0 {
                 return dterr;
             }
-            if fmask & dmask != 0 {
+            if fmask.intersects(dmask) {
                 return -(1 as libc::c_int);
             }
             fmask |= dmask;
@@ -5660,25 +5562,24 @@ unsafe extern "C" fn DecodeDate(
         }
         i += 1;
     }
-    if fmask
-        & !((0x1 as libc::c_int) << 15 as libc::c_int | (0x1 as libc::c_int) << 5 as libc::c_int)
-        != (0x1 as libc::c_int) << 2 as libc::c_int
-            | (0x1 as libc::c_int) << 1 as libc::c_int
-            | (0x1 as libc::c_int) << 3 as libc::c_int
-    {
+    if fmask & !(RealFieldType::Doy | RealFieldType::Tz) != *FIELD_MASK_DATE {
         return -(1 as libc::c_int);
     }
+
+	// validation of the field values must wait until ValidateDate()
     return 0 as libc::c_int;
 }
+
+/// Check valid year/month/day values, handle BC and DOY cases Return 0 if okay, a DTERR code if not.
 #[no_mangle]
 pub unsafe extern "C" fn ValidateDate(
-    mut fmask: libc::c_int,
+    mut fmask: FieldMask,
     mut isjulian: bool_0,
     mut is2digits: bool_0,
     mut bc: bool_0,
     mut tm: *mut pg_tm,
 ) -> libc::c_int {
-    if fmask & (0x1 as libc::c_int) << 2 as libc::c_int != 0 {
+    if fmask.contains(RealFieldType::Year) {
         if !(isjulian != 0) {
             if bc != 0 {
                 if (*tm).tm_year <= 0 as libc::c_int {
@@ -5699,7 +5600,8 @@ pub unsafe extern "C" fn ValidateDate(
             }
         }
     }
-    if fmask & (0x1 as libc::c_int) << 15 as libc::c_int != 0 {
+	// now that we have correct year, decode DOY
+    if fmask.contains(RealFieldType::Doy) {
         j2date(
             date2j((*tm).tm_year, 1 as libc::c_int, 1 as libc::c_int) + (*tm).tm_yday
                 - 1 as libc::c_int,
@@ -5708,24 +5610,19 @@ pub unsafe extern "C" fn ValidateDate(
             &mut (*tm).tm_mday,
         );
     }
-    if fmask & (0x1 as libc::c_int) << 1 as libc::c_int != 0 {
+	// check for valid month
+    if fmask.contains(RealFieldType::Month) {
         if (*tm).tm_mon < 1 as libc::c_int || (*tm).tm_mon > 12 as libc::c_int {
             return -(3 as libc::c_int);
         }
     }
-    if fmask & (0x1 as libc::c_int) << 3 as libc::c_int != 0 {
+	// minimal check for valid day
+    if fmask.contains(RealFieldType::Day) {
         if (*tm).tm_mday < 1 as libc::c_int || (*tm).tm_mday > 31 as libc::c_int {
             return -(3 as libc::c_int);
         }
     }
-    if fmask
-        & ((0x1 as libc::c_int) << 2 as libc::c_int
-            | (0x1 as libc::c_int) << 1 as libc::c_int
-            | (0x1 as libc::c_int) << 3 as libc::c_int)
-        == (0x1 as libc::c_int) << 2 as libc::c_int
-            | (0x1 as libc::c_int) << 1 as libc::c_int
-            | (0x1 as libc::c_int) << 3 as libc::c_int
-    {
+    if fmask.contains(*FIELD_MASK_DATE) {
         if (*tm).tm_mday
             > day_tab[((*tm).tm_year % 4 as libc::c_int == 0 as libc::c_int
                 && ((*tm).tm_year % 100 as libc::c_int != 0 as libc::c_int
@@ -5737,21 +5634,23 @@ pub unsafe extern "C" fn ValidateDate(
     }
     return 0 as libc::c_int;
 }
+
+/// Decode time string which includes delimiters.
+/// Return 0 if okay, a DTERR code if not.
+///
+/// Only check the lower limit on hours, since this same code can be
+/// used to represent time spans.
 unsafe extern "C" fn DecodeTime(
     mut str: *mut libc::c_char,
-    mut fmask: libc::c_int,
+    mut fmask: FieldMask,
     mut range: libc::c_int,
-    mut tmask: *mut libc::c_int,
+    mut tmask: &mut FieldMask,
     mut tm: *mut pg_tm,
     mut fsec: *mut fsec_t,
 ) -> libc::c_int {
     let mut cp: *mut libc::c_char = 0 as *mut libc::c_char;
     let mut dterr: libc::c_int = 0;
-    *tmask = (0x1 as libc::c_int) << 10 as libc::c_int
-        | (0x1 as libc::c_int) << 11 as libc::c_int
-        | ((0x1 as libc::c_int) << 12 as libc::c_int
-            | (0x1 as libc::c_int) << 13 as libc::c_int
-            | (0x1 as libc::c_int) << 14 as libc::c_int);
+    *tmask = *FIELD_MASK_TIME;
     *__errno_location() = 0 as libc::c_int;
     (*tm).tm_hour = strtoint(str, &mut cp, 10 as libc::c_int);
     if *__errno_location() == 34 as libc::c_int {
@@ -5826,8 +5725,8 @@ unsafe extern "C" fn DecodeNumber(
     mut flen: libc::c_int,
     mut str: *mut libc::c_char,
     mut haveTextMonth: bool_0,
-    mut fmask: libc::c_int,
-    mut tmask: *mut libc::c_int,
+    mut fmask: FieldMask,
+    mut tmask: &mut FieldMask,
     mut tm: *mut pg_tm,
     mut fsec: *mut fsec_t,
     mut is2digits: *mut bool_0,
@@ -5835,7 +5734,7 @@ unsafe extern "C" fn DecodeNumber(
     let mut val: libc::c_int = 0;
     let mut cp: *mut libc::c_char = 0 as *mut libc::c_char;
     let mut dterr: libc::c_int = 0;
-    *tmask = 0 as libc::c_int;
+    *tmask = FieldMask::none();
     *__errno_location() = 0 as libc::c_int;
     val = strtoint(str, &mut cp, 10 as libc::c_int);
     if *__errno_location() == 34 as libc::c_int {
@@ -5849,10 +5748,7 @@ unsafe extern "C" fn DecodeNumber(
             dterr = DecodeNumberField(
                 flen,
                 str,
-                fmask
-                    | ((0x1 as libc::c_int) << 2 as libc::c_int
-                        | (0x1 as libc::c_int) << 1 as libc::c_int
-                        | (0x1 as libc::c_int) << 3 as libc::c_int),
+                fmask | *FIELD_MASK_DATE,
                 tmask,
                 tm,
                 fsec,
@@ -5870,78 +5766,77 @@ unsafe extern "C" fn DecodeNumber(
     } else if *cp as libc::c_int != '\0' as i32 {
         return -(1 as libc::c_int);
     }
+	/* Special case for day of year */
     if flen == 3 as libc::c_int
-        && fmask
-            & ((0x1 as libc::c_int) << 2 as libc::c_int
-                | (0x1 as libc::c_int) << 1 as libc::c_int
-                | (0x1 as libc::c_int) << 3 as libc::c_int)
-            == (0x1 as libc::c_int) << 2 as libc::c_int
+        && fmask & *FIELD_MASK_DATE == FieldMask::from(RealFieldType::Year)
         && val >= 1 as libc::c_int
         && val <= 366 as libc::c_int
     {
-        *tmask = (0x1 as libc::c_int) << 15 as libc::c_int
-            | (0x1 as libc::c_int) << 1 as libc::c_int
-            | (0x1 as libc::c_int) << 3 as libc::c_int;
+        *tmask = RealFieldType::Doy | RealFieldType::Month | RealFieldType::Day;
         (*tm).tm_yday = val;
+		// tm_mon and tm_mday can't actually be set yet ...
         return 0 as libc::c_int;
     }
-    match fmask
-        & ((0x1 as libc::c_int) << 2 as libc::c_int
-            | (0x1 as libc::c_int) << 1 as libc::c_int
-            | (0x1 as libc::c_int) << 3 as libc::c_int)
-    {
+	// Switch based on what we have so far
+    match *(fmask & *FIELD_MASK_DATE) {
         0 => {
             if flen >= 3 as libc::c_int || DateOrder == 0 as libc::c_int {
-                *tmask = (0x1 as libc::c_int) << 2 as libc::c_int;
+                *tmask = FieldMask::from(RealFieldType::Year);
                 (*tm).tm_year = val;
             } else if DateOrder == 1 as libc::c_int {
-                *tmask = (0x1 as libc::c_int) << 3 as libc::c_int;
+                *tmask = FieldMask::from(RealFieldType::Day);
                 (*tm).tm_mday = val;
             } else {
-                *tmask = (0x1 as libc::c_int) << 1 as libc::c_int;
+                *tmask = FieldMask::from(RealFieldType::Month);
                 (*tm).tm_mon = val;
             }
         }
         4 => {
-            *tmask = (0x1 as libc::c_int) << 1 as libc::c_int;
+			// Must be at second field of YY-MM-DD
+            *tmask = FieldMask::from(RealFieldType::Month);
             (*tm).tm_mon = val;
         }
         2 => {
             if haveTextMonth != 0 {
                 if flen >= 3 as libc::c_int || DateOrder == 0 as libc::c_int {
-                    *tmask = (0x1 as libc::c_int) << 2 as libc::c_int;
+                    *tmask = FieldMask::from(RealFieldType::Year);
                     (*tm).tm_year = val;
                 } else {
-                    *tmask = (0x1 as libc::c_int) << 3 as libc::c_int;
+                    *tmask = FieldMask::from(RealFieldType::Day);
                     (*tm).tm_mday = val;
                 }
             } else {
-                *tmask = (0x1 as libc::c_int) << 3 as libc::c_int;
+                *tmask = FieldMask::from(RealFieldType::Day);
                 (*tm).tm_mday = val;
             }
         }
         6 => {
             if haveTextMonth != 0 {
+				// Need to accept DD-MON-YYYY even in YMD mode
                 if flen >= 3 as libc::c_int && *is2digits as libc::c_int != 0 {
-                    *tmask = (0x1 as libc::c_int) << 3 as libc::c_int;
+					// Guess that first numeric field is day was wrong
+                    // YEAR is already set
+                    *tmask = FieldMask::from(RealFieldType::Day);
                     (*tm).tm_mday = (*tm).tm_year;
                     (*tm).tm_year = val;
                     *is2digits = 0 as libc::c_int as bool_0;
                 } else {
-                    *tmask = (0x1 as libc::c_int) << 3 as libc::c_int;
+                    *tmask = FieldMask::from(RealFieldType::Day);
                     (*tm).tm_mday = val;
                 }
             } else {
-                *tmask = (0x1 as libc::c_int) << 3 as libc::c_int;
+				// Must be at third field of YY-MM-DD
+                *tmask = FieldMask::from(RealFieldType::Day);
                 (*tm).tm_mday = val;
             }
         }
         8 => {
-            *tmask = (0x1 as libc::c_int) << 1 as libc::c_int;
+			// Must be at second field of DD-MM-YY
+            *tmask = FieldMask::from(RealFieldType::Month);
             (*tm).tm_mon = val;
         }
         10 => {
-            *tmask = (0x1 as libc::c_int) << 2 as libc::c_int;
+            *tmask = FieldMask::from(RealFieldType::Year);
             (*tm).tm_year = val;
         }
         14 => {
@@ -5953,7 +5848,8 @@ unsafe extern "C" fn DecodeNumber(
         }
         _ => return -(1 as libc::c_int),
     }
-    if *tmask == (0x1 as libc::c_int) << 2 as libc::c_int {
+	// When processing a year field, mark it for adjustment if it's only one or two digits.
+    if *tmask == FieldMask::from(RealFieldType::Year) {
         *is2digits = (flen <= 2 as libc::c_int) as libc::c_int as bool_0;
     }
     return 0 as libc::c_int;
@@ -5961,8 +5857,8 @@ unsafe extern "C" fn DecodeNumber(
 unsafe extern "C" fn DecodeNumberField(
     mut len: libc::c_int,
     mut str: *mut libc::c_char,
-    mut fmask: libc::c_int,
-    mut tmask: *mut libc::c_int,
+    mut fmask: FieldMask,
+    mut tmask: &mut FieldMask,
     mut tm: *mut pg_tm,
     mut fsec: *mut fsec_t,
     mut is2digits: *mut bool_0,
@@ -5979,18 +5875,10 @@ unsafe extern "C" fn DecodeNumberField(
         *fsec = rint(frac * 1000000 as libc::c_int as libc::c_double) as fsec_t;
         *cp = '\0' as i32 as libc::c_char;
         len = strlen(str) as libc::c_int;
-    } else if fmask
-        & ((0x1 as libc::c_int) << 2 as libc::c_int
-            | (0x1 as libc::c_int) << 1 as libc::c_int
-            | (0x1 as libc::c_int) << 3 as libc::c_int)
-        != (0x1 as libc::c_int) << 2 as libc::c_int
-            | (0x1 as libc::c_int) << 1 as libc::c_int
-            | (0x1 as libc::c_int) << 3 as libc::c_int
-    {
+	// No decimal point and no complete date yet?
+    } else if !fmask.contains(*FIELD_MASK_DATE) {
         if len >= 6 as libc::c_int {
-            *tmask = (0x1 as libc::c_int) << 2 as libc::c_int
-                | (0x1 as libc::c_int) << 1 as libc::c_int
-                | (0x1 as libc::c_int) << 3 as libc::c_int;
+            *tmask = *FIELD_MASK_DATE;
             (*tm).tm_mday = atoi(str.offset((len - 2 as libc::c_int) as isize));
             *str.offset((len - 2 as libc::c_int) as isize) = '\0' as i32 as libc::c_char;
             (*tm).tm_mon = atoi(str.offset((len - 4 as libc::c_int) as isize));
@@ -6002,24 +5890,10 @@ unsafe extern "C" fn DecodeNumberField(
             return 2 as libc::c_int;
         }
     }
-    if fmask
-        & ((0x1 as libc::c_int) << 10 as libc::c_int
-            | (0x1 as libc::c_int) << 11 as libc::c_int
-            | ((0x1 as libc::c_int) << 12 as libc::c_int
-                | (0x1 as libc::c_int) << 13 as libc::c_int
-                | (0x1 as libc::c_int) << 14 as libc::c_int))
-        != (0x1 as libc::c_int) << 10 as libc::c_int
-            | (0x1 as libc::c_int) << 11 as libc::c_int
-            | ((0x1 as libc::c_int) << 12 as libc::c_int
-                | (0x1 as libc::c_int) << 13 as libc::c_int
-                | (0x1 as libc::c_int) << 14 as libc::c_int)
-    {
+    if !fmask.contains(*FIELD_MASK_TIME) {
+		// hhmmss
         if len == 6 as libc::c_int {
-            *tmask = (0x1 as libc::c_int) << 10 as libc::c_int
-                | (0x1 as libc::c_int) << 11 as libc::c_int
-                | ((0x1 as libc::c_int) << 12 as libc::c_int
-                    | (0x1 as libc::c_int) << 13 as libc::c_int
-                    | (0x1 as libc::c_int) << 14 as libc::c_int);
+            *tmask = *FIELD_MASK_TIME;
             (*tm).tm_sec = atoi(str.offset(4 as libc::c_int as isize));
             *str.offset(4 as libc::c_int as isize) = '\0' as i32 as libc::c_char;
             (*tm).tm_min = atoi(str.offset(2 as libc::c_int as isize));
@@ -6028,11 +5902,7 @@ unsafe extern "C" fn DecodeNumberField(
             return 3 as libc::c_int;
         } else {
             if len == 4 as libc::c_int {
-                *tmask = (0x1 as libc::c_int) << 10 as libc::c_int
-                    | (0x1 as libc::c_int) << 11 as libc::c_int
-                    | ((0x1 as libc::c_int) << 12 as libc::c_int
-                        | (0x1 as libc::c_int) << 13 as libc::c_int
-                        | (0x1 as libc::c_int) << 14 as libc::c_int);
+                *tmask = *FIELD_MASK_TIME;
                 (*tm).tm_sec = 0 as libc::c_int;
                 (*tm).tm_min = atoi(str.offset(2 as libc::c_int as isize));
                 *str.offset(2 as libc::c_int as isize) = '\0' as i32 as libc::c_char;
@@ -6205,8 +6075,8 @@ pub unsafe extern "C" fn DecodeInterval(
 ) -> libc::c_int {
     let mut is_before: bool_0 = 0 as libc::c_int as bool_0;
     let mut cp: *mut libc::c_char = 0 as *mut libc::c_char;
-    let mut fmask: libc::c_int = 0 as libc::c_int;
-    let mut tmask: libc::c_int = 0;
+    let mut fmask = FieldMask::none();
+    let mut tmask = FieldMask::none();
     let mut type_0: libc::c_int = 0;
     let mut i: libc::c_int = 0;
     let mut dterr: libc::c_int = 0;
@@ -6269,7 +6139,7 @@ pub unsafe extern "C" fn DecodeInterval(
                 if type_0 == 8 as libc::c_int {
                     current_block_109 = 7095457783677275021;
                 } else {
-                    tmask = 0 as libc::c_int;
+                    tmask = FieldMask::none();
                     match type_0 {
                         17 => {
                             type_0 = val;
@@ -6279,14 +6149,7 @@ pub unsafe extern "C" fn DecodeInterval(
                             type_0 = val;
                         }
                         0 => {
-                            tmask = (0x1 as libc::c_int) << 2 as libc::c_int
-                                | (0x1 as libc::c_int) << 1 as libc::c_int
-                                | (0x1 as libc::c_int) << 3 as libc::c_int
-                                | ((0x1 as libc::c_int) << 10 as libc::c_int
-                                    | (0x1 as libc::c_int) << 11 as libc::c_int
-                                    | ((0x1 as libc::c_int) << 12 as libc::c_int
-                                        | (0x1 as libc::c_int) << 13 as libc::c_int
-                                        | (0x1 as libc::c_int) << 14 as libc::c_int));
+                            tmask = *FIELD_MASK_DATE | *FIELD_MASK_TIME;
                             *dtype = val;
                         }
                         _ => return -(1 as libc::c_int),
@@ -6374,12 +6237,12 @@ pub unsafe extern "C" fn DecodeInterval(
                 } else {
                     return -(1 as libc::c_int);
                 }
-                tmask = 0 as libc::c_int;
+                tmask = FieldMask::none();
                 match type_0 {
                     30 => {
                         *fsec = (*fsec as libc::c_double + rint(val as libc::c_double + fval))
                             as fsec_t;
-                        tmask = (0x1 as libc::c_int) << 14 as libc::c_int;
+                        tmask = FieldMask::from(RealFieldType::Microsecond);
                     }
                     29 => {
                         (*tm).tm_sec += val / 1000 as libc::c_int;
@@ -6389,7 +6252,7 @@ pub unsafe extern "C" fn DecodeInterval(
                                 (val as libc::c_double + fval)
                                     * 1000 as libc::c_int as libc::c_double,
                             )) as fsec_t;
-                        tmask = (0x1 as libc::c_int) << 13 as libc::c_int;
+                        tmask = FieldMask::from(RealFieldType::Millisecond);
                     }
                     18 => {
                         (*tm).tm_sec += val;
@@ -6397,45 +6260,43 @@ pub unsafe extern "C" fn DecodeInterval(
                             + rint(fval * 1000000 as libc::c_int as libc::c_double))
                             as fsec_t;
                         if fval == 0 as libc::c_int as libc::c_double {
-                            tmask = (0x1 as libc::c_int) << 12 as libc::c_int;
+                            tmask = FieldMask::from(RealFieldType::Second);
                         } else {
-                            tmask = (0x1 as libc::c_int) << 12 as libc::c_int
-                                | (0x1 as libc::c_int) << 13 as libc::c_int
-                                | (0x1 as libc::c_int) << 14 as libc::c_int;
+                            tmask = *FIELD_MASK_ALL_SECS;
                         }
                     }
                     19 => {
                         (*tm).tm_min += val;
                         AdjustFractSeconds(fval, tm, fsec, 60 as libc::c_int);
-                        tmask = (0x1 as libc::c_int) << 11 as libc::c_int;
+                        tmask = FieldMask::from(RealFieldType::Minute);
                     }
                     20 => {
                         (*tm).tm_hour += val;
                         AdjustFractSeconds(fval, tm, fsec, 3600 as libc::c_int);
-                        tmask = (0x1 as libc::c_int) << 10 as libc::c_int;
+                        tmask = FieldMask::from(RealFieldType::Hour);
                         type_0 = 21 as libc::c_int;
                     }
                     21 => {
                         (*tm).tm_mday += val;
                         AdjustFractSeconds(fval, tm, fsec, 86400 as libc::c_int);
-                        tmask = (0x1 as libc::c_int) << 3 as libc::c_int;
+                        tmask = FieldMask::from(RealFieldType::Day);
                     }
                     22 => {
                         (*tm).tm_mday += val * 7 as libc::c_int;
                         AdjustFractDays(fval, tm, fsec, 7 as libc::c_int);
-                        tmask = (0x1 as libc::c_int) << 24 as libc::c_int;
+                        tmask = FieldMask::from(RealFieldType::Week);
                     }
                     23 => {
                         (*tm).tm_mon += val;
                         AdjustFractDays(fval, tm, fsec, 30 as libc::c_int);
-                        tmask = (0x1 as libc::c_int) << 1 as libc::c_int;
+                        tmask = FieldMask::from(RealFieldType::Month);
                     }
                     25 => {
                         (*tm).tm_year += val;
                         (*tm).tm_mon = ((*tm).tm_mon as libc::c_double
                             + rint(fval * 12 as libc::c_int as libc::c_double))
                             as libc::c_int;
-                        tmask = (0x1 as libc::c_int) << 2 as libc::c_int;
+                        tmask = FieldMask::from(RealFieldType::Year);
                     }
                     26 => {
                         (*tm).tm_year += val * 10 as libc::c_int;
@@ -6444,7 +6305,7 @@ pub unsafe extern "C" fn DecodeInterval(
                                 fval * 12 as libc::c_int as libc::c_double
                                     * 10 as libc::c_int as libc::c_double,
                             )) as libc::c_int;
-                        tmask = (0x1 as libc::c_int) << 25 as libc::c_int;
+                        tmask = FieldMask::from(RealFieldType::Decade);
                     }
                     27 => {
                         (*tm).tm_year += val * 100 as libc::c_int;
@@ -6453,7 +6314,7 @@ pub unsafe extern "C" fn DecodeInterval(
                                 fval * 12 as libc::c_int as libc::c_double
                                     * 100 as libc::c_int as libc::c_double,
                             )) as libc::c_int;
-                        tmask = (0x1 as libc::c_int) << 26 as libc::c_int;
+                        tmask = FieldMask::from(RealFieldType::Century);
                     }
                     28 => {
                         (*tm).tm_year += val * 1000 as libc::c_int;
@@ -6462,7 +6323,7 @@ pub unsafe extern "C" fn DecodeInterval(
                                 fval * 12 as libc::c_int as libc::c_double
                                     * 1000 as libc::c_int as libc::c_double,
                             )) as libc::c_int;
-                        tmask = (0x1 as libc::c_int) << 27 as libc::c_int;
+                        tmask = FieldMask::from(RealFieldType::Millennium);
                     }
                     _ => return -(1 as libc::c_int),
                 }
@@ -6472,7 +6333,7 @@ pub unsafe extern "C" fn DecodeInterval(
         }
         match current_block_109 {
             2793352396589381719 => {
-                if tmask & fmask != 0 {
+                if tmask.intersects(fmask) {
                     return -(1 as libc::c_int);
                 }
                 fmask |= tmask;
@@ -6481,7 +6342,7 @@ pub unsafe extern "C" fn DecodeInterval(
         }
         i -= 1;
     }
-    if fmask == 0 as libc::c_int {
+    if fmask.is_none() {
         return -(1 as libc::c_int);
     }
     if *fsec != 0 as libc::c_int {

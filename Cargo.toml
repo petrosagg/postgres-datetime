@@ -7,6 +7,8 @@ edition = "2021"
 
 [dependencies]
 libc= "0.2"
+bitmask = "0.5"
+once_cell = "1"
 
 [dev-dependencies]
 datadriven = "0.6"
