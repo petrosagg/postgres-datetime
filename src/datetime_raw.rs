@@ -3647,31 +3647,25 @@ unsafe extern "C" fn ParseFractionalSecond(
     return 0 as libc::c_int;
 }
 
-/// ParseDateTime()
-///  Break string into tokens based on a date/time context.
-///  Returns 0 if successful, DTERR code if bogus input detected.
+/// Breaks string into tokens based on a date/time context.
+/// Returns an list of (field, type) pairs if successful or an error if bogus input detected.
 ///
-/// timestr - the input string
-/// fields - field strings are pushed in this vector
-/// ftypes - field type indicators are pushed in this vector
-///
-/// The fields extracted from the input are stored as separate,
-/// null-terminated strings in the workspace at workbuf. Any text is
-/// converted to lower case.
+/// The fields extracted from the input are stored as separate strings in the returned vector. Any
+/// text is converted to lower case.
 ///
 /// Several field types are assigned:
-///  FieldType::Number - digits and (possibly) a decimal point
-///  FieldType::Date - digits and two delimiters, or digits and text
-///  FieldType::Time - digits, colon delimiters, and possibly a decimal point
-///  FieldType::String - text (no digits or punctuation)
-///  FieldType::Special - leading "+" or "-" followed by text
-///  FieldType::Tz - leading "+" or "-" followed by digits (also eats ':', '.', '-')
+///   * FieldType::Number - digits and (possibly) a decimal point
+///   * FieldType::Date - digits and two delimiters, or digits and text
+///   * FieldType::Time - digits, colon delimiters, and possibly a decimal point
+///   * FieldType::String - text (no digits or punctuation)
+///   * FieldType::Special - leading "+" or "-" followed by text
+///   * FieldType::Tz - leading "+" or "-" followed by digits (also eats ':', '.', '-')
 ///
 /// Note that some field types can hold unexpected items:
-///  FieldType::Number can hold date fields (yy.ddd)
-///  FieldType::String can hold months (January) and time zones (PST)
-///  FieldType::Date can hold time zone names (America/New_York, GMT-8)
-pub fn ParseDateTime(mut timestr: &str) -> Result<Vec<(String, FieldType)>, i32> {
+///   * FieldType::Number can hold date fields (yy.ddd)
+///   * FieldType::String can hold months (January) and time zones (PST)
+///   * FieldType::Date can hold time zone names (America/New_York, GMT-8)
+pub fn parse_datetime(timestr: &str) -> Result<Vec<(String, FieldType)>, i32> {
     let mut ret = vec![];
     let mut nf: libc::c_int = 0 as libc::c_int;
     let mut cp = timestr.chars().peekable();

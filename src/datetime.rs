@@ -1,6 +1,6 @@
 use std::ffi::CString;
 
-use crate::datetime_raw::{fsec_t, pg_tm, DateADT, DecodeDateTime, ParseDateTime};
+use crate::datetime_raw::{fsec_t, pg_tm, DateADT, DecodeDateTime};
 
 #[derive(Debug)]
 pub enum FieldType {
@@ -40,10 +40,6 @@ pub enum FieldType {
     TzMinute,
     IsoYear,
     IsoDow,
-}
-
-pub fn parse(s: &str) -> Result<Vec<(String, FieldType)>, i32> {
-    ParseDateTime(s)
 }
 
 pub fn decode(fields: Vec<(String, FieldType)>) -> Result<(pg_tm, fsec_t, i32, i32), i32> {
