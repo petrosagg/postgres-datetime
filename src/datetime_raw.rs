@@ -54,9 +54,17 @@ fn errcode(sqlerrcode: libc::c_int) -> libc::c_int {
     0
 }
 fn errmsg0(fmt: *const libc::c_char) -> libc::c_int {
+    unsafe {
+        let s = std::ffi::CStr::from_ptr(fmt);
+        println!("{}", s.to_str().unwrap());
+    }
     0
 }
 fn errmsg(fmt: *const libc::c_char, arg: *mut libc::c_void) -> libc::c_int {
+    unsafe {
+        let s = std::ffi::CStr::from_ptr(fmt);
+        println!("{}", s.to_str().unwrap());
+    }
     0
 }
 fn errmsg2(
@@ -64,9 +72,17 @@ fn errmsg2(
     arg1: *mut libc::c_void,
     arg2: *mut libc::c_void,
 ) -> libc::c_int {
+    unsafe {
+        let s = std::ffi::CStr::from_ptr(fmt);
+        println!("{}", s.to_str().unwrap());
+    }
     0
 }
 fn errdetail(fmt: *const libc::c_char, arg: *mut libc::c_void) -> libc::c_int {
+    unsafe {
+        let s = std::ffi::CStr::from_ptr(fmt);
+        println!("{}", s.to_str().unwrap());
+    }
     0
 }
 fn GetCurrentTransactionStartTimestamp() -> TimestampTz {
@@ -231,6 +247,7 @@ fn timestamp2tm(
 
         /* Julian day routine does not work for negative Julian days */
         if date < 0 || date > libc::INT_MAX.into() {
+            eprintln!("Julian day routine does not work for negative Julian days");
             return -1;
         }
 
@@ -3793,6 +3810,7 @@ unsafe extern "C" fn ParseFractionalSecond(
     *__errno_location() = 0 as libc::c_int;
     frac = strtod(cp, &mut cp);
     if *cp as libc::c_int != '\0' as i32 || *__errno_location() != 0 as libc::c_int {
+        eprintln!("parse fractional second failed");
         return -(1 as libc::c_int);
     }
     *fsec = rint(frac * 1000000 as libc::c_int as libc::c_double) as fsec_t;
@@ -3965,17 +3983,17 @@ pub fn parse_datetime(input: &str) -> Result<Vec<(String, TokenFieldType)>, i32>
 /// Return 0 if full date, 1 if only time, and negative DTERR code if problems.
 /// (Currently, all callers treat 1 as an error return too.)
 ///
-///  	External format(s):
-///  			"<weekday> <month>-<day>-<year> <hour>:<minute>:<second>"
-///  			"Fri Feb-7-1997 15:23:27"
-///  			"Feb-7-1997 15:23:27"
-///  			"2-7-1997 15:23:27"
-///  			"1997-2-7 15:23:27"
-///  			"1997.038 15:23:27"		(day of year 1-366)
-///  	Also supports input in compact time:
-///  			"970207 152327"
-///  			"97038 152327"
-///  			"20011225T040506.789-07"
+///  External format(s):
+///  		"<weekday> <month>-<day>-<year> <hour>:<minute>:<second>"
+///  		"Fri Feb-7-1997 15:23:27"
+///  		"Feb-7-1997 15:23:27"
+///  		"2-7-1997 15:23:27"
+///  		"1997-2-7 15:23:27"
+///  		"1997.038 15:23:27"		(day of year 1-366)
+///  Also supports input in compact time:
+///  		"970207 152327"
+///  		"97038 152327"
+///  		"20011225T040506.789-07"
 ///
 /// Use the system-provided functions to get the current time zone
 /// if not specified in the input string.
@@ -4045,6 +4063,7 @@ pub unsafe extern "C" fn DecodeDateTime(
                     let mut cp: *mut libc::c_char = 0 as *mut libc::c_char;
                     let mut val_0: libc::c_int = 0;
                     if tzp.is_null() {
+                        eprintln!("tzp is null");
                         return -(1 as libc::c_int);
                     }
                     *__errno_location() = 0 as libc::c_int;
@@ -4076,6 +4095,7 @@ pub unsafe extern "C" fn DecodeDateTime(
                 } else if ptype != 0 || fmask.contains(RealFieldType::Month | RealFieldType::Day) {
 					// No time zone accepted? Then quit...
                     if tzp.is_null() {
+                        eprintln!("tzp is null");
                         return -1;
                     }
                     if *(*__ctype_b_loc())
@@ -4088,6 +4108,7 @@ pub unsafe extern "C" fn DecodeDateTime(
                         let mut cp_0: *mut libc::c_char = 0 as *mut libc::c_char;
                         if ptype != 0 as libc::c_int {
                             if ptype != 3 as libc::c_int {
+                                eprintln!("ptype is not 3: {}", ptype);
                                 return -(1 as libc::c_int);
                             }
                             ptype = 0;
@@ -4096,10 +4117,12 @@ pub unsafe extern "C" fn DecodeDateTime(
 						// field? Then we are in trouble with a date and time
 						// already...
                         if fmask.contains(*FIELD_MASK_TIME) {
+                            eprintln!("started with a digit but already have a time");
                             return -1;
                         }
                         cp_0 = strchr(*field.offset(i as isize), '-' as i32);
                         if cp_0.is_null() {
+                            eprintln!("couldn't find '-' character");
                             return -(1 as libc::c_int);
                         }
                         dterr = DecodeTimezone(cp_0, tzp);
@@ -4183,6 +4206,7 @@ pub unsafe extern "C" fn DecodeDateTime(
             3 => {
                 if ptype != 0 as libc::c_int {
                     if ptype != 3 as libc::c_int {
+                        eprintln!("ptype is not 3: {}", ptype);
                         return -(1 as libc::c_int);
                     }
                     ptype = 0 as libc::c_int;
@@ -4206,6 +4230,7 @@ pub unsafe extern "C" fn DecodeDateTime(
             4 => {
                 let mut tz: libc::c_int = 0;
                 if tzp.is_null() {
+                    eprintln!("tzp is null");
                     return -(1 as libc::c_int);
                 }
                 dterr = DecodeTimezone(*field.offset(i as isize), &mut tz);
@@ -4228,9 +4253,13 @@ pub unsafe extern "C" fn DecodeDateTime(
                     if *cp_1 as libc::c_int == '.' as i32 {
                         match ptype {
                             31 | 3 | 18 => {}
-                            _ => return -(1 as libc::c_int),
+                            _ => {
+                                eprintln!("ptype is not 31 3 or 18: {}", ptype);
+                                return -(1 as libc::c_int)
+                            }
                         }
                     } else if *cp_1 as libc::c_int != '\0' as i32 {
+                        eprintln!("expected EOF");
                         return -(1 as libc::c_int);
                     }
                     match ptype {
@@ -4297,6 +4326,7 @@ pub unsafe extern "C" fn DecodeDateTime(
                                 if *cp_1 as libc::c_int != '\0' as i32
                                     || *__errno_location() != 0 as libc::c_int
                                 {
+                                    eprintln!("unclear what happened");
                                     return -(1 as libc::c_int);
                                 }
                                 time *= 86400000000 as libc::c_long as libc::c_double;
@@ -4324,10 +4354,14 @@ pub unsafe extern "C" fn DecodeDateTime(
                                 return dterr;
                             }
                             if tmask != *FIELD_MASK_TIME {
+                                eprintln!("tmask is not FIELD_MASK_TIME");
                                 return -(1 as libc::c_int);
                             }
                         }
-                        _ => return -(1 as libc::c_int),
+                        typ => {
+                            eprintln!("unexpected ptype: {}", typ);
+                            return -(1 as libc::c_int);
+                        }
                     }
                     ptype = 0 as libc::c_int;
                     *dtype = 2 as libc::c_int;
@@ -4402,8 +4436,7 @@ pub unsafe extern "C" fn DecodeDateTime(
                 if type_0 == 8 as libc::c_int {
                     current_block_236 = 12209867499936983673;
                 } else {
-                    let typ: RealFieldType = None.expect("convert type_0 to RealFieldType");
-                    tmask = FieldMask::from(typ);
+                    tmask = FieldMask::from(RealFieldType::from(1 << type_0));
                     match type_0 {
                         0 => match val {
                             12 => {
@@ -4475,6 +4508,7 @@ pub unsafe extern "C" fn DecodeDateTime(
                             tmask.set(RealFieldType::DTz);
                             (*tm).tm_isdst = 1 as libc::c_int;
                             if tzp.is_null() {
+                                eprintln!("tzp is null");
                                 return -(1 as libc::c_int);
                             }
                             *tzp -= val;
@@ -4483,6 +4517,7 @@ pub unsafe extern "C" fn DecodeDateTime(
                             tmask.set(RealFieldType::Tz);
                             (*tm).tm_isdst = 1 as libc::c_int;
                             if tzp.is_null() {
+                                eprintln!("tzp is null");
                                 return -(1 as libc::c_int);
                             }
                             *tzp = -val;
@@ -4490,6 +4525,7 @@ pub unsafe extern "C" fn DecodeDateTime(
                         5 => {
                             (*tm).tm_isdst = 0 as libc::c_int;
                             if tzp.is_null() {
+                                eprintln!("tzp is null");
                                 return -(1 as libc::c_int);
                             }
                             *tzp = -val;
@@ -4497,6 +4533,7 @@ pub unsafe extern "C" fn DecodeDateTime(
                         7 => {
                             tmask.set(RealFieldType::Tz);
                             if tzp.is_null() {
+                                eprintln!("tzp is null");
                                 return -(1 as libc::c_int);
                             }
                             abbrevTz = valtz;
@@ -4522,6 +4559,7 @@ pub unsafe extern "C" fn DecodeDateTime(
 
                             // No preceding date? Then quit...
                             if !fmask.contains(*FIELD_MASK_DATE) {
+                                eprintln!("no preceding date");
                                 return -(1 as libc::c_int);
                             }
 
@@ -4537,6 +4575,7 @@ pub unsafe extern "C" fn DecodeDateTime(
                                     && *ftype.offset((i + 1 as libc::c_int) as isize)
                                         != 2 as libc::c_int
                             {
+                                eprintln!("next field are not the right type");
                                 return -(1 as libc::c_int);
                             }
                             ptype = val;
@@ -4546,11 +4585,15 @@ pub unsafe extern "C" fn DecodeDateTime(
                             // if it is an all-alpha timezone name.
                             namedTz = pg_tzset(*field.offset(i as isize));
                             if namedTz.is_null() {
+                                eprintln!("namedTz is null");
                                 return -(1 as libc::c_int);
                             }
                             tmask = FieldMask::from(RealFieldType::Tz);
                         }
-                        _ => return -(1 as libc::c_int),
+                        mask => {
+                            eprintln!("unexpected mask: {:b}", mask);
+                            return -(1 as libc::c_int);
+                        }
                     }
                     current_block_236 = 13797367574128857302;
                 }
@@ -5218,8 +5261,7 @@ pub unsafe extern "C" fn DecodeTimeOnly(
                 if type_0 == 8 as libc::c_int {
                     current_block_201 = 13536709405535804910;
                 } else {
-                    let typ: RealFieldType = None.expect("convert type to RealFieldType");
-                    tmask = FieldMask::from(typ);
+                    tmask = FieldMask::from(RealFieldType::from(1 << type_0));
                     match type_0 {
                         0 => match val {
                             12 => {
@@ -5515,8 +5557,7 @@ unsafe extern "C" fn DecodeDate(
         {
             type_0 = DecodeSpecial(i, field[i as usize], &mut val);
             if !(type_0 == 8 as libc::c_int) {
-                let typ: RealFieldType = None.expect("convert type_0 to RealFieldType");
-                dmask = FieldMask::from(typ);
+                dmask = FieldMask::from(RealFieldType::from(1 << type_0));
                 match type_0 {
                     1 => {
                         (*tm).tm_mon = val;

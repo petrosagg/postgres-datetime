@@ -55,42 +55,80 @@ pub enum TokenFieldType {
 // that the associated bitmasks can fit into the left half of an INTERVAL's typmod value.  Since
 // those bits are stored in typmods, you can't change them without initdb!
 bitmask! {
-    pub mask FieldMask: i32 where flags RealFieldType {
-        Reserved = 0,
-        Month = 1,
-        Year = 2,
-        Day = 3,
-        Julian = 4,
-        Tz = 5,               /* fixed-offset timezone abbreviation */
-        DTz = 6,               /* fixed-offset timezone abbrev, DST */
-        DynTz = 7,               /* dynamic timezone abbreviation */
-        IgnoreDtf = 8,
-        AmPm = 9,
-        Hour = 10,
-        Minute = 11,
-        Second = 12,
-        Millisecond = 13,
-        Microsecond = 14,
-        Doy = 15,
-        Dow = 16,
-        Units = 17,
-        Adbc = 18,
+    pub mask FieldMask: u32 where flags RealFieldType {
+        Reserved = 1 << 0,
+        Month = 1 << 1,
+        Year = 1 << 2,
+        Day = 1 << 3,
+        Julian = 1 << 4,
+        Tz = 1 << 5,               /* fixed-offset timezone abbreviation */
+        DTz = 1 << 6,               /* fixed-offset timezone abbrev, DST */
+        DynTz = 1 << 7,               /* dynamic timezone abbreviation */
+        IgnoreDtf = 1 << 8,
+        AmPm = 1 << 9,
+        Hour = 1 << 10,
+        Minute = 1 << 11,
+        Second = 1 << 12,
+        Millisecond = 1 << 13,
+        Microsecond = 1 << 14,
+        Doy = 1 << 15,
+        Dow = 1 << 16,
+        Units = 1 << 17,
+        Adbc = 1 << 18,
         /* these are only for relative dates */
-        Ago = 19,
-        AbsBefore = 20,
-        AbsAfter = 21,
+        Ago = 1 << 19,
+        AbsBefore = 1 << 20,
+        AbsAfter = 1 << 21,
         /* generic fields to help with parsing */
-        IsoDate = 22,
-        IsoTime = 23,
+        IsoDate = 1 << 22,
+        IsoTime = 1 << 23,
         /* these are only for parsing intervals */
-        Week = 24,
-        Decade = 25,
-        Century = 26,
-        Millennium = 27,
+        Week = 1 << 24,
+        Decade = 1 << 25,
+        Century = 1 << 26,
+        Millennium = 1 << 27,
         /* hack for parsing two-word timezone specs "MET DST" etc */
-        DtzMod = 28,              /* "DST" as a separate word */
+        DtzMod = 1 << 28,              /* "DST" as a separate word */
         /* reserved for unrecognized string values */
-        UnknownField = 31,
+        UnknownField = 1 << 31,
+    }
+}
+
+impl From<u32> for RealFieldType {
+    fn from(n: u32) -> Self {
+        match n {
+            0b00000000_00000000_00000000_00000001 => Self::Reserved,
+            0b00000000_00000000_00000000_00000010 => Self::Month,
+            0b00000000_00000000_00000000_00000100 => Self::Year,
+            0b00000000_00000000_00000000_00001000 => Self::Day,
+            0b00000000_00000000_00000000_00010000 => Self::Julian,
+            0b00000000_00000000_00000000_00100000 => Self::Tz,
+            0b00000000_00000000_00000000_01000000 => Self::DTz,
+            0b00000000_00000000_00000000_10000000 => Self::DynTz,
+            0b00000000_00000000_00000001_00000000 => Self::IgnoreDtf,
+            0b00000000_00000000_00000010_00000000 => Self::AmPm,
+            0b00000000_00000000_00000100_00000000 => Self::Hour,
+            0b00000000_00000000_00001000_00000000 => Self::Minute,
+            0b00000000_00000000_00010000_00000000 => Self::Second,
+            0b00000000_00000000_00100000_00000000 => Self::Millisecond,
+            0b00000000_00000000_01000000_00000000 => Self::Microsecond,
+            0b00000000_00000000_10000000_00000000 => Self::Doy,
+            0b00000000_00000001_00000000_00000000 => Self::Dow,
+            0b00000000_00000010_00000000_00000000 => Self::Units,
+            0b00000000_00000100_00000000_00000000 => Self::Adbc,
+            0b00000000_00001000_00000000_00000000 => Self::Ago,
+            0b00000000_00010000_00000000_00000000 => Self::AbsBefore,
+            0b00000000_00100000_00000000_00000000 => Self::AbsAfter,
+            0b00000000_01000000_00000000_00000000 => Self::IsoDate,
+            0b00000000_10000000_00000000_00000000 => Self::IsoTime,
+            0b00000001_00000000_00000000_00000000 => Self::Week,
+            0b00000010_00000000_00000000_00000000 => Self::Decade,
+            0b00000100_00000000_00000000_00000000 => Self::Century,
+            0b00001000_00000000_00000000_00000000 => Self::Millennium,
+            0b00010000_00000000_00000000_00000000 => Self::DtzMod,
+            0b10000000_00000000_00000000_00000000 => Self::UnknownField,
+            n => panic!("unknown field {n}"),
+        }
     }
 }
 
