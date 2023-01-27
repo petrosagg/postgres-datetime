@@ -46,11 +46,7 @@ fn errstart(elevel: libc::c_int, domain: *const libc::c_char) -> bool_0 {
 fn errstart_cold(elevel: libc::c_int, domain: *const libc::c_char) -> bool_0 {
     0
 }
-fn errfinish(
-    filename: *const libc::c_char,
-    lineno: libc::c_int,
-    funcname: *const libc::c_char,
-) {}
+fn errfinish(filename: *const libc::c_char, lineno: libc::c_int, funcname: *const libc::c_char) {}
 fn errcode(sqlerrcode: libc::c_int) -> libc::c_int {
     0
 }
@@ -60,7 +56,11 @@ fn errmsg0(fmt: *const libc::c_char) -> libc::c_int {
 fn errmsg(fmt: *const libc::c_char, arg: *mut libc::c_void) -> libc::c_int {
     0
 }
-fn errmsg2(fmt: *const libc::c_char, arg1: *mut libc::c_void, arg2: *mut libc::c_void) -> libc::c_int {
+fn errmsg2(
+    fmt: *const libc::c_char,
+    arg1: *mut libc::c_void,
+    arg2: *mut libc::c_void,
+) -> libc::c_int {
     0
 }
 fn errdetail(fmt: *const libc::c_char, arg: *mut libc::c_void) -> libc::c_int {
@@ -111,11 +111,7 @@ fn pg_tzset(tzname: *const libc::c_char) -> *mut pg_tz {
 }
 static mut session_timezone: *mut pg_tz = 0 as *mut _;
 
-fn strlcpy(
-    dst: *mut libc::c_char,
-    src: *const libc::c_char,
-    siz: libc::c_ulong,
-) -> libc::c_ulong {
+fn strlcpy(dst: *mut libc::c_char, src: *const libc::c_char, siz: libc::c_ulong) -> libc::c_ulong {
     unsafe {
         let mut d: *mut libc::c_char = dst;
         let mut s: *const libc::c_char = src;
@@ -140,14 +136,14 @@ fn strlcpy(
         /* Not enough room in dst, add NUL and traverse rest of src */
         if n == 0 {
             if siz != 0 {
-                *d = 0;          /* NUL-terminate dst */
+                *d = 0; /* NUL-terminate dst */
             }
             while *s != 0 {
                 s = s.offset(1);
             }
         }
 
-        return (s as isize - src as isize - 1) as u64;       /* count does not include NUL */
+        return (s as isize - src as isize - 1) as u64; /* count does not include NUL */
     }
 }
 fn strtoint(
@@ -160,17 +156,17 @@ fn strtoint(
         return val.try_into().unwrap();
     }
 }
-fn time_overflows(
-    hour: libc::c_int,
-    min: libc::c_int,
-    sec: libc::c_int,
-    fsec: fsec_t,
-) -> bool_0 {
+fn time_overflows(hour: libc::c_int, min: libc::c_int, sec: libc::c_int, fsec: fsec_t) -> bool_0 {
     /* Range-check the fields individually. */
-    if hour < 0 || hour > HOURS_PER_DAY ||
-        min < 0 || min >= MINS_PER_HOUR ||
-        sec < 0 || sec > SECS_PER_MINUTE ||
-        fsec < 0 || fsec as i64 > USECS_PER_SEC {
+    if hour < 0
+        || hour > HOURS_PER_DAY
+        || min < 0
+        || min >= MINS_PER_HOUR
+        || sec < 0
+        || sec > SECS_PER_MINUTE
+        || fsec < 0
+        || fsec as i64 > USECS_PER_SEC
+    {
         return 1;
     }
 
@@ -179,7 +175,11 @@ fn time_overflows(
      * that the total time value doesn't exceed 24:00:00.
      */
     if (((((hour as i64 * MINS_PER_HOUR as i64 + min as i64) * SECS_PER_MINUTE as i64)
-           + sec as i64) * USECS_PER_SEC as i64) + fsec as i64) > USECS_PER_DAY {
+        + sec as i64)
+        * USECS_PER_SEC as i64)
+        + fsec as i64)
+        > USECS_PER_DAY
+    {
         return 1;
     }
 
@@ -193,7 +193,7 @@ fn time_overflows(
 fn TMODULO(t: &mut i64, q: &mut i64, u: i64) {
     *q = *t / u;
     if *q != 0 {
-       *t -= *q * u;
+        *t -= *q * u;
     }
 }
 
@@ -231,8 +231,19 @@ fn timestamp2tm(
             return -1;
         }
 
-        j2date(date.try_into().unwrap(), &mut (*tm).tm_year, &mut (*tm).tm_mon, &mut (*tm).tm_mday);
-        dt2time(time, &mut (*tm).tm_hour, &mut (*tm).tm_min, &mut (*tm).tm_sec, fsec);
+        j2date(
+            date.try_into().unwrap(),
+            &mut (*tm).tm_year,
+            &mut (*tm).tm_mon,
+            &mut (*tm).tm_mday,
+        );
+        dt2time(
+            time,
+            &mut (*tm).tm_hour,
+            &mut (*tm).tm_min,
+            &mut (*tm).tm_sec,
+            fsec,
+        );
 
         /* Done if no TZ conversion wanted */
         if tzp.is_null() {
@@ -255,8 +266,8 @@ fn timestamp2tm(
          * coding avoids hardwiring any assumptions about the width of pg_time_t,
          * so it should behave sanely on machines without int64.
          */
-        dt = (dt - *fsec as i64) / USECS_PER_SEC +
-            (POSTGRES_EPOCH_JDATE - UNIX_EPOCH_JDATE) * SECS_PER_DAY as i64;
+        dt = (dt - *fsec as i64) / USECS_PER_SEC
+            + (POSTGRES_EPOCH_JDATE - UNIX_EPOCH_JDATE) * SECS_PER_DAY as i64;
         utime = dt;
         if utime == dt {
             let tx = pg_localtime(&utime, attimezone);
@@ -315,34 +326,18 @@ extern "C" {
     fn strtod(_: *const libc::c_char, _: *mut *mut libc::c_char) -> libc::c_double;
     fn malloc(_: libc::c_ulong) -> *mut libc::c_void;
     fn abs(_: libc::c_int) -> libc::c_int;
-    fn memcpy(
-        _: *mut libc::c_void,
-        _: *const libc::c_void,
-        _: libc::c_ulong,
-    ) -> *mut libc::c_void;
-    fn memset(
-        _: *mut libc::c_void,
-        _: libc::c_int,
-        _: libc::c_ulong,
-    ) -> *mut libc::c_void;
+    fn memcpy(_: *mut libc::c_void, _: *const libc::c_void, _: libc::c_ulong) -> *mut libc::c_void;
+    fn memset(_: *mut libc::c_void, _: libc::c_int, _: libc::c_ulong) -> *mut libc::c_void;
     fn strcpy(_: *mut libc::c_char, _: *const libc::c_char) -> *mut libc::c_char;
     fn strcat(_: *mut libc::c_char, _: *const libc::c_char) -> *mut libc::c_char;
     fn strcmp(_: *const libc::c_char, _: *const libc::c_char) -> libc::c_int;
-    fn strncmp(
-        _: *const libc::c_char,
-        _: *const libc::c_char,
-        _: libc::c_ulong,
-    ) -> libc::c_int;
+    fn strncmp(_: *const libc::c_char, _: *const libc::c_char, _: libc::c_ulong) -> libc::c_int;
     fn strchr(_: *const libc::c_char, _: libc::c_int) -> *mut libc::c_char;
     fn strspn(_: *const libc::c_char, _: *const libc::c_char) -> libc::c_ulong;
     fn strlen(_: *const libc::c_char) -> libc::c_ulong;
     fn __errno_location() -> *mut libc::c_int;
     fn __ctype_b_loc() -> *mut *const libc::c_ushort;
-    fn pg_sprintf(
-        str: *mut libc::c_char,
-        fmt: *const libc::c_char,
-        _: ...
-    ) -> libc::c_int;
+    fn pg_sprintf(str: *mut libc::c_char, fmt: *const libc::c_char, _: ...) -> libc::c_int;
     fn palloc(size: Size) -> *mut libc::c_void;
     static mut CurrentMemoryContext: MemoryContext;
     fn floor(_: libc::c_double) -> libc::c_double;
@@ -475,25 +470,20 @@ pub struct MemoryContextCallback {
     pub arg: *mut libc::c_void,
     pub next: *mut MemoryContextCallback,
 }
-pub type MemoryContextCallbackFunction = Option::<
-    unsafe extern "C" fn(*mut libc::c_void) -> (),
->;
+pub type MemoryContextCallbackFunction = Option<unsafe extern "C" fn(*mut libc::c_void) -> ()>;
 pub type MemoryContext = *mut MemoryContextData;
 #[derive(Copy, Clone)]
 #[repr(C)]
 pub struct MemoryContextMethods {
-    pub alloc: Option::<unsafe extern "C" fn(MemoryContext, Size) -> *mut libc::c_void>,
-    pub free_p: Option::<unsafe extern "C" fn(MemoryContext, *mut libc::c_void) -> ()>,
-    pub realloc: Option::<
-        unsafe extern "C" fn(MemoryContext, *mut libc::c_void, Size) -> *mut libc::c_void,
-    >,
-    pub reset: Option::<unsafe extern "C" fn(MemoryContext) -> ()>,
-    pub delete_context: Option::<unsafe extern "C" fn(MemoryContext) -> ()>,
-    pub get_chunk_space: Option::<
-        unsafe extern "C" fn(MemoryContext, *mut libc::c_void) -> Size,
-    >,
-    pub is_empty: Option::<unsafe extern "C" fn(MemoryContext) -> bool_0>,
-    pub stats: Option::<
+    pub alloc: Option<unsafe extern "C" fn(MemoryContext, Size) -> *mut libc::c_void>,
+    pub free_p: Option<unsafe extern "C" fn(MemoryContext, *mut libc::c_void) -> ()>,
+    pub realloc:
+        Option<unsafe extern "C" fn(MemoryContext, *mut libc::c_void, Size) -> *mut libc::c_void>,
+    pub reset: Option<unsafe extern "C" fn(MemoryContext) -> ()>,
+    pub delete_context: Option<unsafe extern "C" fn(MemoryContext) -> ()>,
+    pub get_chunk_space: Option<unsafe extern "C" fn(MemoryContext, *mut libc::c_void) -> Size>,
+    pub is_empty: Option<unsafe extern "C" fn(MemoryContext) -> bool_0>,
+    pub stats: Option<
         unsafe extern "C" fn(
             MemoryContext,
             MemoryStatsPrintFunc,
@@ -511,13 +501,8 @@ pub struct MemoryContextCounters {
     pub totalspace: Size,
     pub freespace: Size,
 }
-pub type MemoryStatsPrintFunc = Option::<
-    unsafe extern "C" fn(
-        MemoryContext,
-        *mut libc::c_void,
-        *const libc::c_char,
-        bool_0,
-    ) -> (),
+pub type MemoryStatsPrintFunc = Option<
+    unsafe extern "C" fn(MemoryContext, *mut libc::c_void, *const libc::c_char, bool_0) -> (),
 >;
 pub type NodeTag = libc::c_uint;
 pub const T_SupportRequestIndexCondition: NodeTag = 430;
@@ -975,8 +960,8 @@ pub struct ItemPointerData_Inner {
     pub ip_posid: OffsetNumber,
 }
 #[allow(dead_code, non_upper_case_globals)]
-const ItemPointerData_PADDING: usize = ::core::mem::size_of::<ItemPointerData>()
-    - ::core::mem::size_of::<ItemPointerData_Inner>();
+const ItemPointerData_PADDING: usize =
+    ::core::mem::size_of::<ItemPointerData>() - ::core::mem::size_of::<ItemPointerData_Inner>();
 #[derive(Copy, Clone)]
 #[repr(C)]
 pub struct HeapTupleHeaderData {
@@ -1224,29 +1209,18 @@ pub struct AttrMap {
 #[repr(C)]
 pub struct TupleTableSlotOps {
     pub base_slot_size: size_t,
-    pub init: Option::<unsafe extern "C" fn(*mut TupleTableSlot) -> ()>,
-    pub release: Option::<unsafe extern "C" fn(*mut TupleTableSlot) -> ()>,
-    pub clear: Option::<unsafe extern "C" fn(*mut TupleTableSlot) -> ()>,
-    pub getsomeattrs: Option::<
-        unsafe extern "C" fn(*mut TupleTableSlot, libc::c_int) -> (),
-    >,
-    pub getsysattr: Option::<
-        unsafe extern "C" fn(*mut TupleTableSlot, libc::c_int, *mut bool_0) -> Datum,
-    >,
-    pub materialize: Option::<unsafe extern "C" fn(*mut TupleTableSlot) -> ()>,
-    pub copyslot: Option::<
-        unsafe extern "C" fn(*mut TupleTableSlot, *mut TupleTableSlot) -> (),
-    >,
-    pub get_heap_tuple: Option::<unsafe extern "C" fn(*mut TupleTableSlot) -> HeapTuple>,
-    pub get_minimal_tuple: Option::<
-        unsafe extern "C" fn(*mut TupleTableSlot) -> MinimalTuple,
-    >,
-    pub copy_heap_tuple: Option::<
-        unsafe extern "C" fn(*mut TupleTableSlot) -> HeapTuple,
-    >,
-    pub copy_minimal_tuple: Option::<
-        unsafe extern "C" fn(*mut TupleTableSlot) -> MinimalTuple,
-    >,
+    pub init: Option<unsafe extern "C" fn(*mut TupleTableSlot) -> ()>,
+    pub release: Option<unsafe extern "C" fn(*mut TupleTableSlot) -> ()>,
+    pub clear: Option<unsafe extern "C" fn(*mut TupleTableSlot) -> ()>,
+    pub getsomeattrs: Option<unsafe extern "C" fn(*mut TupleTableSlot, libc::c_int) -> ()>,
+    pub getsysattr:
+        Option<unsafe extern "C" fn(*mut TupleTableSlot, libc::c_int, *mut bool_0) -> Datum>,
+    pub materialize: Option<unsafe extern "C" fn(*mut TupleTableSlot) -> ()>,
+    pub copyslot: Option<unsafe extern "C" fn(*mut TupleTableSlot, *mut TupleTableSlot) -> ()>,
+    pub get_heap_tuple: Option<unsafe extern "C" fn(*mut TupleTableSlot) -> HeapTuple>,
+    pub get_minimal_tuple: Option<unsafe extern "C" fn(*mut TupleTableSlot) -> MinimalTuple>,
+    pub copy_heap_tuple: Option<unsafe extern "C" fn(*mut TupleTableSlot) -> HeapTuple>,
+    pub copy_minimal_tuple: Option<unsafe extern "C" fn(*mut TupleTableSlot) -> MinimalTuple>,
 }
 #[derive(Copy, Clone)]
 #[repr(C)]
@@ -1352,7 +1326,7 @@ pub struct FmgrInfo {
     pub fn_mcxt: MemoryContext,
     pub fn_expr: fmNodePtr,
 }
-pub type PGFunction = Option::<unsafe extern "C" fn(FunctionCallInfo) -> Datum>;
+pub type PGFunction = Option<unsafe extern "C" fn(FunctionCallInfo) -> Datum>;
 pub type FunctionCallInfo = *mut FunctionCallInfoBaseData;
 #[derive(Copy, Clone)]
 #[repr(C)]
@@ -1404,19 +1378,11 @@ pub struct ParamExternData {
     pub pflags: uint16,
     pub ptype: Oid,
 }
-pub type ParserSetupHook = Option::<
-    unsafe extern "C" fn(*mut ParseState, *mut libc::c_void) -> (),
+pub type ParserSetupHook = Option<unsafe extern "C" fn(*mut ParseState, *mut libc::c_void) -> ()>;
+pub type ParamCompileHook = Option<
+    unsafe extern "C" fn(ParamListInfo, *mut Param, *mut ExprState, *mut Datum, *mut bool_0) -> (),
 >;
-pub type ParamCompileHook = Option::<
-    unsafe extern "C" fn(
-        ParamListInfo,
-        *mut Param,
-        *mut ExprState,
-        *mut Datum,
-        *mut bool_0,
-    ) -> (),
->;
-pub type ParamFetchHook = Option::<
+pub type ParamFetchHook = Option<
     unsafe extern "C" fn(
         ParamListInfo,
         libc::c_int,
@@ -1494,7 +1460,7 @@ pub struct ExprContext_CB {
     pub function: ExprContextCallbackFunction,
     pub arg: Datum,
 }
-pub type ExprContextCallbackFunction = Option::<unsafe extern "C" fn(Datum) -> ()>;
+pub type ExprContextCallbackFunction = Option<unsafe extern "C" fn(Datum) -> ()>;
 #[derive(Copy, Clone)]
 #[repr(C)]
 pub struct EState {
@@ -1814,12 +1780,9 @@ pub type ScanDirection = libc::c_int;
 pub const ForwardScanDirection: ScanDirection = 1;
 pub const NoMovementScanDirection: ScanDirection = 0;
 pub const BackwardScanDirection: ScanDirection = -1;
-pub type ExecProcNodeMtd = Option::<
-    unsafe extern "C" fn(*mut PlanState) -> *mut TupleTableSlot,
->;
-pub type ExprStateEvalFunc = Option::<
-    unsafe extern "C" fn(*mut ExprState, *mut ExprContext, *mut bool_0) -> Datum,
->;
+pub type ExecProcNodeMtd = Option<unsafe extern "C" fn(*mut PlanState) -> *mut TupleTableSlot>;
+pub type ExprStateEvalFunc =
+    Option<unsafe extern "C" fn(*mut ExprState, *mut ExprContext, *mut bool_0) -> Datum>;
 pub type ExprDoneCond = libc::c_uint;
 pub const ExprEndResult: ExprDoneCond = 2;
 pub const ExprMultipleResult: ExprDoneCond = 1;
@@ -1919,10 +1882,7 @@ unsafe extern "C" fn MemoryContextSwitchTo(mut context: MemoryContext) -> Memory
     return old;
 }
 #[inline]
-unsafe extern "C" fn list_nth_cell(
-    mut list: *const List,
-    mut n: libc::c_int,
-) -> *mut ListCell {
+unsafe extern "C" fn list_nth_cell(mut list: *const List, mut n: libc::c_int) -> *mut ListCell {
     return &mut *((*list).elements).offset(n as isize) as *mut ListCell;
 }
 #[no_mangle]
@@ -1989,10 +1949,9 @@ static mut datetktbl: [datetkn; 71] = unsafe {
     [
         {
             let mut init = datetkn {
-                token: *::core::mem::transmute::<
-                    &[u8; 11],
-                    &mut [libc::c_char; 11],
-                >(b"-infinity\0\0"),
+                token: *::core::mem::transmute::<&[u8; 11], &mut [libc::c_char; 11]>(
+                    b"-infinity\0\0",
+                ),
                 type_0: 0 as libc::c_int as libc::c_char,
                 value: 9 as libc::c_int,
             };
@@ -2000,10 +1959,9 @@ static mut datetktbl: [datetkn; 71] = unsafe {
         },
         {
             let mut init = datetkn {
-                token: *::core::mem::transmute::<
-                    &[u8; 11],
-                    &mut [libc::c_char; 11],
-                >(b"ad\0\0\0\0\0\0\0\0\0"),
+                token: *::core::mem::transmute::<&[u8; 11], &mut [libc::c_char; 11]>(
+                    b"ad\0\0\0\0\0\0\0\0\0",
+                ),
                 type_0: 18 as libc::c_int as libc::c_char,
                 value: 0 as libc::c_int,
             };
@@ -2011,10 +1969,9 @@ static mut datetktbl: [datetkn; 71] = unsafe {
         },
         {
             let mut init = datetkn {
-                token: *::core::mem::transmute::<
-                    &[u8; 11],
-                    &mut [libc::c_char; 11],
-                >(b"allballs\0\0\0"),
+                token: *::core::mem::transmute::<&[u8; 11], &mut [libc::c_char; 11]>(
+                    b"allballs\0\0\0",
+                ),
                 type_0: 0 as libc::c_int as libc::c_char,
                 value: 16 as libc::c_int,
             };
@@ -2022,10 +1979,9 @@ static mut datetktbl: [datetkn; 71] = unsafe {
         },
         {
             let mut init = datetkn {
-                token: *::core::mem::transmute::<
-                    &[u8; 11],
-                    &mut [libc::c_char; 11],
-                >(b"am\0\0\0\0\0\0\0\0\0"),
+                token: *::core::mem::transmute::<&[u8; 11], &mut [libc::c_char; 11]>(
+                    b"am\0\0\0\0\0\0\0\0\0",
+                ),
                 type_0: 9 as libc::c_int as libc::c_char,
                 value: 0 as libc::c_int,
             };
@@ -2033,10 +1989,9 @@ static mut datetktbl: [datetkn; 71] = unsafe {
         },
         {
             let mut init = datetkn {
-                token: *::core::mem::transmute::<
-                    &[u8; 11],
-                    &mut [libc::c_char; 11],
-                >(b"apr\0\0\0\0\0\0\0\0"),
+                token: *::core::mem::transmute::<&[u8; 11], &mut [libc::c_char; 11]>(
+                    b"apr\0\0\0\0\0\0\0\0",
+                ),
                 type_0: 1 as libc::c_int as libc::c_char,
                 value: 4 as libc::c_int,
             };
@@ -2044,10 +1999,9 @@ static mut datetktbl: [datetkn; 71] = unsafe {
         },
         {
             let mut init = datetkn {
-                token: *::core::mem::transmute::<
-                    &[u8; 11],
-                    &mut [libc::c_char; 11],
-                >(b"april\0\0\0\0\0\0"),
+                token: *::core::mem::transmute::<&[u8; 11], &mut [libc::c_char; 11]>(
+                    b"april\0\0\0\0\0\0",
+                ),
                 type_0: 1 as libc::c_int as libc::c_char,
                 value: 4 as libc::c_int,
             };
@@ -2055,10 +2009,9 @@ static mut datetktbl: [datetkn; 71] = unsafe {
         },
         {
             let mut init = datetkn {
-                token: *::core::mem::transmute::<
-                    &[u8; 11],
-                    &mut [libc::c_char; 11],
-                >(b"at\0\0\0\0\0\0\0\0\0"),
+                token: *::core::mem::transmute::<&[u8; 11], &mut [libc::c_char; 11]>(
+                    b"at\0\0\0\0\0\0\0\0\0",
+                ),
                 type_0: 8 as libc::c_int as libc::c_char,
                 value: 0 as libc::c_int,
             };
@@ -2066,10 +2019,9 @@ static mut datetktbl: [datetkn; 71] = unsafe {
         },
         {
             let mut init = datetkn {
-                token: *::core::mem::transmute::<
-                    &[u8; 11],
-                    &mut [libc::c_char; 11],
-                >(b"aug\0\0\0\0\0\0\0\0"),
+                token: *::core::mem::transmute::<&[u8; 11], &mut [libc::c_char; 11]>(
+                    b"aug\0\0\0\0\0\0\0\0",
+                ),
                 type_0: 1 as libc::c_int as libc::c_char,
                 value: 8 as libc::c_int,
             };
@@ -2077,10 +2029,9 @@ static mut datetktbl: [datetkn; 71] = unsafe {
         },
         {
             let mut init = datetkn {
-                token: *::core::mem::transmute::<
-                    &[u8; 11],
-                    &mut [libc::c_char; 11],
-                >(b"august\0\0\0\0\0"),
+                token: *::core::mem::transmute::<&[u8; 11], &mut [libc::c_char; 11]>(
+                    b"august\0\0\0\0\0",
+                ),
                 type_0: 1 as libc::c_int as libc::c_char,
                 value: 8 as libc::c_int,
             };
@@ -2088,10 +2039,9 @@ static mut datetktbl: [datetkn; 71] = unsafe {
         },
         {
             let mut init = datetkn {
-                token: *::core::mem::transmute::<
-                    &[u8; 11],
-                    &mut [libc::c_char; 11],
-                >(b"bc\0\0\0\0\0\0\0\0\0"),
+                token: *::core::mem::transmute::<&[u8; 11], &mut [libc::c_char; 11]>(
+                    b"bc\0\0\0\0\0\0\0\0\0",
+                ),
                 type_0: 18 as libc::c_int as libc::c_char,
                 value: 1 as libc::c_int,
             };
@@ -2099,10 +2049,9 @@ static mut datetktbl: [datetkn; 71] = unsafe {
         },
         {
             let mut init = datetkn {
-                token: *::core::mem::transmute::<
-                    &[u8; 11],
-                    &mut [libc::c_char; 11],
-                >(b"d\0\0\0\0\0\0\0\0\0\0"),
+                token: *::core::mem::transmute::<&[u8; 11], &mut [libc::c_char; 11]>(
+                    b"d\0\0\0\0\0\0\0\0\0\0",
+                ),
                 type_0: 17 as libc::c_int as libc::c_char,
                 value: 21 as libc::c_int,
             };
@@ -2110,10 +2059,9 @@ static mut datetktbl: [datetkn; 71] = unsafe {
         },
         {
             let mut init = datetkn {
-                token: *::core::mem::transmute::<
-                    &[u8; 11],
-                    &mut [libc::c_char; 11],
-                >(b"dec\0\0\0\0\0\0\0\0"),
+                token: *::core::mem::transmute::<&[u8; 11], &mut [libc::c_char; 11]>(
+                    b"dec\0\0\0\0\0\0\0\0",
+                ),
                 type_0: 1 as libc::c_int as libc::c_char,
                 value: 12 as libc::c_int,
             };
@@ -2121,10 +2069,9 @@ static mut datetktbl: [datetkn; 71] = unsafe {
         },
         {
             let mut init = datetkn {
-                token: *::core::mem::transmute::<
-                    &[u8; 11],
-                    &mut [libc::c_char; 11],
-                >(b"december\0\0\0"),
+                token: *::core::mem::transmute::<&[u8; 11], &mut [libc::c_char; 11]>(
+                    b"december\0\0\0",
+                ),
                 type_0: 1 as libc::c_int as libc::c_char,
                 value: 12 as libc::c_int,
             };
@@ -2132,10 +2079,9 @@ static mut datetktbl: [datetkn; 71] = unsafe {
         },
         {
             let mut init = datetkn {
-                token: *::core::mem::transmute::<
-                    &[u8; 11],
-                    &mut [libc::c_char; 11],
-                >(b"dow\0\0\0\0\0\0\0\0"),
+                token: *::core::mem::transmute::<&[u8; 11], &mut [libc::c_char; 11]>(
+                    b"dow\0\0\0\0\0\0\0\0",
+                ),
                 type_0: 17 as libc::c_int as libc::c_char,
                 value: 32 as libc::c_int,
             };
@@ -2143,10 +2089,9 @@ static mut datetktbl: [datetkn; 71] = unsafe {
         },
         {
             let mut init = datetkn {
-                token: *::core::mem::transmute::<
-                    &[u8; 11],
-                    &mut [libc::c_char; 11],
-                >(b"doy\0\0\0\0\0\0\0\0"),
+                token: *::core::mem::transmute::<&[u8; 11], &mut [libc::c_char; 11]>(
+                    b"doy\0\0\0\0\0\0\0\0",
+                ),
                 type_0: 17 as libc::c_int as libc::c_char,
                 value: 33 as libc::c_int,
             };
@@ -2154,10 +2099,9 @@ static mut datetktbl: [datetkn; 71] = unsafe {
         },
         {
             let mut init = datetkn {
-                token: *::core::mem::transmute::<
-                    &[u8; 11],
-                    &mut [libc::c_char; 11],
-                >(b"dst\0\0\0\0\0\0\0\0"),
+                token: *::core::mem::transmute::<&[u8; 11], &mut [libc::c_char; 11]>(
+                    b"dst\0\0\0\0\0\0\0\0",
+                ),
                 type_0: 28 as libc::c_int as libc::c_char,
                 value: 3600 as libc::c_int,
             };
@@ -2165,10 +2109,9 @@ static mut datetktbl: [datetkn; 71] = unsafe {
         },
         {
             let mut init = datetkn {
-                token: *::core::mem::transmute::<
-                    &[u8; 11],
-                    &mut [libc::c_char; 11],
-                >(b"epoch\0\0\0\0\0\0"),
+                token: *::core::mem::transmute::<&[u8; 11], &mut [libc::c_char; 11]>(
+                    b"epoch\0\0\0\0\0\0",
+                ),
                 type_0: 0 as libc::c_int as libc::c_char,
                 value: 11 as libc::c_int,
             };
@@ -2176,10 +2119,9 @@ static mut datetktbl: [datetkn; 71] = unsafe {
         },
         {
             let mut init = datetkn {
-                token: *::core::mem::transmute::<
-                    &[u8; 11],
-                    &mut [libc::c_char; 11],
-                >(b"feb\0\0\0\0\0\0\0\0"),
+                token: *::core::mem::transmute::<&[u8; 11], &mut [libc::c_char; 11]>(
+                    b"feb\0\0\0\0\0\0\0\0",
+                ),
                 type_0: 1 as libc::c_int as libc::c_char,
                 value: 2 as libc::c_int,
             };
@@ -2187,10 +2129,9 @@ static mut datetktbl: [datetkn; 71] = unsafe {
         },
         {
             let mut init = datetkn {
-                token: *::core::mem::transmute::<
-                    &[u8; 11],
-                    &mut [libc::c_char; 11],
-                >(b"february\0\0\0"),
+                token: *::core::mem::transmute::<&[u8; 11], &mut [libc::c_char; 11]>(
+                    b"february\0\0\0",
+                ),
                 type_0: 1 as libc::c_int as libc::c_char,
                 value: 2 as libc::c_int,
             };
@@ -2198,10 +2139,9 @@ static mut datetktbl: [datetkn; 71] = unsafe {
         },
         {
             let mut init = datetkn {
-                token: *::core::mem::transmute::<
-                    &[u8; 11],
-                    &mut [libc::c_char; 11],
-                >(b"fri\0\0\0\0\0\0\0\0"),
+                token: *::core::mem::transmute::<&[u8; 11], &mut [libc::c_char; 11]>(
+                    b"fri\0\0\0\0\0\0\0\0",
+                ),
                 type_0: 16 as libc::c_int as libc::c_char,
                 value: 5 as libc::c_int,
             };
@@ -2209,10 +2149,9 @@ static mut datetktbl: [datetkn; 71] = unsafe {
         },
         {
             let mut init = datetkn {
-                token: *::core::mem::transmute::<
-                    &[u8; 11],
-                    &mut [libc::c_char; 11],
-                >(b"friday\0\0\0\0\0"),
+                token: *::core::mem::transmute::<&[u8; 11], &mut [libc::c_char; 11]>(
+                    b"friday\0\0\0\0\0",
+                ),
                 type_0: 16 as libc::c_int as libc::c_char,
                 value: 5 as libc::c_int,
             };
@@ -2220,10 +2159,9 @@ static mut datetktbl: [datetkn; 71] = unsafe {
         },
         {
             let mut init = datetkn {
-                token: *::core::mem::transmute::<
-                    &[u8; 11],
-                    &mut [libc::c_char; 11],
-                >(b"h\0\0\0\0\0\0\0\0\0\0"),
+                token: *::core::mem::transmute::<&[u8; 11], &mut [libc::c_char; 11]>(
+                    b"h\0\0\0\0\0\0\0\0\0\0",
+                ),
                 type_0: 17 as libc::c_int as libc::c_char,
                 value: 20 as libc::c_int,
             };
@@ -2231,10 +2169,9 @@ static mut datetktbl: [datetkn; 71] = unsafe {
         },
         {
             let mut init = datetkn {
-                token: *::core::mem::transmute::<
-                    &[u8; 11],
-                    &mut [libc::c_char; 11],
-                >(b"infinity\0\0\0"),
+                token: *::core::mem::transmute::<&[u8; 11], &mut [libc::c_char; 11]>(
+                    b"infinity\0\0\0",
+                ),
                 type_0: 0 as libc::c_int as libc::c_char,
                 value: 10 as libc::c_int,
             };
@@ -2242,10 +2179,9 @@ static mut datetktbl: [datetkn; 71] = unsafe {
         },
         {
             let mut init = datetkn {
-                token: *::core::mem::transmute::<
-                    &[u8; 11],
-                    &mut [libc::c_char; 11],
-                >(b"isodow\0\0\0\0\0"),
+                token: *::core::mem::transmute::<&[u8; 11], &mut [libc::c_char; 11]>(
+                    b"isodow\0\0\0\0\0",
+                ),
                 type_0: 17 as libc::c_int as libc::c_char,
                 value: 37 as libc::c_int,
             };
@@ -2253,10 +2189,9 @@ static mut datetktbl: [datetkn; 71] = unsafe {
         },
         {
             let mut init = datetkn {
-                token: *::core::mem::transmute::<
-                    &[u8; 11],
-                    &mut [libc::c_char; 11],
-                >(b"isoyear\0\0\0\0"),
+                token: *::core::mem::transmute::<&[u8; 11], &mut [libc::c_char; 11]>(
+                    b"isoyear\0\0\0\0",
+                ),
                 type_0: 17 as libc::c_int as libc::c_char,
                 value: 36 as libc::c_int,
             };
@@ -2264,10 +2199,9 @@ static mut datetktbl: [datetkn; 71] = unsafe {
         },
         {
             let mut init = datetkn {
-                token: *::core::mem::transmute::<
-                    &[u8; 11],
-                    &mut [libc::c_char; 11],
-                >(b"j\0\0\0\0\0\0\0\0\0\0"),
+                token: *::core::mem::transmute::<&[u8; 11], &mut [libc::c_char; 11]>(
+                    b"j\0\0\0\0\0\0\0\0\0\0",
+                ),
                 type_0: 17 as libc::c_int as libc::c_char,
                 value: 31 as libc::c_int,
             };
@@ -2275,10 +2209,9 @@ static mut datetktbl: [datetkn; 71] = unsafe {
         },
         {
             let mut init = datetkn {
-                token: *::core::mem::transmute::<
-                    &[u8; 11],
-                    &mut [libc::c_char; 11],
-                >(b"jan\0\0\0\0\0\0\0\0"),
+                token: *::core::mem::transmute::<&[u8; 11], &mut [libc::c_char; 11]>(
+                    b"jan\0\0\0\0\0\0\0\0",
+                ),
                 type_0: 1 as libc::c_int as libc::c_char,
                 value: 1 as libc::c_int,
             };
@@ -2286,10 +2219,9 @@ static mut datetktbl: [datetkn; 71] = unsafe {
         },
         {
             let mut init = datetkn {
-                token: *::core::mem::transmute::<
-                    &[u8; 11],
-                    &mut [libc::c_char; 11],
-                >(b"january\0\0\0\0"),
+                token: *::core::mem::transmute::<&[u8; 11], &mut [libc::c_char; 11]>(
+                    b"january\0\0\0\0",
+                ),
                 type_0: 1 as libc::c_int as libc::c_char,
                 value: 1 as libc::c_int,
             };
@@ -2297,10 +2229,9 @@ static mut datetktbl: [datetkn; 71] = unsafe {
         },
         {
             let mut init = datetkn {
-                token: *::core::mem::transmute::<
-                    &[u8; 11],
-                    &mut [libc::c_char; 11],
-                >(b"jd\0\0\0\0\0\0\0\0\0"),
+                token: *::core::mem::transmute::<&[u8; 11], &mut [libc::c_char; 11]>(
+                    b"jd\0\0\0\0\0\0\0\0\0",
+                ),
                 type_0: 17 as libc::c_int as libc::c_char,
                 value: 31 as libc::c_int,
             };
@@ -2308,10 +2239,9 @@ static mut datetktbl: [datetkn; 71] = unsafe {
         },
         {
             let mut init = datetkn {
-                token: *::core::mem::transmute::<
-                    &[u8; 11],
-                    &mut [libc::c_char; 11],
-                >(b"jul\0\0\0\0\0\0\0\0"),
+                token: *::core::mem::transmute::<&[u8; 11], &mut [libc::c_char; 11]>(
+                    b"jul\0\0\0\0\0\0\0\0",
+                ),
                 type_0: 1 as libc::c_int as libc::c_char,
                 value: 7 as libc::c_int,
             };
@@ -2319,10 +2249,9 @@ static mut datetktbl: [datetkn; 71] = unsafe {
         },
         {
             let mut init = datetkn {
-                token: *::core::mem::transmute::<
-                    &[u8; 11],
-                    &mut [libc::c_char; 11],
-                >(b"julian\0\0\0\0\0"),
+                token: *::core::mem::transmute::<&[u8; 11], &mut [libc::c_char; 11]>(
+                    b"julian\0\0\0\0\0",
+                ),
                 type_0: 17 as libc::c_int as libc::c_char,
                 value: 31 as libc::c_int,
             };
@@ -2330,10 +2259,9 @@ static mut datetktbl: [datetkn; 71] = unsafe {
         },
         {
             let mut init = datetkn {
-                token: *::core::mem::transmute::<
-                    &[u8; 11],
-                    &mut [libc::c_char; 11],
-                >(b"july\0\0\0\0\0\0\0"),
+                token: *::core::mem::transmute::<&[u8; 11], &mut [libc::c_char; 11]>(
+                    b"july\0\0\0\0\0\0\0",
+                ),
                 type_0: 1 as libc::c_int as libc::c_char,
                 value: 7 as libc::c_int,
             };
@@ -2341,10 +2269,9 @@ static mut datetktbl: [datetkn; 71] = unsafe {
         },
         {
             let mut init = datetkn {
-                token: *::core::mem::transmute::<
-                    &[u8; 11],
-                    &mut [libc::c_char; 11],
-                >(b"jun\0\0\0\0\0\0\0\0"),
+                token: *::core::mem::transmute::<&[u8; 11], &mut [libc::c_char; 11]>(
+                    b"jun\0\0\0\0\0\0\0\0",
+                ),
                 type_0: 1 as libc::c_int as libc::c_char,
                 value: 6 as libc::c_int,
             };
@@ -2352,10 +2279,9 @@ static mut datetktbl: [datetkn; 71] = unsafe {
         },
         {
             let mut init = datetkn {
-                token: *::core::mem::transmute::<
-                    &[u8; 11],
-                    &mut [libc::c_char; 11],
-                >(b"june\0\0\0\0\0\0\0"),
+                token: *::core::mem::transmute::<&[u8; 11], &mut [libc::c_char; 11]>(
+                    b"june\0\0\0\0\0\0\0",
+                ),
                 type_0: 1 as libc::c_int as libc::c_char,
                 value: 6 as libc::c_int,
             };
@@ -2363,10 +2289,9 @@ static mut datetktbl: [datetkn; 71] = unsafe {
         },
         {
             let mut init = datetkn {
-                token: *::core::mem::transmute::<
-                    &[u8; 11],
-                    &mut [libc::c_char; 11],
-                >(b"m\0\0\0\0\0\0\0\0\0\0"),
+                token: *::core::mem::transmute::<&[u8; 11], &mut [libc::c_char; 11]>(
+                    b"m\0\0\0\0\0\0\0\0\0\0",
+                ),
                 type_0: 17 as libc::c_int as libc::c_char,
                 value: 23 as libc::c_int,
             };
@@ -2374,10 +2299,9 @@ static mut datetktbl: [datetkn; 71] = unsafe {
         },
         {
             let mut init = datetkn {
-                token: *::core::mem::transmute::<
-                    &[u8; 11],
-                    &mut [libc::c_char; 11],
-                >(b"mar\0\0\0\0\0\0\0\0"),
+                token: *::core::mem::transmute::<&[u8; 11], &mut [libc::c_char; 11]>(
+                    b"mar\0\0\0\0\0\0\0\0",
+                ),
                 type_0: 1 as libc::c_int as libc::c_char,
                 value: 3 as libc::c_int,
             };
@@ -2385,10 +2309,9 @@ static mut datetktbl: [datetkn; 71] = unsafe {
         },
         {
             let mut init = datetkn {
-                token: *::core::mem::transmute::<
-                    &[u8; 11],
-                    &mut [libc::c_char; 11],
-                >(b"march\0\0\0\0\0\0"),
+                token: *::core::mem::transmute::<&[u8; 11], &mut [libc::c_char; 11]>(
+                    b"march\0\0\0\0\0\0",
+                ),
                 type_0: 1 as libc::c_int as libc::c_char,
                 value: 3 as libc::c_int,
             };
@@ -2396,10 +2319,9 @@ static mut datetktbl: [datetkn; 71] = unsafe {
         },
         {
             let mut init = datetkn {
-                token: *::core::mem::transmute::<
-                    &[u8; 11],
-                    &mut [libc::c_char; 11],
-                >(b"may\0\0\0\0\0\0\0\0"),
+                token: *::core::mem::transmute::<&[u8; 11], &mut [libc::c_char; 11]>(
+                    b"may\0\0\0\0\0\0\0\0",
+                ),
                 type_0: 1 as libc::c_int as libc::c_char,
                 value: 5 as libc::c_int,
             };
@@ -2407,10 +2329,9 @@ static mut datetktbl: [datetkn; 71] = unsafe {
         },
         {
             let mut init = datetkn {
-                token: *::core::mem::transmute::<
-                    &[u8; 11],
-                    &mut [libc::c_char; 11],
-                >(b"mm\0\0\0\0\0\0\0\0\0"),
+                token: *::core::mem::transmute::<&[u8; 11], &mut [libc::c_char; 11]>(
+                    b"mm\0\0\0\0\0\0\0\0\0",
+                ),
                 type_0: 17 as libc::c_int as libc::c_char,
                 value: 19 as libc::c_int,
             };
@@ -2418,10 +2339,9 @@ static mut datetktbl: [datetkn; 71] = unsafe {
         },
         {
             let mut init = datetkn {
-                token: *::core::mem::transmute::<
-                    &[u8; 11],
-                    &mut [libc::c_char; 11],
-                >(b"mon\0\0\0\0\0\0\0\0"),
+                token: *::core::mem::transmute::<&[u8; 11], &mut [libc::c_char; 11]>(
+                    b"mon\0\0\0\0\0\0\0\0",
+                ),
                 type_0: 16 as libc::c_int as libc::c_char,
                 value: 1 as libc::c_int,
             };
@@ -2429,10 +2349,9 @@ static mut datetktbl: [datetkn; 71] = unsafe {
         },
         {
             let mut init = datetkn {
-                token: *::core::mem::transmute::<
-                    &[u8; 11],
-                    &mut [libc::c_char; 11],
-                >(b"monday\0\0\0\0\0"),
+                token: *::core::mem::transmute::<&[u8; 11], &mut [libc::c_char; 11]>(
+                    b"monday\0\0\0\0\0",
+                ),
                 type_0: 16 as libc::c_int as libc::c_char,
                 value: 1 as libc::c_int,
             };
@@ -2440,10 +2359,9 @@ static mut datetktbl: [datetkn; 71] = unsafe {
         },
         {
             let mut init = datetkn {
-                token: *::core::mem::transmute::<
-                    &[u8; 11],
-                    &mut [libc::c_char; 11],
-                >(b"nov\0\0\0\0\0\0\0\0"),
+                token: *::core::mem::transmute::<&[u8; 11], &mut [libc::c_char; 11]>(
+                    b"nov\0\0\0\0\0\0\0\0",
+                ),
                 type_0: 1 as libc::c_int as libc::c_char,
                 value: 11 as libc::c_int,
             };
@@ -2451,10 +2369,9 @@ static mut datetktbl: [datetkn; 71] = unsafe {
         },
         {
             let mut init = datetkn {
-                token: *::core::mem::transmute::<
-                    &[u8; 11],
-                    &mut [libc::c_char; 11],
-                >(b"november\0\0\0"),
+                token: *::core::mem::transmute::<&[u8; 11], &mut [libc::c_char; 11]>(
+                    b"november\0\0\0",
+                ),
                 type_0: 1 as libc::c_int as libc::c_char,
                 value: 11 as libc::c_int,
             };
@@ -2462,10 +2379,9 @@ static mut datetktbl: [datetkn; 71] = unsafe {
         },
         {
             let mut init = datetkn {
-                token: *::core::mem::transmute::<
-                    &[u8; 11],
-                    &mut [libc::c_char; 11],
-                >(b"now\0\0\0\0\0\0\0\0"),
+                token: *::core::mem::transmute::<&[u8; 11], &mut [libc::c_char; 11]>(
+                    b"now\0\0\0\0\0\0\0\0",
+                ),
                 type_0: 0 as libc::c_int as libc::c_char,
                 value: 12 as libc::c_int,
             };
@@ -2473,10 +2389,9 @@ static mut datetktbl: [datetkn; 71] = unsafe {
         },
         {
             let mut init = datetkn {
-                token: *::core::mem::transmute::<
-                    &[u8; 11],
-                    &mut [libc::c_char; 11],
-                >(b"oct\0\0\0\0\0\0\0\0"),
+                token: *::core::mem::transmute::<&[u8; 11], &mut [libc::c_char; 11]>(
+                    b"oct\0\0\0\0\0\0\0\0",
+                ),
                 type_0: 1 as libc::c_int as libc::c_char,
                 value: 10 as libc::c_int,
             };
@@ -2484,10 +2399,9 @@ static mut datetktbl: [datetkn; 71] = unsafe {
         },
         {
             let mut init = datetkn {
-                token: *::core::mem::transmute::<
-                    &[u8; 11],
-                    &mut [libc::c_char; 11],
-                >(b"october\0\0\0\0"),
+                token: *::core::mem::transmute::<&[u8; 11], &mut [libc::c_char; 11]>(
+                    b"october\0\0\0\0",
+                ),
                 type_0: 1 as libc::c_int as libc::c_char,
                 value: 10 as libc::c_int,
             };
@@ -2495,10 +2409,9 @@ static mut datetktbl: [datetkn; 71] = unsafe {
         },
         {
             let mut init = datetkn {
-                token: *::core::mem::transmute::<
-                    &[u8; 11],
-                    &mut [libc::c_char; 11],
-                >(b"on\0\0\0\0\0\0\0\0\0"),
+                token: *::core::mem::transmute::<&[u8; 11], &mut [libc::c_char; 11]>(
+                    b"on\0\0\0\0\0\0\0\0\0",
+                ),
                 type_0: 8 as libc::c_int as libc::c_char,
                 value: 0 as libc::c_int,
             };
@@ -2506,10 +2419,9 @@ static mut datetktbl: [datetkn; 71] = unsafe {
         },
         {
             let mut init = datetkn {
-                token: *::core::mem::transmute::<
-                    &[u8; 11],
-                    &mut [libc::c_char; 11],
-                >(b"pm\0\0\0\0\0\0\0\0\0"),
+                token: *::core::mem::transmute::<&[u8; 11], &mut [libc::c_char; 11]>(
+                    b"pm\0\0\0\0\0\0\0\0\0",
+                ),
                 type_0: 9 as libc::c_int as libc::c_char,
                 value: 1 as libc::c_int,
             };
@@ -2517,10 +2429,9 @@ static mut datetktbl: [datetkn; 71] = unsafe {
         },
         {
             let mut init = datetkn {
-                token: *::core::mem::transmute::<
-                    &[u8; 11],
-                    &mut [libc::c_char; 11],
-                >(b"s\0\0\0\0\0\0\0\0\0\0"),
+                token: *::core::mem::transmute::<&[u8; 11], &mut [libc::c_char; 11]>(
+                    b"s\0\0\0\0\0\0\0\0\0\0",
+                ),
                 type_0: 17 as libc::c_int as libc::c_char,
                 value: 18 as libc::c_int,
             };
@@ -2528,10 +2439,9 @@ static mut datetktbl: [datetkn; 71] = unsafe {
         },
         {
             let mut init = datetkn {
-                token: *::core::mem::transmute::<
-                    &[u8; 11],
-                    &mut [libc::c_char; 11],
-                >(b"sat\0\0\0\0\0\0\0\0"),
+                token: *::core::mem::transmute::<&[u8; 11], &mut [libc::c_char; 11]>(
+                    b"sat\0\0\0\0\0\0\0\0",
+                ),
                 type_0: 16 as libc::c_int as libc::c_char,
                 value: 6 as libc::c_int,
             };
@@ -2539,10 +2449,9 @@ static mut datetktbl: [datetkn; 71] = unsafe {
         },
         {
             let mut init = datetkn {
-                token: *::core::mem::transmute::<
-                    &[u8; 11],
-                    &mut [libc::c_char; 11],
-                >(b"saturday\0\0\0"),
+                token: *::core::mem::transmute::<&[u8; 11], &mut [libc::c_char; 11]>(
+                    b"saturday\0\0\0",
+                ),
                 type_0: 16 as libc::c_int as libc::c_char,
                 value: 6 as libc::c_int,
             };
@@ -2550,10 +2459,9 @@ static mut datetktbl: [datetkn; 71] = unsafe {
         },
         {
             let mut init = datetkn {
-                token: *::core::mem::transmute::<
-                    &[u8; 11],
-                    &mut [libc::c_char; 11],
-                >(b"sep\0\0\0\0\0\0\0\0"),
+                token: *::core::mem::transmute::<&[u8; 11], &mut [libc::c_char; 11]>(
+                    b"sep\0\0\0\0\0\0\0\0",
+                ),
                 type_0: 1 as libc::c_int as libc::c_char,
                 value: 9 as libc::c_int,
             };
@@ -2561,10 +2469,9 @@ static mut datetktbl: [datetkn; 71] = unsafe {
         },
         {
             let mut init = datetkn {
-                token: *::core::mem::transmute::<
-                    &[u8; 11],
-                    &mut [libc::c_char; 11],
-                >(b"sept\0\0\0\0\0\0\0"),
+                token: *::core::mem::transmute::<&[u8; 11], &mut [libc::c_char; 11]>(
+                    b"sept\0\0\0\0\0\0\0",
+                ),
                 type_0: 1 as libc::c_int as libc::c_char,
                 value: 9 as libc::c_int,
             };
@@ -2572,10 +2479,9 @@ static mut datetktbl: [datetkn; 71] = unsafe {
         },
         {
             let mut init = datetkn {
-                token: *::core::mem::transmute::<
-                    &[u8; 11],
-                    &mut [libc::c_char; 11],
-                >(b"september\0\0"),
+                token: *::core::mem::transmute::<&[u8; 11], &mut [libc::c_char; 11]>(
+                    b"september\0\0",
+                ),
                 type_0: 1 as libc::c_int as libc::c_char,
                 value: 9 as libc::c_int,
             };
@@ -2583,10 +2489,9 @@ static mut datetktbl: [datetkn; 71] = unsafe {
         },
         {
             let mut init = datetkn {
-                token: *::core::mem::transmute::<
-                    &[u8; 11],
-                    &mut [libc::c_char; 11],
-                >(b"sun\0\0\0\0\0\0\0\0"),
+                token: *::core::mem::transmute::<&[u8; 11], &mut [libc::c_char; 11]>(
+                    b"sun\0\0\0\0\0\0\0\0",
+                ),
                 type_0: 16 as libc::c_int as libc::c_char,
                 value: 0 as libc::c_int,
             };
@@ -2594,10 +2499,9 @@ static mut datetktbl: [datetkn; 71] = unsafe {
         },
         {
             let mut init = datetkn {
-                token: *::core::mem::transmute::<
-                    &[u8; 11],
-                    &mut [libc::c_char; 11],
-                >(b"sunday\0\0\0\0\0"),
+                token: *::core::mem::transmute::<&[u8; 11], &mut [libc::c_char; 11]>(
+                    b"sunday\0\0\0\0\0",
+                ),
                 type_0: 16 as libc::c_int as libc::c_char,
                 value: 0 as libc::c_int,
             };
@@ -2605,10 +2509,9 @@ static mut datetktbl: [datetkn; 71] = unsafe {
         },
         {
             let mut init = datetkn {
-                token: *::core::mem::transmute::<
-                    &[u8; 11],
-                    &mut [libc::c_char; 11],
-                >(b"t\0\0\0\0\0\0\0\0\0\0"),
+                token: *::core::mem::transmute::<&[u8; 11], &mut [libc::c_char; 11]>(
+                    b"t\0\0\0\0\0\0\0\0\0\0",
+                ),
                 type_0: 23 as libc::c_int as libc::c_char,
                 value: 3 as libc::c_int,
             };
@@ -2616,10 +2519,9 @@ static mut datetktbl: [datetkn; 71] = unsafe {
         },
         {
             let mut init = datetkn {
-                token: *::core::mem::transmute::<
-                    &[u8; 11],
-                    &mut [libc::c_char; 11],
-                >(b"thu\0\0\0\0\0\0\0\0"),
+                token: *::core::mem::transmute::<&[u8; 11], &mut [libc::c_char; 11]>(
+                    b"thu\0\0\0\0\0\0\0\0",
+                ),
                 type_0: 16 as libc::c_int as libc::c_char,
                 value: 4 as libc::c_int,
             };
@@ -2627,10 +2529,9 @@ static mut datetktbl: [datetkn; 71] = unsafe {
         },
         {
             let mut init = datetkn {
-                token: *::core::mem::transmute::<
-                    &[u8; 11],
-                    &mut [libc::c_char; 11],
-                >(b"thur\0\0\0\0\0\0\0"),
+                token: *::core::mem::transmute::<&[u8; 11], &mut [libc::c_char; 11]>(
+                    b"thur\0\0\0\0\0\0\0",
+                ),
                 type_0: 16 as libc::c_int as libc::c_char,
                 value: 4 as libc::c_int,
             };
@@ -2638,10 +2539,9 @@ static mut datetktbl: [datetkn; 71] = unsafe {
         },
         {
             let mut init = datetkn {
-                token: *::core::mem::transmute::<
-                    &[u8; 11],
-                    &mut [libc::c_char; 11],
-                >(b"thurs\0\0\0\0\0\0"),
+                token: *::core::mem::transmute::<&[u8; 11], &mut [libc::c_char; 11]>(
+                    b"thurs\0\0\0\0\0\0",
+                ),
                 type_0: 16 as libc::c_int as libc::c_char,
                 value: 4 as libc::c_int,
             };
@@ -2649,10 +2549,9 @@ static mut datetktbl: [datetkn; 71] = unsafe {
         },
         {
             let mut init = datetkn {
-                token: *::core::mem::transmute::<
-                    &[u8; 11],
-                    &mut [libc::c_char; 11],
-                >(b"thursday\0\0\0"),
+                token: *::core::mem::transmute::<&[u8; 11], &mut [libc::c_char; 11]>(
+                    b"thursday\0\0\0",
+                ),
                 type_0: 16 as libc::c_int as libc::c_char,
                 value: 4 as libc::c_int,
             };
@@ -2660,10 +2559,9 @@ static mut datetktbl: [datetkn; 71] = unsafe {
         },
         {
             let mut init = datetkn {
-                token: *::core::mem::transmute::<
-                    &[u8; 11],
-                    &mut [libc::c_char; 11],
-                >(b"today\0\0\0\0\0\0"),
+                token: *::core::mem::transmute::<&[u8; 11], &mut [libc::c_char; 11]>(
+                    b"today\0\0\0\0\0\0",
+                ),
                 type_0: 0 as libc::c_int as libc::c_char,
                 value: 14 as libc::c_int,
             };
@@ -2671,10 +2569,9 @@ static mut datetktbl: [datetkn; 71] = unsafe {
         },
         {
             let mut init = datetkn {
-                token: *::core::mem::transmute::<
-                    &[u8; 11],
-                    &mut [libc::c_char; 11],
-                >(b"tomorrow\0\0\0"),
+                token: *::core::mem::transmute::<&[u8; 11], &mut [libc::c_char; 11]>(
+                    b"tomorrow\0\0\0",
+                ),
                 type_0: 0 as libc::c_int as libc::c_char,
                 value: 15 as libc::c_int,
             };
@@ -2682,10 +2579,9 @@ static mut datetktbl: [datetkn; 71] = unsafe {
         },
         {
             let mut init = datetkn {
-                token: *::core::mem::transmute::<
-                    &[u8; 11],
-                    &mut [libc::c_char; 11],
-                >(b"tue\0\0\0\0\0\0\0\0"),
+                token: *::core::mem::transmute::<&[u8; 11], &mut [libc::c_char; 11]>(
+                    b"tue\0\0\0\0\0\0\0\0",
+                ),
                 type_0: 16 as libc::c_int as libc::c_char,
                 value: 2 as libc::c_int,
             };
@@ -2693,10 +2589,9 @@ static mut datetktbl: [datetkn; 71] = unsafe {
         },
         {
             let mut init = datetkn {
-                token: *::core::mem::transmute::<
-                    &[u8; 11],
-                    &mut [libc::c_char; 11],
-                >(b"tues\0\0\0\0\0\0\0"),
+                token: *::core::mem::transmute::<&[u8; 11], &mut [libc::c_char; 11]>(
+                    b"tues\0\0\0\0\0\0\0",
+                ),
                 type_0: 16 as libc::c_int as libc::c_char,
                 value: 2 as libc::c_int,
             };
@@ -2704,10 +2599,9 @@ static mut datetktbl: [datetkn; 71] = unsafe {
         },
         {
             let mut init = datetkn {
-                token: *::core::mem::transmute::<
-                    &[u8; 11],
-                    &mut [libc::c_char; 11],
-                >(b"tuesday\0\0\0\0"),
+                token: *::core::mem::transmute::<&[u8; 11], &mut [libc::c_char; 11]>(
+                    b"tuesday\0\0\0\0",
+                ),
                 type_0: 16 as libc::c_int as libc::c_char,
                 value: 2 as libc::c_int,
             };
@@ -2715,10 +2609,9 @@ static mut datetktbl: [datetkn; 71] = unsafe {
         },
         {
             let mut init = datetkn {
-                token: *::core::mem::transmute::<
-                    &[u8; 11],
-                    &mut [libc::c_char; 11],
-                >(b"wed\0\0\0\0\0\0\0\0"),
+                token: *::core::mem::transmute::<&[u8; 11], &mut [libc::c_char; 11]>(
+                    b"wed\0\0\0\0\0\0\0\0",
+                ),
                 type_0: 16 as libc::c_int as libc::c_char,
                 value: 3 as libc::c_int,
             };
@@ -2726,10 +2619,9 @@ static mut datetktbl: [datetkn; 71] = unsafe {
         },
         {
             let mut init = datetkn {
-                token: *::core::mem::transmute::<
-                    &[u8; 11],
-                    &mut [libc::c_char; 11],
-                >(b"wednesday\0\0"),
+                token: *::core::mem::transmute::<&[u8; 11], &mut [libc::c_char; 11]>(
+                    b"wednesday\0\0",
+                ),
                 type_0: 16 as libc::c_int as libc::c_char,
                 value: 3 as libc::c_int,
             };
@@ -2737,10 +2629,9 @@ static mut datetktbl: [datetkn; 71] = unsafe {
         },
         {
             let mut init = datetkn {
-                token: *::core::mem::transmute::<
-                    &[u8; 11],
-                    &mut [libc::c_char; 11],
-                >(b"weds\0\0\0\0\0\0\0"),
+                token: *::core::mem::transmute::<&[u8; 11], &mut [libc::c_char; 11]>(
+                    b"weds\0\0\0\0\0\0\0",
+                ),
                 type_0: 16 as libc::c_int as libc::c_char,
                 value: 3 as libc::c_int,
             };
@@ -2748,10 +2639,9 @@ static mut datetktbl: [datetkn; 71] = unsafe {
         },
         {
             let mut init = datetkn {
-                token: *::core::mem::transmute::<
-                    &[u8; 11],
-                    &mut [libc::c_char; 11],
-                >(b"y\0\0\0\0\0\0\0\0\0\0"),
+                token: *::core::mem::transmute::<&[u8; 11], &mut [libc::c_char; 11]>(
+                    b"y\0\0\0\0\0\0\0\0\0\0",
+                ),
                 type_0: 17 as libc::c_int as libc::c_char,
                 value: 25 as libc::c_int,
             };
@@ -2759,10 +2649,9 @@ static mut datetktbl: [datetkn; 71] = unsafe {
         },
         {
             let mut init = datetkn {
-                token: *::core::mem::transmute::<
-                    &[u8; 11],
-                    &mut [libc::c_char; 11],
-                >(b"yesterday\0\0"),
+                token: *::core::mem::transmute::<&[u8; 11], &mut [libc::c_char; 11]>(
+                    b"yesterday\0\0",
+                ),
                 type_0: 0 as libc::c_int as libc::c_char,
                 value: 13 as libc::c_int,
             };
@@ -2775,10 +2664,9 @@ static mut deltatktbl: [datetkn; 61] = unsafe {
     [
         {
             let mut init = datetkn {
-                token: *::core::mem::transmute::<
-                    &[u8; 11],
-                    &mut [libc::c_char; 11],
-                >(b"@\0\0\0\0\0\0\0\0\0\0"),
+                token: *::core::mem::transmute::<&[u8; 11], &mut [libc::c_char; 11]>(
+                    b"@\0\0\0\0\0\0\0\0\0\0",
+                ),
                 type_0: 8 as libc::c_int as libc::c_char,
                 value: 0 as libc::c_int,
             };
@@ -2786,10 +2674,9 @@ static mut deltatktbl: [datetkn; 61] = unsafe {
         },
         {
             let mut init = datetkn {
-                token: *::core::mem::transmute::<
-                    &[u8; 11],
-                    &mut [libc::c_char; 11],
-                >(b"ago\0\0\0\0\0\0\0\0"),
+                token: *::core::mem::transmute::<&[u8; 11], &mut [libc::c_char; 11]>(
+                    b"ago\0\0\0\0\0\0\0\0",
+                ),
                 type_0: 19 as libc::c_int as libc::c_char,
                 value: 0 as libc::c_int,
             };
@@ -2797,10 +2684,9 @@ static mut deltatktbl: [datetkn; 61] = unsafe {
         },
         {
             let mut init = datetkn {
-                token: *::core::mem::transmute::<
-                    &[u8; 11],
-                    &mut [libc::c_char; 11],
-                >(b"c\0\0\0\0\0\0\0\0\0\0"),
+                token: *::core::mem::transmute::<&[u8; 11], &mut [libc::c_char; 11]>(
+                    b"c\0\0\0\0\0\0\0\0\0\0",
+                ),
                 type_0: 17 as libc::c_int as libc::c_char,
                 value: 27 as libc::c_int,
             };
@@ -2808,10 +2694,9 @@ static mut deltatktbl: [datetkn; 61] = unsafe {
         },
         {
             let mut init = datetkn {
-                token: *::core::mem::transmute::<
-                    &[u8; 11],
-                    &mut [libc::c_char; 11],
-                >(b"cent\0\0\0\0\0\0\0"),
+                token: *::core::mem::transmute::<&[u8; 11], &mut [libc::c_char; 11]>(
+                    b"cent\0\0\0\0\0\0\0",
+                ),
                 type_0: 17 as libc::c_int as libc::c_char,
                 value: 27 as libc::c_int,
             };
@@ -2819,10 +2704,9 @@ static mut deltatktbl: [datetkn; 61] = unsafe {
         },
         {
             let mut init = datetkn {
-                token: *::core::mem::transmute::<
-                    &[u8; 11],
-                    &mut [libc::c_char; 11],
-                >(b"centuries\0\0"),
+                token: *::core::mem::transmute::<&[u8; 11], &mut [libc::c_char; 11]>(
+                    b"centuries\0\0",
+                ),
                 type_0: 17 as libc::c_int as libc::c_char,
                 value: 27 as libc::c_int,
             };
@@ -2830,10 +2714,9 @@ static mut deltatktbl: [datetkn; 61] = unsafe {
         },
         {
             let mut init = datetkn {
-                token: *::core::mem::transmute::<
-                    &[u8; 11],
-                    &mut [libc::c_char; 11],
-                >(b"century\0\0\0\0"),
+                token: *::core::mem::transmute::<&[u8; 11], &mut [libc::c_char; 11]>(
+                    b"century\0\0\0\0",
+                ),
                 type_0: 17 as libc::c_int as libc::c_char,
                 value: 27 as libc::c_int,
             };
@@ -2841,10 +2724,9 @@ static mut deltatktbl: [datetkn; 61] = unsafe {
         },
         {
             let mut init = datetkn {
-                token: *::core::mem::transmute::<
-                    &[u8; 11],
-                    &mut [libc::c_char; 11],
-                >(b"d\0\0\0\0\0\0\0\0\0\0"),
+                token: *::core::mem::transmute::<&[u8; 11], &mut [libc::c_char; 11]>(
+                    b"d\0\0\0\0\0\0\0\0\0\0",
+                ),
                 type_0: 17 as libc::c_int as libc::c_char,
                 value: 21 as libc::c_int,
             };
@@ -2852,10 +2734,9 @@ static mut deltatktbl: [datetkn; 61] = unsafe {
         },
         {
             let mut init = datetkn {
-                token: *::core::mem::transmute::<
-                    &[u8; 11],
-                    &mut [libc::c_char; 11],
-                >(b"day\0\0\0\0\0\0\0\0"),
+                token: *::core::mem::transmute::<&[u8; 11], &mut [libc::c_char; 11]>(
+                    b"day\0\0\0\0\0\0\0\0",
+                ),
                 type_0: 17 as libc::c_int as libc::c_char,
                 value: 21 as libc::c_int,
             };
@@ -2863,10 +2744,9 @@ static mut deltatktbl: [datetkn; 61] = unsafe {
         },
         {
             let mut init = datetkn {
-                token: *::core::mem::transmute::<
-                    &[u8; 11],
-                    &mut [libc::c_char; 11],
-                >(b"days\0\0\0\0\0\0\0"),
+                token: *::core::mem::transmute::<&[u8; 11], &mut [libc::c_char; 11]>(
+                    b"days\0\0\0\0\0\0\0",
+                ),
                 type_0: 17 as libc::c_int as libc::c_char,
                 value: 21 as libc::c_int,
             };
@@ -2874,10 +2754,9 @@ static mut deltatktbl: [datetkn; 61] = unsafe {
         },
         {
             let mut init = datetkn {
-                token: *::core::mem::transmute::<
-                    &[u8; 11],
-                    &mut [libc::c_char; 11],
-                >(b"dec\0\0\0\0\0\0\0\0"),
+                token: *::core::mem::transmute::<&[u8; 11], &mut [libc::c_char; 11]>(
+                    b"dec\0\0\0\0\0\0\0\0",
+                ),
                 type_0: 17 as libc::c_int as libc::c_char,
                 value: 26 as libc::c_int,
             };
@@ -2885,10 +2764,9 @@ static mut deltatktbl: [datetkn; 61] = unsafe {
         },
         {
             let mut init = datetkn {
-                token: *::core::mem::transmute::<
-                    &[u8; 11],
-                    &mut [libc::c_char; 11],
-                >(b"decade\0\0\0\0\0"),
+                token: *::core::mem::transmute::<&[u8; 11], &mut [libc::c_char; 11]>(
+                    b"decade\0\0\0\0\0",
+                ),
                 type_0: 17 as libc::c_int as libc::c_char,
                 value: 26 as libc::c_int,
             };
@@ -2896,10 +2774,9 @@ static mut deltatktbl: [datetkn; 61] = unsafe {
         },
         {
             let mut init = datetkn {
-                token: *::core::mem::transmute::<
-                    &[u8; 11],
-                    &mut [libc::c_char; 11],
-                >(b"decades\0\0\0\0"),
+                token: *::core::mem::transmute::<&[u8; 11], &mut [libc::c_char; 11]>(
+                    b"decades\0\0\0\0",
+                ),
                 type_0: 17 as libc::c_int as libc::c_char,
                 value: 26 as libc::c_int,
             };
@@ -2907,10 +2784,9 @@ static mut deltatktbl: [datetkn; 61] = unsafe {
         },
         {
             let mut init = datetkn {
-                token: *::core::mem::transmute::<
-                    &[u8; 11],
-                    &mut [libc::c_char; 11],
-                >(b"decs\0\0\0\0\0\0\0"),
+                token: *::core::mem::transmute::<&[u8; 11], &mut [libc::c_char; 11]>(
+                    b"decs\0\0\0\0\0\0\0",
+                ),
                 type_0: 17 as libc::c_int as libc::c_char,
                 value: 26 as libc::c_int,
             };
@@ -2918,10 +2794,9 @@ static mut deltatktbl: [datetkn; 61] = unsafe {
         },
         {
             let mut init = datetkn {
-                token: *::core::mem::transmute::<
-                    &[u8; 11],
-                    &mut [libc::c_char; 11],
-                >(b"h\0\0\0\0\0\0\0\0\0\0"),
+                token: *::core::mem::transmute::<&[u8; 11], &mut [libc::c_char; 11]>(
+                    b"h\0\0\0\0\0\0\0\0\0\0",
+                ),
                 type_0: 17 as libc::c_int as libc::c_char,
                 value: 20 as libc::c_int,
             };
@@ -2929,10 +2804,9 @@ static mut deltatktbl: [datetkn; 61] = unsafe {
         },
         {
             let mut init = datetkn {
-                token: *::core::mem::transmute::<
-                    &[u8; 11],
-                    &mut [libc::c_char; 11],
-                >(b"hour\0\0\0\0\0\0\0"),
+                token: *::core::mem::transmute::<&[u8; 11], &mut [libc::c_char; 11]>(
+                    b"hour\0\0\0\0\0\0\0",
+                ),
                 type_0: 17 as libc::c_int as libc::c_char,
                 value: 20 as libc::c_int,
             };
@@ -2940,10 +2814,9 @@ static mut deltatktbl: [datetkn; 61] = unsafe {
         },
         {
             let mut init = datetkn {
-                token: *::core::mem::transmute::<
-                    &[u8; 11],
-                    &mut [libc::c_char; 11],
-                >(b"hours\0\0\0\0\0\0"),
+                token: *::core::mem::transmute::<&[u8; 11], &mut [libc::c_char; 11]>(
+                    b"hours\0\0\0\0\0\0",
+                ),
                 type_0: 17 as libc::c_int as libc::c_char,
                 value: 20 as libc::c_int,
             };
@@ -2951,10 +2824,9 @@ static mut deltatktbl: [datetkn; 61] = unsafe {
         },
         {
             let mut init = datetkn {
-                token: *::core::mem::transmute::<
-                    &[u8; 11],
-                    &mut [libc::c_char; 11],
-                >(b"hr\0\0\0\0\0\0\0\0\0"),
+                token: *::core::mem::transmute::<&[u8; 11], &mut [libc::c_char; 11]>(
+                    b"hr\0\0\0\0\0\0\0\0\0",
+                ),
                 type_0: 17 as libc::c_int as libc::c_char,
                 value: 20 as libc::c_int,
             };
@@ -2962,10 +2834,9 @@ static mut deltatktbl: [datetkn; 61] = unsafe {
         },
         {
             let mut init = datetkn {
-                token: *::core::mem::transmute::<
-                    &[u8; 11],
-                    &mut [libc::c_char; 11],
-                >(b"hrs\0\0\0\0\0\0\0\0"),
+                token: *::core::mem::transmute::<&[u8; 11], &mut [libc::c_char; 11]>(
+                    b"hrs\0\0\0\0\0\0\0\0",
+                ),
                 type_0: 17 as libc::c_int as libc::c_char,
                 value: 20 as libc::c_int,
             };
@@ -2973,10 +2844,9 @@ static mut deltatktbl: [datetkn; 61] = unsafe {
         },
         {
             let mut init = datetkn {
-                token: *::core::mem::transmute::<
-                    &[u8; 11],
-                    &mut [libc::c_char; 11],
-                >(b"m\0\0\0\0\0\0\0\0\0\0"),
+                token: *::core::mem::transmute::<&[u8; 11], &mut [libc::c_char; 11]>(
+                    b"m\0\0\0\0\0\0\0\0\0\0",
+                ),
                 type_0: 17 as libc::c_int as libc::c_char,
                 value: 19 as libc::c_int,
             };
@@ -2984,10 +2854,9 @@ static mut deltatktbl: [datetkn; 61] = unsafe {
         },
         {
             let mut init = datetkn {
-                token: *::core::mem::transmute::<
-                    &[u8; 11],
-                    &mut [libc::c_char; 11],
-                >(b"microsecon\0"),
+                token: *::core::mem::transmute::<&[u8; 11], &mut [libc::c_char; 11]>(
+                    b"microsecon\0",
+                ),
                 type_0: 17 as libc::c_int as libc::c_char,
                 value: 30 as libc::c_int,
             };
@@ -2995,10 +2864,9 @@ static mut deltatktbl: [datetkn; 61] = unsafe {
         },
         {
             let mut init = datetkn {
-                token: *::core::mem::transmute::<
-                    &[u8; 11],
-                    &mut [libc::c_char; 11],
-                >(b"mil\0\0\0\0\0\0\0\0"),
+                token: *::core::mem::transmute::<&[u8; 11], &mut [libc::c_char; 11]>(
+                    b"mil\0\0\0\0\0\0\0\0",
+                ),
                 type_0: 17 as libc::c_int as libc::c_char,
                 value: 28 as libc::c_int,
             };
@@ -3006,10 +2874,9 @@ static mut deltatktbl: [datetkn; 61] = unsafe {
         },
         {
             let mut init = datetkn {
-                token: *::core::mem::transmute::<
-                    &[u8; 11],
-                    &mut [libc::c_char; 11],
-                >(b"millennia\0\0"),
+                token: *::core::mem::transmute::<&[u8; 11], &mut [libc::c_char; 11]>(
+                    b"millennia\0\0",
+                ),
                 type_0: 17 as libc::c_int as libc::c_char,
                 value: 28 as libc::c_int,
             };
@@ -3017,10 +2884,9 @@ static mut deltatktbl: [datetkn; 61] = unsafe {
         },
         {
             let mut init = datetkn {
-                token: *::core::mem::transmute::<
-                    &[u8; 11],
-                    &mut [libc::c_char; 11],
-                >(b"millennium\0"),
+                token: *::core::mem::transmute::<&[u8; 11], &mut [libc::c_char; 11]>(
+                    b"millennium\0",
+                ),
                 type_0: 17 as libc::c_int as libc::c_char,
                 value: 28 as libc::c_int,
             };
@@ -3028,10 +2894,9 @@ static mut deltatktbl: [datetkn; 61] = unsafe {
         },
         {
             let mut init = datetkn {
-                token: *::core::mem::transmute::<
-                    &[u8; 11],
-                    &mut [libc::c_char; 11],
-                >(b"millisecon\0"),
+                token: *::core::mem::transmute::<&[u8; 11], &mut [libc::c_char; 11]>(
+                    b"millisecon\0",
+                ),
                 type_0: 17 as libc::c_int as libc::c_char,
                 value: 29 as libc::c_int,
             };
@@ -3039,10 +2904,9 @@ static mut deltatktbl: [datetkn; 61] = unsafe {
         },
         {
             let mut init = datetkn {
-                token: *::core::mem::transmute::<
-                    &[u8; 11],
-                    &mut [libc::c_char; 11],
-                >(b"mils\0\0\0\0\0\0\0"),
+                token: *::core::mem::transmute::<&[u8; 11], &mut [libc::c_char; 11]>(
+                    b"mils\0\0\0\0\0\0\0",
+                ),
                 type_0: 17 as libc::c_int as libc::c_char,
                 value: 28 as libc::c_int,
             };
@@ -3050,10 +2914,9 @@ static mut deltatktbl: [datetkn; 61] = unsafe {
         },
         {
             let mut init = datetkn {
-                token: *::core::mem::transmute::<
-                    &[u8; 11],
-                    &mut [libc::c_char; 11],
-                >(b"min\0\0\0\0\0\0\0\0"),
+                token: *::core::mem::transmute::<&[u8; 11], &mut [libc::c_char; 11]>(
+                    b"min\0\0\0\0\0\0\0\0",
+                ),
                 type_0: 17 as libc::c_int as libc::c_char,
                 value: 19 as libc::c_int,
             };
@@ -3061,10 +2924,9 @@ static mut deltatktbl: [datetkn; 61] = unsafe {
         },
         {
             let mut init = datetkn {
-                token: *::core::mem::transmute::<
-                    &[u8; 11],
-                    &mut [libc::c_char; 11],
-                >(b"mins\0\0\0\0\0\0\0"),
+                token: *::core::mem::transmute::<&[u8; 11], &mut [libc::c_char; 11]>(
+                    b"mins\0\0\0\0\0\0\0",
+                ),
                 type_0: 17 as libc::c_int as libc::c_char,
                 value: 19 as libc::c_int,
             };
@@ -3072,10 +2934,9 @@ static mut deltatktbl: [datetkn; 61] = unsafe {
         },
         {
             let mut init = datetkn {
-                token: *::core::mem::transmute::<
-                    &[u8; 11],
-                    &mut [libc::c_char; 11],
-                >(b"minute\0\0\0\0\0"),
+                token: *::core::mem::transmute::<&[u8; 11], &mut [libc::c_char; 11]>(
+                    b"minute\0\0\0\0\0",
+                ),
                 type_0: 17 as libc::c_int as libc::c_char,
                 value: 19 as libc::c_int,
             };
@@ -3083,10 +2944,9 @@ static mut deltatktbl: [datetkn; 61] = unsafe {
         },
         {
             let mut init = datetkn {
-                token: *::core::mem::transmute::<
-                    &[u8; 11],
-                    &mut [libc::c_char; 11],
-                >(b"minutes\0\0\0\0"),
+                token: *::core::mem::transmute::<&[u8; 11], &mut [libc::c_char; 11]>(
+                    b"minutes\0\0\0\0",
+                ),
                 type_0: 17 as libc::c_int as libc::c_char,
                 value: 19 as libc::c_int,
             };
@@ -3094,10 +2954,9 @@ static mut deltatktbl: [datetkn; 61] = unsafe {
         },
         {
             let mut init = datetkn {
-                token: *::core::mem::transmute::<
-                    &[u8; 11],
-                    &mut [libc::c_char; 11],
-                >(b"mon\0\0\0\0\0\0\0\0"),
+                token: *::core::mem::transmute::<&[u8; 11], &mut [libc::c_char; 11]>(
+                    b"mon\0\0\0\0\0\0\0\0",
+                ),
                 type_0: 17 as libc::c_int as libc::c_char,
                 value: 23 as libc::c_int,
             };
@@ -3105,10 +2964,9 @@ static mut deltatktbl: [datetkn; 61] = unsafe {
         },
         {
             let mut init = datetkn {
-                token: *::core::mem::transmute::<
-                    &[u8; 11],
-                    &mut [libc::c_char; 11],
-                >(b"mons\0\0\0\0\0\0\0"),
+                token: *::core::mem::transmute::<&[u8; 11], &mut [libc::c_char; 11]>(
+                    b"mons\0\0\0\0\0\0\0",
+                ),
                 type_0: 17 as libc::c_int as libc::c_char,
                 value: 23 as libc::c_int,
             };
@@ -3116,10 +2974,9 @@ static mut deltatktbl: [datetkn; 61] = unsafe {
         },
         {
             let mut init = datetkn {
-                token: *::core::mem::transmute::<
-                    &[u8; 11],
-                    &mut [libc::c_char; 11],
-                >(b"month\0\0\0\0\0\0"),
+                token: *::core::mem::transmute::<&[u8; 11], &mut [libc::c_char; 11]>(
+                    b"month\0\0\0\0\0\0",
+                ),
                 type_0: 17 as libc::c_int as libc::c_char,
                 value: 23 as libc::c_int,
             };
@@ -3127,10 +2984,9 @@ static mut deltatktbl: [datetkn; 61] = unsafe {
         },
         {
             let mut init = datetkn {
-                token: *::core::mem::transmute::<
-                    &[u8; 11],
-                    &mut [libc::c_char; 11],
-                >(b"months\0\0\0\0\0"),
+                token: *::core::mem::transmute::<&[u8; 11], &mut [libc::c_char; 11]>(
+                    b"months\0\0\0\0\0",
+                ),
                 type_0: 17 as libc::c_int as libc::c_char,
                 value: 23 as libc::c_int,
             };
@@ -3138,10 +2994,9 @@ static mut deltatktbl: [datetkn; 61] = unsafe {
         },
         {
             let mut init = datetkn {
-                token: *::core::mem::transmute::<
-                    &[u8; 11],
-                    &mut [libc::c_char; 11],
-                >(b"ms\0\0\0\0\0\0\0\0\0"),
+                token: *::core::mem::transmute::<&[u8; 11], &mut [libc::c_char; 11]>(
+                    b"ms\0\0\0\0\0\0\0\0\0",
+                ),
                 type_0: 17 as libc::c_int as libc::c_char,
                 value: 29 as libc::c_int,
             };
@@ -3149,10 +3004,9 @@ static mut deltatktbl: [datetkn; 61] = unsafe {
         },
         {
             let mut init = datetkn {
-                token: *::core::mem::transmute::<
-                    &[u8; 11],
-                    &mut [libc::c_char; 11],
-                >(b"msec\0\0\0\0\0\0\0"),
+                token: *::core::mem::transmute::<&[u8; 11], &mut [libc::c_char; 11]>(
+                    b"msec\0\0\0\0\0\0\0",
+                ),
                 type_0: 17 as libc::c_int as libc::c_char,
                 value: 29 as libc::c_int,
             };
@@ -3160,10 +3014,9 @@ static mut deltatktbl: [datetkn; 61] = unsafe {
         },
         {
             let mut init = datetkn {
-                token: *::core::mem::transmute::<
-                    &[u8; 11],
-                    &mut [libc::c_char; 11],
-                >(b"msecond\0\0\0\0"),
+                token: *::core::mem::transmute::<&[u8; 11], &mut [libc::c_char; 11]>(
+                    b"msecond\0\0\0\0",
+                ),
                 type_0: 17 as libc::c_int as libc::c_char,
                 value: 29 as libc::c_int,
             };
@@ -3171,10 +3024,9 @@ static mut deltatktbl: [datetkn; 61] = unsafe {
         },
         {
             let mut init = datetkn {
-                token: *::core::mem::transmute::<
-                    &[u8; 11],
-                    &mut [libc::c_char; 11],
-                >(b"mseconds\0\0\0"),
+                token: *::core::mem::transmute::<&[u8; 11], &mut [libc::c_char; 11]>(
+                    b"mseconds\0\0\0",
+                ),
                 type_0: 17 as libc::c_int as libc::c_char,
                 value: 29 as libc::c_int,
             };
@@ -3182,10 +3034,9 @@ static mut deltatktbl: [datetkn; 61] = unsafe {
         },
         {
             let mut init = datetkn {
-                token: *::core::mem::transmute::<
-                    &[u8; 11],
-                    &mut [libc::c_char; 11],
-                >(b"msecs\0\0\0\0\0\0"),
+                token: *::core::mem::transmute::<&[u8; 11], &mut [libc::c_char; 11]>(
+                    b"msecs\0\0\0\0\0\0",
+                ),
                 type_0: 17 as libc::c_int as libc::c_char,
                 value: 29 as libc::c_int,
             };
@@ -3193,10 +3044,9 @@ static mut deltatktbl: [datetkn; 61] = unsafe {
         },
         {
             let mut init = datetkn {
-                token: *::core::mem::transmute::<
-                    &[u8; 11],
-                    &mut [libc::c_char; 11],
-                >(b"qtr\0\0\0\0\0\0\0\0"),
+                token: *::core::mem::transmute::<&[u8; 11], &mut [libc::c_char; 11]>(
+                    b"qtr\0\0\0\0\0\0\0\0",
+                ),
                 type_0: 17 as libc::c_int as libc::c_char,
                 value: 24 as libc::c_int,
             };
@@ -3204,10 +3054,9 @@ static mut deltatktbl: [datetkn; 61] = unsafe {
         },
         {
             let mut init = datetkn {
-                token: *::core::mem::transmute::<
-                    &[u8; 11],
-                    &mut [libc::c_char; 11],
-                >(b"quarter\0\0\0\0"),
+                token: *::core::mem::transmute::<&[u8; 11], &mut [libc::c_char; 11]>(
+                    b"quarter\0\0\0\0",
+                ),
                 type_0: 17 as libc::c_int as libc::c_char,
                 value: 24 as libc::c_int,
             };
@@ -3215,10 +3064,9 @@ static mut deltatktbl: [datetkn; 61] = unsafe {
         },
         {
             let mut init = datetkn {
-                token: *::core::mem::transmute::<
-                    &[u8; 11],
-                    &mut [libc::c_char; 11],
-                >(b"s\0\0\0\0\0\0\0\0\0\0"),
+                token: *::core::mem::transmute::<&[u8; 11], &mut [libc::c_char; 11]>(
+                    b"s\0\0\0\0\0\0\0\0\0\0",
+                ),
                 type_0: 17 as libc::c_int as libc::c_char,
                 value: 18 as libc::c_int,
             };
@@ -3226,10 +3074,9 @@ static mut deltatktbl: [datetkn; 61] = unsafe {
         },
         {
             let mut init = datetkn {
-                token: *::core::mem::transmute::<
-                    &[u8; 11],
-                    &mut [libc::c_char; 11],
-                >(b"sec\0\0\0\0\0\0\0\0"),
+                token: *::core::mem::transmute::<&[u8; 11], &mut [libc::c_char; 11]>(
+                    b"sec\0\0\0\0\0\0\0\0",
+                ),
                 type_0: 17 as libc::c_int as libc::c_char,
                 value: 18 as libc::c_int,
             };
@@ -3237,10 +3084,9 @@ static mut deltatktbl: [datetkn; 61] = unsafe {
         },
         {
             let mut init = datetkn {
-                token: *::core::mem::transmute::<
-                    &[u8; 11],
-                    &mut [libc::c_char; 11],
-                >(b"second\0\0\0\0\0"),
+                token: *::core::mem::transmute::<&[u8; 11], &mut [libc::c_char; 11]>(
+                    b"second\0\0\0\0\0",
+                ),
                 type_0: 17 as libc::c_int as libc::c_char,
                 value: 18 as libc::c_int,
             };
@@ -3248,10 +3094,9 @@ static mut deltatktbl: [datetkn; 61] = unsafe {
         },
         {
             let mut init = datetkn {
-                token: *::core::mem::transmute::<
-                    &[u8; 11],
-                    &mut [libc::c_char; 11],
-                >(b"seconds\0\0\0\0"),
+                token: *::core::mem::transmute::<&[u8; 11], &mut [libc::c_char; 11]>(
+                    b"seconds\0\0\0\0",
+                ),
                 type_0: 17 as libc::c_int as libc::c_char,
                 value: 18 as libc::c_int,
             };
@@ -3259,10 +3104,9 @@ static mut deltatktbl: [datetkn; 61] = unsafe {
         },
         {
             let mut init = datetkn {
-                token: *::core::mem::transmute::<
-                    &[u8; 11],
-                    &mut [libc::c_char; 11],
-                >(b"secs\0\0\0\0\0\0\0"),
+                token: *::core::mem::transmute::<&[u8; 11], &mut [libc::c_char; 11]>(
+                    b"secs\0\0\0\0\0\0\0",
+                ),
                 type_0: 17 as libc::c_int as libc::c_char,
                 value: 18 as libc::c_int,
             };
@@ -3270,10 +3114,9 @@ static mut deltatktbl: [datetkn; 61] = unsafe {
         },
         {
             let mut init = datetkn {
-                token: *::core::mem::transmute::<
-                    &[u8; 11],
-                    &mut [libc::c_char; 11],
-                >(b"timezone\0\0\0"),
+                token: *::core::mem::transmute::<&[u8; 11], &mut [libc::c_char; 11]>(
+                    b"timezone\0\0\0",
+                ),
                 type_0: 17 as libc::c_int as libc::c_char,
                 value: 4 as libc::c_int,
             };
@@ -3281,10 +3124,9 @@ static mut deltatktbl: [datetkn; 61] = unsafe {
         },
         {
             let mut init = datetkn {
-                token: *::core::mem::transmute::<
-                    &[u8; 11],
-                    &mut [libc::c_char; 11],
-                >(b"timezone_h\0"),
+                token: *::core::mem::transmute::<&[u8; 11], &mut [libc::c_char; 11]>(
+                    b"timezone_h\0",
+                ),
                 type_0: 17 as libc::c_int as libc::c_char,
                 value: 34 as libc::c_int,
             };
@@ -3292,10 +3134,9 @@ static mut deltatktbl: [datetkn; 61] = unsafe {
         },
         {
             let mut init = datetkn {
-                token: *::core::mem::transmute::<
-                    &[u8; 11],
-                    &mut [libc::c_char; 11],
-                >(b"timezone_m\0"),
+                token: *::core::mem::transmute::<&[u8; 11], &mut [libc::c_char; 11]>(
+                    b"timezone_m\0",
+                ),
                 type_0: 17 as libc::c_int as libc::c_char,
                 value: 35 as libc::c_int,
             };
@@ -3303,10 +3144,9 @@ static mut deltatktbl: [datetkn; 61] = unsafe {
         },
         {
             let mut init = datetkn {
-                token: *::core::mem::transmute::<
-                    &[u8; 11],
-                    &mut [libc::c_char; 11],
-                >(b"us\0\0\0\0\0\0\0\0\0"),
+                token: *::core::mem::transmute::<&[u8; 11], &mut [libc::c_char; 11]>(
+                    b"us\0\0\0\0\0\0\0\0\0",
+                ),
                 type_0: 17 as libc::c_int as libc::c_char,
                 value: 30 as libc::c_int,
             };
@@ -3314,10 +3154,9 @@ static mut deltatktbl: [datetkn; 61] = unsafe {
         },
         {
             let mut init = datetkn {
-                token: *::core::mem::transmute::<
-                    &[u8; 11],
-                    &mut [libc::c_char; 11],
-                >(b"usec\0\0\0\0\0\0\0"),
+                token: *::core::mem::transmute::<&[u8; 11], &mut [libc::c_char; 11]>(
+                    b"usec\0\0\0\0\0\0\0",
+                ),
                 type_0: 17 as libc::c_int as libc::c_char,
                 value: 30 as libc::c_int,
             };
@@ -3325,10 +3164,9 @@ static mut deltatktbl: [datetkn; 61] = unsafe {
         },
         {
             let mut init = datetkn {
-                token: *::core::mem::transmute::<
-                    &[u8; 11],
-                    &mut [libc::c_char; 11],
-                >(b"usecond\0\0\0\0"),
+                token: *::core::mem::transmute::<&[u8; 11], &mut [libc::c_char; 11]>(
+                    b"usecond\0\0\0\0",
+                ),
                 type_0: 17 as libc::c_int as libc::c_char,
                 value: 30 as libc::c_int,
             };
@@ -3336,10 +3174,9 @@ static mut deltatktbl: [datetkn; 61] = unsafe {
         },
         {
             let mut init = datetkn {
-                token: *::core::mem::transmute::<
-                    &[u8; 11],
-                    &mut [libc::c_char; 11],
-                >(b"useconds\0\0\0"),
+                token: *::core::mem::transmute::<&[u8; 11], &mut [libc::c_char; 11]>(
+                    b"useconds\0\0\0",
+                ),
                 type_0: 17 as libc::c_int as libc::c_char,
                 value: 30 as libc::c_int,
             };
@@ -3347,10 +3184,9 @@ static mut deltatktbl: [datetkn; 61] = unsafe {
         },
         {
             let mut init = datetkn {
-                token: *::core::mem::transmute::<
-                    &[u8; 11],
-                    &mut [libc::c_char; 11],
-                >(b"usecs\0\0\0\0\0\0"),
+                token: *::core::mem::transmute::<&[u8; 11], &mut [libc::c_char; 11]>(
+                    b"usecs\0\0\0\0\0\0",
+                ),
                 type_0: 17 as libc::c_int as libc::c_char,
                 value: 30 as libc::c_int,
             };
@@ -3358,10 +3194,9 @@ static mut deltatktbl: [datetkn; 61] = unsafe {
         },
         {
             let mut init = datetkn {
-                token: *::core::mem::transmute::<
-                    &[u8; 11],
-                    &mut [libc::c_char; 11],
-                >(b"w\0\0\0\0\0\0\0\0\0\0"),
+                token: *::core::mem::transmute::<&[u8; 11], &mut [libc::c_char; 11]>(
+                    b"w\0\0\0\0\0\0\0\0\0\0",
+                ),
                 type_0: 17 as libc::c_int as libc::c_char,
                 value: 22 as libc::c_int,
             };
@@ -3369,10 +3204,9 @@ static mut deltatktbl: [datetkn; 61] = unsafe {
         },
         {
             let mut init = datetkn {
-                token: *::core::mem::transmute::<
-                    &[u8; 11],
-                    &mut [libc::c_char; 11],
-                >(b"week\0\0\0\0\0\0\0"),
+                token: *::core::mem::transmute::<&[u8; 11], &mut [libc::c_char; 11]>(
+                    b"week\0\0\0\0\0\0\0",
+                ),
                 type_0: 17 as libc::c_int as libc::c_char,
                 value: 22 as libc::c_int,
             };
@@ -3380,10 +3214,9 @@ static mut deltatktbl: [datetkn; 61] = unsafe {
         },
         {
             let mut init = datetkn {
-                token: *::core::mem::transmute::<
-                    &[u8; 11],
-                    &mut [libc::c_char; 11],
-                >(b"weeks\0\0\0\0\0\0"),
+                token: *::core::mem::transmute::<&[u8; 11], &mut [libc::c_char; 11]>(
+                    b"weeks\0\0\0\0\0\0",
+                ),
                 type_0: 17 as libc::c_int as libc::c_char,
                 value: 22 as libc::c_int,
             };
@@ -3391,10 +3224,9 @@ static mut deltatktbl: [datetkn; 61] = unsafe {
         },
         {
             let mut init = datetkn {
-                token: *::core::mem::transmute::<
-                    &[u8; 11],
-                    &mut [libc::c_char; 11],
-                >(b"y\0\0\0\0\0\0\0\0\0\0"),
+                token: *::core::mem::transmute::<&[u8; 11], &mut [libc::c_char; 11]>(
+                    b"y\0\0\0\0\0\0\0\0\0\0",
+                ),
                 type_0: 17 as libc::c_int as libc::c_char,
                 value: 25 as libc::c_int,
             };
@@ -3402,10 +3234,9 @@ static mut deltatktbl: [datetkn; 61] = unsafe {
         },
         {
             let mut init = datetkn {
-                token: *::core::mem::transmute::<
-                    &[u8; 11],
-                    &mut [libc::c_char; 11],
-                >(b"year\0\0\0\0\0\0\0"),
+                token: *::core::mem::transmute::<&[u8; 11], &mut [libc::c_char; 11]>(
+                    b"year\0\0\0\0\0\0\0",
+                ),
                 type_0: 17 as libc::c_int as libc::c_char,
                 value: 25 as libc::c_int,
             };
@@ -3413,10 +3244,9 @@ static mut deltatktbl: [datetkn; 61] = unsafe {
         },
         {
             let mut init = datetkn {
-                token: *::core::mem::transmute::<
-                    &[u8; 11],
-                    &mut [libc::c_char; 11],
-                >(b"years\0\0\0\0\0\0"),
+                token: *::core::mem::transmute::<&[u8; 11], &mut [libc::c_char; 11]>(
+                    b"years\0\0\0\0\0\0",
+                ),
                 type_0: 17 as libc::c_int as libc::c_char,
                 value: 25 as libc::c_int,
             };
@@ -3424,10 +3254,9 @@ static mut deltatktbl: [datetkn; 61] = unsafe {
         },
         {
             let mut init = datetkn {
-                token: *::core::mem::transmute::<
-                    &[u8; 11],
-                    &mut [libc::c_char; 11],
-                >(b"yr\0\0\0\0\0\0\0\0\0"),
+                token: *::core::mem::transmute::<&[u8; 11], &mut [libc::c_char; 11]>(
+                    b"yr\0\0\0\0\0\0\0\0\0",
+                ),
                 type_0: 17 as libc::c_int as libc::c_char,
                 value: 25 as libc::c_int,
             };
@@ -3435,10 +3264,9 @@ static mut deltatktbl: [datetkn; 61] = unsafe {
         },
         {
             let mut init = datetkn {
-                token: *::core::mem::transmute::<
-                    &[u8; 11],
-                    &mut [libc::c_char; 11],
-                >(b"yrs\0\0\0\0\0\0\0\0"),
+                token: *::core::mem::transmute::<&[u8; 11], &mut [libc::c_char; 11]>(
+                    b"yrs\0\0\0\0\0\0\0\0",
+                ),
                 type_0: 17 as libc::c_int as libc::c_char,
                 value: 25 as libc::c_int,
             };
@@ -3447,8 +3275,8 @@ static mut deltatktbl: [datetkn; 61] = unsafe {
     ]
 };
 static mut szdeltatktbl: libc::c_int = 0;
-static mut zoneabbrevtbl: *mut TimeZoneAbbrevTable = 0 as *const TimeZoneAbbrevTable
-    as *mut TimeZoneAbbrevTable;
+static mut zoneabbrevtbl: *mut TimeZoneAbbrevTable =
+    0 as *const TimeZoneAbbrevTable as *mut TimeZoneAbbrevTable;
 static mut datecache: [*const datetkn; 25] = [
     0 as *const datetkn,
     0 as *const datetkn,
@@ -3569,12 +3397,11 @@ pub unsafe extern "C" fn j2date(
         .wrapping_sub(quad.wrapping_mul(146097 as libc::c_int as libc::c_uint))
         .wrapping_mul(4 as libc::c_int as libc::c_uint)
         .wrapping_add(3 as libc::c_int as libc::c_uint);
-    julian = julian
-        .wrapping_add(
-            (60 as libc::c_int as libc::c_uint)
-                .wrapping_add(quad.wrapping_mul(3 as libc::c_int as libc::c_uint))
-                .wrapping_add(extra.wrapping_div(146097 as libc::c_int as libc::c_uint)),
-        );
+    julian = julian.wrapping_add(
+        (60 as libc::c_int as libc::c_uint)
+            .wrapping_add(quad.wrapping_mul(3 as libc::c_int as libc::c_uint))
+            .wrapping_add(extra.wrapping_div(146097 as libc::c_int as libc::c_uint)),
+    );
     quad = julian.wrapping_div(1461 as libc::c_int as libc::c_uint);
     julian = julian.wrapping_sub(quad.wrapping_mul(1461 as libc::c_int as libc::c_uint));
     y = julian
@@ -3589,20 +3416,18 @@ pub unsafe extern "C" fn j2date(
             .wrapping_add(306 as libc::c_int as libc::c_uint)
             .wrapping_rem(366 as libc::c_int as libc::c_uint)
     })
-        .wrapping_add(123 as libc::c_int as libc::c_uint);
-    y = (y as libc::c_uint)
-        .wrapping_add(quad.wrapping_mul(4 as libc::c_int as libc::c_uint)) as libc::c_int
-        as libc::c_int;
+    .wrapping_add(123 as libc::c_int as libc::c_uint);
+    y = (y as libc::c_uint).wrapping_add(quad.wrapping_mul(4 as libc::c_int as libc::c_uint))
+        as libc::c_int as libc::c_int;
     *year = y - 4800 as libc::c_int;
     quad = julian
         .wrapping_mul(2141 as libc::c_int as libc::c_uint)
         .wrapping_div(65536 as libc::c_int as libc::c_uint);
-    *day = julian
-        .wrapping_sub(
-            (7834 as libc::c_int as libc::c_uint)
-                .wrapping_mul(quad)
-                .wrapping_div(256 as libc::c_int as libc::c_uint),
-        ) as libc::c_int;
+    *day = julian.wrapping_sub(
+        (7834 as libc::c_int as libc::c_uint)
+            .wrapping_mul(quad)
+            .wrapping_div(256 as libc::c_int as libc::c_uint),
+    ) as libc::c_int;
     *month = quad
         .wrapping_add(10 as libc::c_int as libc::c_uint)
         .wrapping_rem(12 as libc::c_int as libc::c_uint)
@@ -3666,25 +3491,20 @@ pub unsafe extern "C" fn GetCurrentTimeUsec(
             {
                 errcode(
                     ('2' as i32 - '0' as i32 & 0x3f as libc::c_int)
-                        + (('2' as i32 - '0' as i32 & 0x3f as libc::c_int)
-                            << 6 as libc::c_int)
-                        + (('0' as i32 - '0' as i32 & 0x3f as libc::c_int)
-                            << 12 as libc::c_int)
-                        + (('0' as i32 - '0' as i32 & 0x3f as libc::c_int)
-                            << 18 as libc::c_int)
-                        + (('8' as i32 - '0' as i32 & 0x3f as libc::c_int)
-                            << 24 as libc::c_int),
+                        + (('2' as i32 - '0' as i32 & 0x3f as libc::c_int) << 6 as libc::c_int)
+                        + (('0' as i32 - '0' as i32 & 0x3f as libc::c_int) << 12 as libc::c_int)
+                        + (('0' as i32 - '0' as i32 & 0x3f as libc::c_int) << 18 as libc::c_int)
+                        + (('8' as i32 - '0' as i32 & 0x3f as libc::c_int) << 24 as libc::c_int),
                 );
                 errmsg0(b"timestamp out of range\0" as *const u8 as *const libc::c_char);
                 errfinish(
-                    b"/home/petrosagg/projects/postgres-datetime/src/datetime.c\0"
-                        as *const u8 as *const libc::c_char,
+                    b"/home/petrosagg/projects/postgres-datetime/src/datetime.c\0" as *const u8
+                        as *const libc::c_char,
                     405 as libc::c_int,
-                    (*::core::mem::transmute::<
-                        &[u8; 19],
-                        &[libc::c_char; 19],
-                    >(b"GetCurrentTimeUsec\0"))
-                        .as_ptr(),
+                    (*::core::mem::transmute::<&[u8; 19], &[libc::c_char; 19]>(
+                        b"GetCurrentTimeUsec\0",
+                    ))
+                    .as_ptr(),
                 );
             }
             if 0 != 0 && 21 as libc::c_int >= 21 as libc::c_int {
@@ -3720,9 +3540,13 @@ unsafe extern "C" fn AppendSeconds(
         );
     }
     if fsec != 0 as libc::c_int {
-        let mut value: int32 = if fsec >= 0 as libc::c_int { fsec } else { -fsec };
-        let mut end: *mut libc::c_char = &mut *cp
-            .offset((precision + 1 as libc::c_int) as isize) as *mut libc::c_char;
+        let mut value: int32 = if fsec >= 0 as libc::c_int {
+            fsec
+        } else {
+            -fsec
+        };
+        let mut end: *mut libc::c_char =
+            &mut *cp.offset((precision + 1 as libc::c_int) as isize) as *mut libc::c_char;
         let mut gotnonzero: bool_0 = 0 as libc::c_int as bool_0;
         let fresh0 = cp;
         cp = cp.offset(1);
@@ -3741,10 +3565,7 @@ unsafe extern "C" fn AppendSeconds(
                 gotnonzero = 1 as libc::c_int as bool_0;
             }
             if gotnonzero != 0 {
-                *cp
-                    .offset(
-                        precision as isize,
-                    ) = ('0' as i32 + remainder) as libc::c_char;
+                *cp.offset(precision as isize) = ('0' as i32 + remainder) as libc::c_char;
             } else {
                 end = &mut *cp.offset(precision as isize) as *mut libc::c_char;
             }
@@ -3752,12 +3573,16 @@ unsafe extern "C" fn AppendSeconds(
         if value != 0 {
             return pg_ultostr(
                 cp,
-                (if fsec >= 0 as libc::c_int { fsec } else { -fsec }) as uint32,
+                (if fsec >= 0 as libc::c_int {
+                    fsec
+                } else {
+                    -fsec
+                }) as uint32,
             );
         }
         return end;
     } else {
-        return cp
+        return cp;
     };
 }
 unsafe extern "C" fn AppendTimestampSeconds(
@@ -3787,8 +3612,8 @@ unsafe extern "C" fn AdjustFractSeconds(
     sec = frac as libc::c_int;
     (*tm).tm_sec += sec;
     frac -= sec as libc::c_double;
-    *fsec = (*fsec as libc::c_double
-        + rint(frac * 1000000 as libc::c_int as libc::c_double)) as fsec_t;
+    *fsec =
+        (*fsec as libc::c_double + rint(frac * 1000000 as libc::c_int as libc::c_double)) as fsec_t;
 }
 unsafe extern "C" fn AdjustFractDays(
     mut frac: libc::c_double,
@@ -3819,398 +3644,189 @@ unsafe extern "C" fn ParseFractionalSecond(
     *fsec = rint(frac * 1000000 as libc::c_int as libc::c_double) as fsec_t;
     return 0 as libc::c_int;
 }
+
+/// ParseDateTime()
+///  Break string into tokens based on a date/time context.
+///  Returns 0 if successful, DTERR code if bogus input detected.
+///
+/// timestr - the input string
+/// workbuf - workspace for field string storage. This must be
+///   larger than the largest legal input for this datetime type --
+///   some additional space will be needed to NUL terminate fields.
+/// buflen - the size of workbuf
+/// field[] - pointers to field strings are returned in this array
+/// ftype[] - field type indicators are returned in this array
+/// maxfields - dimensions of the above two arrays
+/// *numfields - set to the actual number of fields detected
+///
+/// The fields extracted from the input are stored as separate,
+/// null-terminated strings in the workspace at workbuf. Any text is
+/// converted to lower case.
+///
+/// Several field types are assigned:
+///  DTK_NUMBER - digits and (possibly) a decimal point
+///  DTK_DATE - digits and two delimiters, or digits and text
+///  DTK_TIME - digits, colon delimiters, and possibly a decimal point
+///  DTK_STRING - text (no digits or punctuation)
+///  DTK_SPECIAL - leading "+" or "-" followed by text
+///  DTK_TZ - leading "+" or "-" followed by digits (also eats ':', '.', '-')
+///
+/// Note that some field types can hold unexpected items:
+///  DTK_NUMBER can hold date fields (yy.ddd)
+///  DTK_STRING can hold months (January) and time zones (PST)
+///  DTK_DATE can hold time zone names (America/New_York, GMT-8)
 #[no_mangle]
 pub unsafe extern "C" fn ParseDateTime(
-    mut timestr: *const libc::c_char,
-    mut workbuf: *mut libc::c_char,
-    mut buflen: size_t,
-    mut field: *mut *mut libc::c_char,
-    mut ftype: *mut libc::c_int,
+    mut timestr: &str,
+    mut fields: &mut Vec<String>,
+    mut ftypes: &mut Vec<libc::c_int>,
     mut maxfields: libc::c_int,
-    mut numfields: *mut libc::c_int,
 ) -> libc::c_int {
     let mut nf: libc::c_int = 0 as libc::c_int;
-    let mut cp: *const libc::c_char = timestr;
-    let mut bufp: *mut libc::c_char = workbuf;
-    let mut bufend: *const libc::c_char = workbuf.offset(buflen as isize);
-    while *cp as libc::c_int != '\0' as i32 {
-        if *(*__ctype_b_loc()).offset(*cp as libc::c_uchar as libc::c_int as isize)
-            as libc::c_int & _ISspace as libc::c_int as libc::c_ushort as libc::c_int
-            != 0
-        {
-            cp = cp.offset(1);
-        } else {
-            if nf >= maxfields {
-                return -(1 as libc::c_int);
+    let mut cp = timestr.chars().peekable();
+
+    // outer loop through fields
+    while cp.peek().is_some() {
+        // Ignore spaces between fields
+        if cp.peek().unwrap().is_ascii_whitespace() {
+            cp.next();
+            continue;
+        }
+
+        // Record start of current field
+        if nf >= maxfields {
+            return -(1 as libc::c_int);
+        }
+        let mut fdata = String::new();
+        let mut ftype = 0;
+
+        // leading digit? then date or time
+        if cp.peek().unwrap().is_ascii_digit() {
+            while let Some(c) = cp.next_if(|c| c.is_ascii_digit()) {
+                fdata.push(c);
             }
-            let ref mut fresh2 = *field.offset(nf as isize);
-            *fresh2 = bufp;
-            if *(*__ctype_b_loc()).offset(*cp as libc::c_uchar as libc::c_int as isize)
-                as libc::c_int & _ISdigit as libc::c_int as libc::c_ushort as libc::c_int
-                != 0
-            {
-                if bufp.offset(1 as libc::c_int as isize) >= bufend as *mut libc::c_char
-                {
-                    return -(1 as libc::c_int);
+
+            // time field?
+            if *cp.peek().unwrap() == ':' {
+                ftype = 3;
+
+                while let Some(c) = cp.next_if(|&c| c.is_ascii_digit() || c == ':' || c == '.') {
+                    fdata.push(c);
                 }
-                let fresh3 = cp;
-                cp = cp.offset(1);
-                let fresh4 = bufp;
-                bufp = bufp.offset(1);
-                *fresh4 = *fresh3;
-                while *(*__ctype_b_loc())
-                    .offset(*cp as libc::c_uchar as libc::c_int as isize) as libc::c_int
-                    & _ISdigit as libc::c_int as libc::c_ushort as libc::c_int != 0
-                {
-                    if bufp.offset(1 as libc::c_int as isize)
-                        >= bufend as *mut libc::c_char
-                    {
-                        return -(1 as libc::c_int);
+            // date field? allow embedded text month
+            } else if matches!(*cp.peek().unwrap(), '-' | '/' | '.') {
+                // save delimiting character to use later
+                let mut delim = *cp.peek().unwrap();
+
+                fdata.push(cp.next().unwrap());
+
+                // second field is all digits? then no embedded text month
+                if cp.peek().unwrap().is_ascii_digit() {
+                    ftype = match delim {
+                        '.' => 0,
+                        _ => 2,
+                    };
+                    while let Some(c) = cp.next_if(|c| c.is_ascii_digit()) {
+                        fdata.push(c);
                     }
-                    let fresh5 = cp;
-                    cp = cp.offset(1);
-                    let fresh6 = bufp;
-                    bufp = bufp.offset(1);
-                    *fresh6 = *fresh5;
-                }
-                if *cp as libc::c_int == ':' as i32 {
-                    *ftype.offset(nf as isize) = 3 as libc::c_int;
-                    if bufp.offset(1 as libc::c_int as isize)
-                        >= bufend as *mut libc::c_char
-                    {
-                        return -(1 as libc::c_int);
-                    }
-                    let fresh7 = cp;
-                    cp = cp.offset(1);
-                    let fresh8 = bufp;
-                    bufp = bufp.offset(1);
-                    *fresh8 = *fresh7;
-                    while *(*__ctype_b_loc())
-                        .offset(*cp as libc::c_uchar as libc::c_int as isize)
-                        as libc::c_int
-                        & _ISdigit as libc::c_int as libc::c_ushort as libc::c_int != 0
-                        || *cp as libc::c_int == ':' as i32
-                        || *cp as libc::c_int == '.' as i32
-                    {
-                        if bufp.offset(1 as libc::c_int as isize)
-                            >= bufend as *mut libc::c_char
-                        {
-                            return -(1 as libc::c_int);
-                        }
-                        let fresh9 = cp;
-                        cp = cp.offset(1);
-                        let fresh10 = bufp;
-                        bufp = bufp.offset(1);
-                        *fresh10 = *fresh9;
-                    }
-                } else if *cp as libc::c_int == '-' as i32
-                    || *cp as libc::c_int == '/' as i32
-                    || *cp as libc::c_int == '.' as i32
-                {
-                    let mut delim: libc::c_char = *cp;
-                    if bufp.offset(1 as libc::c_int as isize)
-                        >= bufend as *mut libc::c_char
-                    {
-                        return -(1 as libc::c_int);
-                    }
-                    let fresh11 = cp;
-                    cp = cp.offset(1);
-                    let fresh12 = bufp;
-                    bufp = bufp.offset(1);
-                    *fresh12 = *fresh11;
-                    if *(*__ctype_b_loc())
-                        .offset(*cp as libc::c_uchar as libc::c_int as isize)
-                        as libc::c_int
-                        & _ISdigit as libc::c_int as libc::c_ushort as libc::c_int != 0
-                    {
-                        *ftype
-                            .offset(
-                                nf as isize,
-                            ) = if delim as libc::c_int == '.' as i32 {
-                            0 as libc::c_int
-                        } else {
-                            2 as libc::c_int
-                        };
-                        while *(*__ctype_b_loc())
-                            .offset(*cp as libc::c_uchar as libc::c_int as isize)
-                            as libc::c_int
-                            & _ISdigit as libc::c_int as libc::c_ushort as libc::c_int
-                            != 0
-                        {
-                            if bufp.offset(1 as libc::c_int as isize)
-                                >= bufend as *mut libc::c_char
-                            {
-                                return -(1 as libc::c_int);
-                            }
-                            let fresh13 = cp;
-                            cp = cp.offset(1);
-                            let fresh14 = bufp;
-                            bufp = bufp.offset(1);
-                            *fresh14 = *fresh13;
-                        }
-                        if *cp as libc::c_int == delim as libc::c_int {
-                            *ftype.offset(nf as isize) = 2 as libc::c_int;
-                            if bufp.offset(1 as libc::c_int as isize)
-                                >= bufend as *mut libc::c_char
-                            {
-                                return -(1 as libc::c_int);
-                            }
-                            let fresh15 = cp;
-                            cp = cp.offset(1);
-                            let fresh16 = bufp;
-                            bufp = bufp.offset(1);
-                            *fresh16 = *fresh15;
-                            while *(*__ctype_b_loc())
-                                .offset(*cp as libc::c_uchar as libc::c_int as isize)
-                                as libc::c_int
-                                & _ISdigit as libc::c_int as libc::c_ushort as libc::c_int
-                                != 0 || *cp as libc::c_int == delim as libc::c_int
-                            {
-                                if bufp.offset(1 as libc::c_int as isize)
-                                    >= bufend as *mut libc::c_char
-                                {
-                                    return -(1 as libc::c_int);
-                                }
-                                let fresh17 = cp;
-                                cp = cp.offset(1);
-                                let fresh18 = bufp;
-                                bufp = bufp.offset(1);
-                                *fresh18 = *fresh17;
-                            }
-                        }
-                    } else {
-                        *ftype.offset(nf as isize) = 2 as libc::c_int;
-                        while *(*__ctype_b_loc())
-                            .offset(*cp as libc::c_uchar as libc::c_int as isize)
-                            as libc::c_int
-                            & _ISalnum as libc::c_int as libc::c_ushort as libc::c_int
-                            != 0 || *cp as libc::c_int == delim as libc::c_int
-                        {
-                            if bufp.offset(1 as libc::c_int as isize)
-                                >= bufend as *mut libc::c_char
-                            {
-                                return -(1 as libc::c_int);
-                            }
-                            let fresh19 = cp;
-                            cp = cp.offset(1);
-                            let fresh20 = bufp;
-                            bufp = bufp.offset(1);
-                            *fresh20 = pg_tolower(*fresh19 as libc::c_uchar)
-                                as libc::c_char;
+
+                    // insist that the delimiters match to get a three-field date.
+                    if *cp.peek().unwrap() == delim {
+                        ftype = 2;
+
+                        fdata.push(cp.next().unwrap());
+                        while let Some(c) = cp.next_if(|&c| c.is_ascii_digit() || c == delim) {
+                            fdata.push(c);
                         }
                     }
                 } else {
-                    *ftype.offset(nf as isize) = 0 as libc::c_int;
-                }
-            } else if *cp as libc::c_int == '.' as i32 {
-                if bufp.offset(1 as libc::c_int as isize) >= bufend as *mut libc::c_char
-                {
-                    return -(1 as libc::c_int);
-                }
-                let fresh21 = cp;
-                cp = cp.offset(1);
-                let fresh22 = bufp;
-                bufp = bufp.offset(1);
-                *fresh22 = *fresh21;
-                while *(*__ctype_b_loc())
-                    .offset(*cp as libc::c_uchar as libc::c_int as isize) as libc::c_int
-                    & _ISdigit as libc::c_int as libc::c_ushort as libc::c_int != 0
-                {
-                    if bufp.offset(1 as libc::c_int as isize)
-                        >= bufend as *mut libc::c_char
-                    {
-                        return -(1 as libc::c_int);
+                    ftype = 2;
+                    while let Some(c) = cp.next_if(|&c| c.is_ascii_alphanumeric() || c == delim) {
+                        fdata.push(c.to_ascii_lowercase());
                     }
-                    let fresh23 = cp;
-                    cp = cp.offset(1);
-                    let fresh24 = bufp;
-                    bufp = bufp.offset(1);
-                    *fresh24 = *fresh23;
                 }
-                *ftype.offset(nf as isize) = 0 as libc::c_int;
-            } else if *(*__ctype_b_loc())
-                .offset(*cp as libc::c_uchar as libc::c_int as isize) as libc::c_int
-                & _ISalpha as libc::c_int as libc::c_ushort as libc::c_int != 0
-            {
-                let mut is_date: bool_0 = 0;
-                *ftype.offset(nf as isize) = 1 as libc::c_int;
-                if bufp.offset(1 as libc::c_int as isize) >= bufend as *mut libc::c_char
-                {
-                    return -(1 as libc::c_int);
-                }
-                let fresh25 = cp;
-                cp = cp.offset(1);
-                let fresh26 = bufp;
-                bufp = bufp.offset(1);
-                *fresh26 = pg_tolower(*fresh25 as libc::c_uchar) as libc::c_char;
-                while *(*__ctype_b_loc())
-                    .offset(*cp as libc::c_uchar as libc::c_int as isize) as libc::c_int
-                    & _ISalpha as libc::c_int as libc::c_ushort as libc::c_int != 0
-                {
-                    if bufp.offset(1 as libc::c_int as isize)
-                        >= bufend as *mut libc::c_char
-                    {
-                        return -(1 as libc::c_int);
-                    }
-                    let fresh27 = cp;
-                    cp = cp.offset(1);
-                    let fresh28 = bufp;
-                    bufp = bufp.offset(1);
-                    *fresh28 = pg_tolower(*fresh27 as libc::c_uchar) as libc::c_char;
-                }
-                is_date = 0 as libc::c_int as bool_0;
-                if *cp as libc::c_int == '-' as i32 || *cp as libc::c_int == '/' as i32
-                    || *cp as libc::c_int == '.' as i32
+            // otherwise, number only and will determine year, month, day, or concatenated fields
+            // later..
+            } else {
+                ftype = 0;
+            }
+        // Leading decimal point? Then fractional seconds...
+        } else if *cp.peek().unwrap() == '.' {
+            fdata.push(cp.next().unwrap());
+            while let Some(c) = cp.next_if(|&c| c.is_ascii_digit()) {
+                fdata.push(c);
+            }
+            ftype = 0;
+        // text? then date string, month, day of week, special, or timezone
+        } else if cp.peek().unwrap().is_ascii_alphabetic() {
+            let mut is_date: bool_0 = 0;
+            ftype = 1;
+            while let Some(c) = cp.next_if(|&c| c.is_ascii_alphabetic()) {
+                fdata.push(c.to_ascii_lowercase());
+            }
+            // Dates can have embedded '-', '/', or '.' separators.  It could also be a timezone
+            // name containing embedded '/', '+', '-', '_', or ':' (but '_' or ':' can't be the
+            // first punctuation). If the next character is a digit or '+', we need to check
+            // whether what we have so far is a recognized non-timezone keyword --- if so, don't
+            // believe that this is the start of a timezone.
+            is_date = 0 as libc::c_int as bool_0;
+            if matches!(*cp.peek().unwrap(), '-' | '/' | '.') {
+                is_date = 1 as libc::c_int as bool_0;
+            } else if *cp.peek().unwrap() == '+' || cp.peek().unwrap().is_ascii_digit() {
+                // we need search only the core token table, not TZ names
+                let cdata = std::ffi::CString::new(fdata.clone()).unwrap();
+                if (datebsearch(cdata.as_ptr(), datetktbl.as_ptr(), szdatetktbl))
+                    .is_null()
                 {
                     is_date = 1 as libc::c_int as bool_0;
-                } else if *cp as libc::c_int == '+' as i32
-                    || *(*__ctype_b_loc())
-                        .offset(*cp as libc::c_uchar as libc::c_int as isize)
-                        as libc::c_int
-                        & _ISdigit as libc::c_int as libc::c_ushort as libc::c_int != 0
-                {
-                    *bufp = '\0' as i32 as libc::c_char;
-                    if (datebsearch(
-                        *field.offset(nf as isize),
-                        datetktbl.as_ptr(),
-                        szdatetktbl,
-                    ))
-                        .is_null()
-                    {
-                        is_date = 1 as libc::c_int as bool_0;
-                    }
                 }
-                if is_date != 0 {
-                    *ftype.offset(nf as isize) = 2 as libc::c_int;
-                    loop {
-                        if bufp.offset(1 as libc::c_int as isize)
-                            >= bufend as *mut libc::c_char
-                        {
-                            return -(1 as libc::c_int);
-                        }
-                        let fresh29 = cp;
-                        cp = cp.offset(1);
-                        let fresh30 = bufp;
-                        bufp = bufp.offset(1);
-                        *fresh30 = pg_tolower(*fresh29 as libc::c_uchar) as libc::c_char;
-                        if !(*cp as libc::c_int == '+' as i32
-                            || *cp as libc::c_int == '-' as i32
-                            || *cp as libc::c_int == '/' as i32
-                            || *cp as libc::c_int == '_' as i32
-                            || *cp as libc::c_int == '.' as i32
-                            || *cp as libc::c_int == ':' as i32
-                            || *(*__ctype_b_loc())
-                                .offset(*cp as libc::c_uchar as libc::c_int as isize)
-                                as libc::c_int
-                                & _ISalnum as libc::c_int as libc::c_ushort as libc::c_int
-                                != 0)
-                        {
-                            break;
-                        }
-                    }
-                }
-            } else if *cp as libc::c_int == '+' as i32
-                || *cp as libc::c_int == '-' as i32
-            {
-                if bufp.offset(1 as libc::c_int as isize) >= bufend as *mut libc::c_char
-                {
-                    return -(1 as libc::c_int);
-                }
-                let fresh31 = cp;
-                cp = cp.offset(1);
-                let fresh32 = bufp;
-                bufp = bufp.offset(1);
-                *fresh32 = *fresh31;
-                while *(*__ctype_b_loc())
-                    .offset(*cp as libc::c_uchar as libc::c_int as isize) as libc::c_int
-                    & _ISspace as libc::c_int as libc::c_ushort as libc::c_int != 0
-                {
-                    cp = cp.offset(1);
-                }
-                if *(*__ctype_b_loc())
-                    .offset(*cp as libc::c_uchar as libc::c_int as isize) as libc::c_int
-                    & _ISdigit as libc::c_int as libc::c_ushort as libc::c_int != 0
-                {
-                    *ftype.offset(nf as isize) = 4 as libc::c_int;
-                    if bufp.offset(1 as libc::c_int as isize)
-                        >= bufend as *mut libc::c_char
-                    {
-                        return -(1 as libc::c_int);
-                    }
-                    let fresh33 = cp;
-                    cp = cp.offset(1);
-                    let fresh34 = bufp;
-                    bufp = bufp.offset(1);
-                    *fresh34 = *fresh33;
-                    while *(*__ctype_b_loc())
-                        .offset(*cp as libc::c_uchar as libc::c_int as isize)
-                        as libc::c_int
-                        & _ISdigit as libc::c_int as libc::c_ushort as libc::c_int != 0
-                        || *cp as libc::c_int == ':' as i32
-                        || *cp as libc::c_int == '.' as i32
-                        || *cp as libc::c_int == '-' as i32
-                    {
-                        if bufp.offset(1 as libc::c_int as isize)
-                            >= bufend as *mut libc::c_char
-                        {
-                            return -(1 as libc::c_int);
-                        }
-                        let fresh35 = cp;
-                        cp = cp.offset(1);
-                        let fresh36 = bufp;
-                        bufp = bufp.offset(1);
-                        *fresh36 = *fresh35;
-                    }
-                } else if *(*__ctype_b_loc())
-                    .offset(*cp as libc::c_uchar as libc::c_int as isize) as libc::c_int
-                    & _ISalpha as libc::c_int as libc::c_ushort as libc::c_int != 0
-                {
-                    *ftype.offset(nf as isize) = 6 as libc::c_int;
-                    if bufp.offset(1 as libc::c_int as isize)
-                        >= bufend as *mut libc::c_char
-                    {
-                        return -(1 as libc::c_int);
-                    }
-                    let fresh37 = cp;
-                    cp = cp.offset(1);
-                    let fresh38 = bufp;
-                    bufp = bufp.offset(1);
-                    *fresh38 = pg_tolower(*fresh37 as libc::c_uchar) as libc::c_char;
-                    while *(*__ctype_b_loc())
-                        .offset(*cp as libc::c_uchar as libc::c_int as isize)
-                        as libc::c_int
-                        & _ISalpha as libc::c_int as libc::c_ushort as libc::c_int != 0
-                    {
-                        if bufp.offset(1 as libc::c_int as isize)
-                            >= bufend as *mut libc::c_char
-                        {
-                            return -(1 as libc::c_int);
-                        }
-                        let fresh39 = cp;
-                        cp = cp.offset(1);
-                        let fresh40 = bufp;
-                        bufp = bufp.offset(1);
-                        *fresh40 = pg_tolower(*fresh39 as libc::c_uchar) as libc::c_char;
-                    }
-                } else {
-                    return -(1 as libc::c_int)
-                }
-            } else if *(*__ctype_b_loc())
-                .offset(*cp as libc::c_uchar as libc::c_int as isize) as libc::c_int
-                & _ISpunct as libc::c_int as libc::c_ushort as libc::c_int != 0
-            {
-                cp = cp.offset(1);
-                continue;
-            } else {
-                return -(1 as libc::c_int)
             }
-            let fresh41 = bufp;
-            bufp = bufp.offset(1);
-            *fresh41 = '\0' as i32 as libc::c_char;
-            nf += 1;
+            if is_date != 0 {
+                ftype = 2;
+                fdata.push(cp.next().unwrap().to_ascii_lowercase());
+                while let Some(c) = cp.next_if(|&c| {
+                    c.is_ascii_alphanumeric() || matches!(c, '+' | '-' | '/' | '_' | '.' | ':')
+                }) {
+                    fdata.push(c.to_ascii_lowercase());
+                }
+            }
+        // sign? then special or numeric timezone
+        } else if matches!(*cp.peek().unwrap(), '+' | '-') {
+            fdata.push(cp.next().unwrap());
+            // soak up leading whitespace
+            while cp.next_if(|c| c.is_ascii_whitespace()).is_some() {}
+            // numeric timezone?
+            // note that "DTK_TZ" could also be a signed float or yyyy-mm
+            if cp.peek().unwrap().is_ascii_digit() {
+                ftype = 4;
+                fdata.push(cp.next().unwrap());
+                while let Some(c) =
+                    cp.next_if(|&c| c.is_ascii_digit() || matches!(c, ':' | '.' | '-'))
+                {
+                    fdata.push(c.to_ascii_lowercase());
+                }
+            // special?
+            } else if cp.peek().unwrap().is_ascii_alphabetic() {
+                ftype = 6;
+                while let Some(c) = cp.next_if(|&c| c.is_ascii_alphabetic()) {
+                    fdata.push(c.to_ascii_lowercase());
+                }
+            // otherwise something wrong...
+            } else {
+                return -(1 as libc::c_int);
+            }
+        // ignore other punctuation but use as delimiter
+        } else if cp.peek().unwrap().is_ascii_punctuation() {
+            cp.next();
+            continue;
+        // otherwise, something is not right...
+        } else {
+            return -(1 as libc::c_int);
         }
+        nf += 1;
+        fields.push(fdata);
+        ftypes.push(ftype);
     }
-    *numfields = nf;
     return 0 as libc::c_int;
 }
 #[no_mangle]
@@ -4273,14 +3889,8 @@ pub unsafe extern "C" fn DecodeDateTime(
                         return -(1 as libc::c_int);
                     }
                     *__errno_location() = 0 as libc::c_int;
-                    val_0 = strtoint(
-                        *field.offset(i as isize),
-                        &mut cp,
-                        10 as libc::c_int,
-                    );
-                    if *__errno_location() == 34 as libc::c_int
-                        || val_0 < 0 as libc::c_int
-                    {
+                    val_0 = strtoint(*field.offset(i as isize), &mut cp, 10 as libc::c_int);
+                    if *__errno_location() == 34 as libc::c_int || val_0 < 0 as libc::c_int {
                         return -(2 as libc::c_int);
                     }
                     j2date(
@@ -4315,11 +3925,10 @@ pub unsafe extern "C" fn DecodeDateTime(
                         return -(1 as libc::c_int);
                     }
                     if *(*__ctype_b_loc())
-                        .offset(
-                            **field.offset(i as isize) as libc::c_uchar as libc::c_int
-                                as isize,
-                        ) as libc::c_int
-                        & _ISdigit as libc::c_int as libc::c_ushort as libc::c_int != 0
+                        .offset(**field.offset(i as isize) as libc::c_uchar as libc::c_int as isize)
+                        as libc::c_int
+                        & _ISdigit as libc::c_int as libc::c_ushort as libc::c_int
+                        != 0
                         || ptype != 0 as libc::c_int
                     {
                         let mut cp_0: *mut libc::c_char = 0 as *mut libc::c_char;
@@ -4373,8 +3982,7 @@ pub unsafe extern "C" fn DecodeDateTime(
                                 errstart_cold(21 as libc::c_int, 0 as *const libc::c_char)
                                     as libc::c_int
                             } else {
-                                errstart(21 as libc::c_int, 0 as *const libc::c_char)
-                                    as libc::c_int
+                                errstart(21 as libc::c_int, 0 as *const libc::c_char) as libc::c_int
                             } != 0
                             {
                                 errcode(
@@ -4395,13 +4003,13 @@ pub unsafe extern "C" fn DecodeDateTime(
                                 );
                                 errfinish(
                                     b"/home/petrosagg/projects/postgres-datetime/src/datetime.c\0"
-                                        as *const u8 as *const libc::c_char,
+                                        as *const u8
+                                        as *const libc::c_char,
                                     952 as libc::c_int,
-                                    (*::core::mem::transmute::<
-                                        &[u8; 15],
-                                        &[libc::c_char; 15],
-                                    >(b"DecodeDateTime\0"))
-                                        .as_ptr(),
+                                    (*::core::mem::transmute::<&[u8; 15], &[libc::c_char; 15]>(
+                                        b"DecodeDateTime\0",
+                                    ))
+                                    .as_ptr(),
                                 );
                             }
                             if 0 != 0 && 21 as libc::c_int >= 21 as libc::c_int {
@@ -4442,8 +4050,7 @@ pub unsafe extern "C" fn DecodeDateTime(
                 if dterr != 0 {
                     return dterr;
                 }
-                if time_overflows((*tm).tm_hour, (*tm).tm_min, (*tm).tm_sec, *fsec) != 0
-                {
+                if time_overflows((*tm).tm_hour, (*tm).tm_min, (*tm).tm_sec, *fsec) != 0 {
                     return -(2 as libc::c_int);
                 }
                 current_block_236 = 13797367574128857302;
@@ -4466,11 +4073,7 @@ pub unsafe extern "C" fn DecodeDateTime(
                     let mut cp_1: *mut libc::c_char = 0 as *mut libc::c_char;
                     let mut val_1: libc::c_int = 0;
                     *__errno_location() = 0 as libc::c_int;
-                    val_1 = strtoint(
-                        *field.offset(i as isize),
-                        &mut cp_1,
-                        10 as libc::c_int,
-                    );
+                    val_1 = strtoint(*field.offset(i as isize), &mut cp_1, 10 as libc::c_int);
                     if *__errno_location() == 34 as libc::c_int {
                         return -(2 as libc::c_int);
                     }
@@ -4480,7 +4083,7 @@ pub unsafe extern "C" fn DecodeDateTime(
                             _ => return -(1 as libc::c_int),
                         }
                     } else if *cp_1 as libc::c_int != '\0' as i32 {
-                        return -(1 as libc::c_int)
+                        return -(1 as libc::c_int);
                     }
                     match ptype {
                         25 => {
@@ -4488,8 +4091,7 @@ pub unsafe extern "C" fn DecodeDateTime(
                             tmask = (0x1 as libc::c_int) << 2 as libc::c_int;
                         }
                         23 => {
-                            if fmask & (0x1 as libc::c_int) << 1 as libc::c_int
-                                != 0 as libc::c_int
+                            if fmask & (0x1 as libc::c_int) << 1 as libc::c_int != 0 as libc::c_int
                                 && fmask & (0x1 as libc::c_int) << 10 as libc::c_int
                                     != 0 as libc::c_int
                             {
@@ -4563,12 +4165,11 @@ pub unsafe extern "C" fn DecodeDateTime(
                                     &mut (*tm).tm_sec,
                                     fsec,
                                 );
-                                tmask
-                                    |= (0x1 as libc::c_int) << 10 as libc::c_int
-                                        | (0x1 as libc::c_int) << 11 as libc::c_int
-                                        | ((0x1 as libc::c_int) << 12 as libc::c_int
-                                            | (0x1 as libc::c_int) << 13 as libc::c_int
-                                            | (0x1 as libc::c_int) << 14 as libc::c_int);
+                                tmask |= (0x1 as libc::c_int) << 10 as libc::c_int
+                                    | (0x1 as libc::c_int) << 11 as libc::c_int
+                                    | ((0x1 as libc::c_int) << 12 as libc::c_int
+                                        | (0x1 as libc::c_int) << 13 as libc::c_int
+                                        | (0x1 as libc::c_int) << 14 as libc::c_int);
                             }
                         }
                         3 => {
@@ -4610,7 +4211,8 @@ pub unsafe extern "C" fn DecodeDateTime(
                         && fmask
                             & ((0x1 as libc::c_int) << 2 as libc::c_int
                                 | (0x1 as libc::c_int) << 1 as libc::c_int
-                                | (0x1 as libc::c_int) << 3 as libc::c_int) == 0
+                                | (0x1 as libc::c_int) << 3 as libc::c_int)
+                            == 0
                     {
                         dterr = DecodeDate(
                             *field.offset(i as isize),
@@ -4642,13 +4244,15 @@ pub unsafe extern "C" fn DecodeDateTime(
                         && (fmask
                             & ((0x1 as libc::c_int) << 2 as libc::c_int
                                 | (0x1 as libc::c_int) << 1 as libc::c_int
-                                | (0x1 as libc::c_int) << 3 as libc::c_int) == 0
+                                | (0x1 as libc::c_int) << 3 as libc::c_int)
+                            == 0
                             || fmask
                                 & ((0x1 as libc::c_int) << 10 as libc::c_int
                                     | (0x1 as libc::c_int) << 11 as libc::c_int
                                     | ((0x1 as libc::c_int) << 12 as libc::c_int
                                         | (0x1 as libc::c_int) << 13 as libc::c_int
-                                        | (0x1 as libc::c_int) << 14 as libc::c_int)) == 0)
+                                        | (0x1 as libc::c_int) << 14 as libc::c_int))
+                                == 0)
                     {
                         dterr = DecodeNumberField(
                             flen,
@@ -4681,12 +4285,7 @@ pub unsafe extern "C" fn DecodeDateTime(
                 current_block_236 = 13797367574128857302;
             }
             1 | 6 => {
-                type_0 = DecodeTimezoneAbbrev(
-                    i,
-                    *field.offset(i as isize),
-                    &mut val,
-                    &mut valtz,
-                );
+                type_0 = DecodeTimezoneAbbrev(i, *field.offset(i as isize), &mut val, &mut valtz);
                 if type_0 == 31 as libc::c_int {
                     type_0 = DecodeSpecial(i, *field.offset(i as isize), &mut val);
                 }
@@ -4695,79 +4294,77 @@ pub unsafe extern "C" fn DecodeDateTime(
                 } else {
                     tmask = (0x1 as libc::c_int) << type_0;
                     match type_0 {
-                        0 => {
-                            match val {
-                                12 => {
-                                    tmask = (0x1 as libc::c_int) << 2 as libc::c_int
-                                        | (0x1 as libc::c_int) << 1 as libc::c_int
-                                        | (0x1 as libc::c_int) << 3 as libc::c_int
-                                        | ((0x1 as libc::c_int) << 10 as libc::c_int
-                                            | (0x1 as libc::c_int) << 11 as libc::c_int
-                                            | ((0x1 as libc::c_int) << 12 as libc::c_int
-                                                | (0x1 as libc::c_int) << 13 as libc::c_int
-                                                | (0x1 as libc::c_int) << 14 as libc::c_int))
-                                        | (0x1 as libc::c_int) << 5 as libc::c_int;
-                                    *dtype = 2 as libc::c_int;
-                                    GetCurrentTimeUsec(tm, fsec, tzp);
-                                }
-                                13 => {
-                                    tmask = (0x1 as libc::c_int) << 2 as libc::c_int
-                                        | (0x1 as libc::c_int) << 1 as libc::c_int
-                                        | (0x1 as libc::c_int) << 3 as libc::c_int;
-                                    *dtype = 2 as libc::c_int;
-                                    GetCurrentDateTime(&mut cur_tm);
-                                    j2date(
-                                        date2j(cur_tm.tm_year, cur_tm.tm_mon, cur_tm.tm_mday)
-                                            - 1 as libc::c_int,
-                                        &mut (*tm).tm_year,
-                                        &mut (*tm).tm_mon,
-                                        &mut (*tm).tm_mday,
-                                    );
-                                }
-                                14 => {
-                                    tmask = (0x1 as libc::c_int) << 2 as libc::c_int
-                                        | (0x1 as libc::c_int) << 1 as libc::c_int
-                                        | (0x1 as libc::c_int) << 3 as libc::c_int;
-                                    *dtype = 2 as libc::c_int;
-                                    GetCurrentDateTime(&mut cur_tm);
-                                    (*tm).tm_year = cur_tm.tm_year;
-                                    (*tm).tm_mon = cur_tm.tm_mon;
-                                    (*tm).tm_mday = cur_tm.tm_mday;
-                                }
-                                15 => {
-                                    tmask = (0x1 as libc::c_int) << 2 as libc::c_int
-                                        | (0x1 as libc::c_int) << 1 as libc::c_int
-                                        | (0x1 as libc::c_int) << 3 as libc::c_int;
-                                    *dtype = 2 as libc::c_int;
-                                    GetCurrentDateTime(&mut cur_tm);
-                                    j2date(
-                                        date2j(cur_tm.tm_year, cur_tm.tm_mon, cur_tm.tm_mday)
-                                            + 1 as libc::c_int,
-                                        &mut (*tm).tm_year,
-                                        &mut (*tm).tm_mon,
-                                        &mut (*tm).tm_mday,
-                                    );
-                                }
-                                16 => {
-                                    tmask = (0x1 as libc::c_int) << 10 as libc::c_int
+                        0 => match val {
+                            12 => {
+                                tmask = (0x1 as libc::c_int) << 2 as libc::c_int
+                                    | (0x1 as libc::c_int) << 1 as libc::c_int
+                                    | (0x1 as libc::c_int) << 3 as libc::c_int
+                                    | ((0x1 as libc::c_int) << 10 as libc::c_int
                                         | (0x1 as libc::c_int) << 11 as libc::c_int
                                         | ((0x1 as libc::c_int) << 12 as libc::c_int
                                             | (0x1 as libc::c_int) << 13 as libc::c_int
-                                            | (0x1 as libc::c_int) << 14 as libc::c_int)
-                                        | (0x1 as libc::c_int) << 5 as libc::c_int;
-                                    *dtype = 2 as libc::c_int;
-                                    (*tm).tm_hour = 0 as libc::c_int;
-                                    (*tm).tm_min = 0 as libc::c_int;
-                                    (*tm).tm_sec = 0 as libc::c_int;
-                                    if !tzp.is_null() {
-                                        *tzp = 0 as libc::c_int;
-                                    }
-                                }
-                                _ => {
-                                    *dtype = val;
+                                            | (0x1 as libc::c_int) << 14 as libc::c_int))
+                                    | (0x1 as libc::c_int) << 5 as libc::c_int;
+                                *dtype = 2 as libc::c_int;
+                                GetCurrentTimeUsec(tm, fsec, tzp);
+                            }
+                            13 => {
+                                tmask = (0x1 as libc::c_int) << 2 as libc::c_int
+                                    | (0x1 as libc::c_int) << 1 as libc::c_int
+                                    | (0x1 as libc::c_int) << 3 as libc::c_int;
+                                *dtype = 2 as libc::c_int;
+                                GetCurrentDateTime(&mut cur_tm);
+                                j2date(
+                                    date2j(cur_tm.tm_year, cur_tm.tm_mon, cur_tm.tm_mday)
+                                        - 1 as libc::c_int,
+                                    &mut (*tm).tm_year,
+                                    &mut (*tm).tm_mon,
+                                    &mut (*tm).tm_mday,
+                                );
+                            }
+                            14 => {
+                                tmask = (0x1 as libc::c_int) << 2 as libc::c_int
+                                    | (0x1 as libc::c_int) << 1 as libc::c_int
+                                    | (0x1 as libc::c_int) << 3 as libc::c_int;
+                                *dtype = 2 as libc::c_int;
+                                GetCurrentDateTime(&mut cur_tm);
+                                (*tm).tm_year = cur_tm.tm_year;
+                                (*tm).tm_mon = cur_tm.tm_mon;
+                                (*tm).tm_mday = cur_tm.tm_mday;
+                            }
+                            15 => {
+                                tmask = (0x1 as libc::c_int) << 2 as libc::c_int
+                                    | (0x1 as libc::c_int) << 1 as libc::c_int
+                                    | (0x1 as libc::c_int) << 3 as libc::c_int;
+                                *dtype = 2 as libc::c_int;
+                                GetCurrentDateTime(&mut cur_tm);
+                                j2date(
+                                    date2j(cur_tm.tm_year, cur_tm.tm_mon, cur_tm.tm_mday)
+                                        + 1 as libc::c_int,
+                                    &mut (*tm).tm_year,
+                                    &mut (*tm).tm_mon,
+                                    &mut (*tm).tm_mday,
+                                );
+                            }
+                            16 => {
+                                tmask = (0x1 as libc::c_int) << 10 as libc::c_int
+                                    | (0x1 as libc::c_int) << 11 as libc::c_int
+                                    | ((0x1 as libc::c_int) << 12 as libc::c_int
+                                        | (0x1 as libc::c_int) << 13 as libc::c_int
+                                        | (0x1 as libc::c_int) << 14 as libc::c_int)
+                                    | (0x1 as libc::c_int) << 5 as libc::c_int;
+                                *dtype = 2 as libc::c_int;
+                                (*tm).tm_hour = 0 as libc::c_int;
+                                (*tm).tm_min = 0 as libc::c_int;
+                                (*tm).tm_sec = 0 as libc::c_int;
+                                if !tzp.is_null() {
+                                    *tzp = 0 as libc::c_int;
                                 }
                             }
-                        }
+                            _ => {
+                                *dtype = val;
+                            }
+                        },
                         1 => {
                             if fmask & (0x1 as libc::c_int) << 1 as libc::c_int != 0
                                 && haveTextMonth == 0
@@ -4883,9 +4480,7 @@ pub unsafe extern "C" fn DecodeDateTime(
     }
     if mer == 0 as libc::c_int && (*tm).tm_hour == 24 as libc::c_int / 2 as libc::c_int {
         (*tm).tm_hour = 0 as libc::c_int;
-    } else if mer == 1 as libc::c_int
-        && (*tm).tm_hour != 24 as libc::c_int / 2 as libc::c_int
-    {
+    } else if mer == 1 as libc::c_int && (*tm).tm_hour != 24 as libc::c_int / 2 as libc::c_int {
         (*tm).tm_hour += 24 as libc::c_int / 2 as libc::c_int;
     }
     if *dtype == 2 as libc::c_int {
@@ -4963,11 +4558,9 @@ unsafe extern "C" fn DetermineTimeZoneOffsetInternal(
     if ((*tm).tm_year > -(4713 as libc::c_int)
         || (*tm).tm_year == -(4713 as libc::c_int) && (*tm).tm_mon >= 11 as libc::c_int)
         && ((*tm).tm_year < 5874898 as libc::c_int
-            || (*tm).tm_year == 5874898 as libc::c_int
-                && (*tm).tm_mon < 6 as libc::c_int)
+            || (*tm).tm_year == 5874898 as libc::c_int && (*tm).tm_mon < 6 as libc::c_int)
     {
-        date = date2j((*tm).tm_year, (*tm).tm_mon, (*tm).tm_mday)
-            - 2440588 as libc::c_int;
+        date = date2j((*tm).tm_year, (*tm).tm_mon, (*tm).tm_mday) - 2440588 as libc::c_int;
         day = date as pg_time_t * 86400 as libc::c_int as libc::c_long;
         if !(day / 86400 as libc::c_int as libc::c_long != date as libc::c_long) {
             sec = (*tm).tm_sec
@@ -5051,14 +4644,7 @@ pub unsafe extern "C" fn DetermineTimeZoneAbbrevOffset(
     let mut abbr_offset: libc::c_int = 0;
     let mut abbr_isdst: libc::c_int = 0;
     zone_offset = DetermineTimeZoneOffsetInternal(tm, tzp, &mut t);
-    if DetermineTimeZoneAbbrevOffsetInternal(
-        t,
-        abbr,
-        tzp,
-        &mut abbr_offset,
-        &mut abbr_isdst,
-    ) != 0
-    {
+    if DetermineTimeZoneAbbrevOffsetInternal(t, abbr, tzp, &mut abbr_offset, &mut abbr_isdst) != 0 {
         (*tm).tm_isdst = abbr_isdst;
         return abbr_offset;
     }
@@ -5089,12 +4675,17 @@ pub unsafe extern "C" fn DetermineTimeZoneAbbrevOffsetTS(
         tm_zone: 0 as *const libc::c_char,
     };
     let mut fsec: fsec_t = 0;
-    if DetermineTimeZoneAbbrevOffsetInternal(t, abbr, tzp, &mut abbr_offset, isdst) != 0
-    {
+    if DetermineTimeZoneAbbrevOffsetInternal(t, abbr, tzp, &mut abbr_offset, isdst) != 0 {
         return abbr_offset;
     }
-    if timestamp2tm(ts, &mut tz, &mut tm, &mut fsec, 0 as *mut *const libc::c_char, tzp)
-        != 0 as libc::c_int
+    if timestamp2tm(
+        ts,
+        &mut tz,
+        &mut tm,
+        &mut fsec,
+        0 as *mut *const libc::c_char,
+        tzp,
+    ) != 0 as libc::c_int
     {
         let mut __errno_location_0: libc::c_int = 0;
         if if 0 != 0 && 21 as libc::c_int >= 21 as libc::c_int {
@@ -5105,25 +4696,20 @@ pub unsafe extern "C" fn DetermineTimeZoneAbbrevOffsetTS(
         {
             errcode(
                 ('2' as i32 - '0' as i32 & 0x3f as libc::c_int)
-                    + (('2' as i32 - '0' as i32 & 0x3f as libc::c_int)
-                        << 6 as libc::c_int)
-                    + (('0' as i32 - '0' as i32 & 0x3f as libc::c_int)
-                        << 12 as libc::c_int)
-                    + (('0' as i32 - '0' as i32 & 0x3f as libc::c_int)
-                        << 18 as libc::c_int)
-                    + (('8' as i32 - '0' as i32 & 0x3f as libc::c_int)
-                        << 24 as libc::c_int),
+                    + (('2' as i32 - '0' as i32 & 0x3f as libc::c_int) << 6 as libc::c_int)
+                    + (('0' as i32 - '0' as i32 & 0x3f as libc::c_int) << 12 as libc::c_int)
+                    + (('0' as i32 - '0' as i32 & 0x3f as libc::c_int) << 18 as libc::c_int)
+                    + (('8' as i32 - '0' as i32 & 0x3f as libc::c_int) << 24 as libc::c_int),
             );
             errmsg0(b"timestamp out of range\0" as *const u8 as *const libc::c_char);
             errfinish(
-                b"/home/petrosagg/projects/postgres-datetime/src/datetime.c\0"
-                    as *const u8 as *const libc::c_char,
+                b"/home/petrosagg/projects/postgres-datetime/src/datetime.c\0" as *const u8
+                    as *const libc::c_char,
                 1700 as libc::c_int,
-                (*::core::mem::transmute::<
-                    &[u8; 32],
-                    &[libc::c_char; 32],
-                >(b"DetermineTimeZoneAbbrevOffsetTS\0"))
-                    .as_ptr(),
+                (*::core::mem::transmute::<&[u8; 32], &[libc::c_char; 32]>(
+                    b"DetermineTimeZoneAbbrevOffsetTS\0",
+                ))
+                .as_ptr(),
             );
         }
         if 0 != 0 && 21 as libc::c_int >= 21 as libc::c_int {
@@ -5154,9 +4740,7 @@ unsafe extern "C" fn DetermineTimeZoneAbbrevOffsetInternal(
         *p = pg_toupper(*p);
         p = p.offset(1);
     }
-    if pg_interpret_timezone_abbrev(upabbr.as_mut_ptr(), &mut t, &mut gmtoff, isdst, tzp)
-        != 0
-    {
+    if pg_interpret_timezone_abbrev(upabbr.as_mut_ptr(), &mut t, &mut gmtoff, isdst, tzp) != 0 {
         *offset = -gmtoff as libc::c_int;
         return 1 as libc::c_int as bool_0;
     }
@@ -5204,9 +4788,9 @@ pub unsafe extern "C" fn DecodeTimeOnly(
                 if tzp.is_null() {
                     return -(1 as libc::c_int);
                 }
-                if i == 0 as libc::c_int && nf >= 2 as libc::c_int
-                    && (*ftype.offset((nf - 1 as libc::c_int) as isize)
-                        == 2 as libc::c_int
+                if i == 0 as libc::c_int
+                    && nf >= 2 as libc::c_int
+                    && (*ftype.offset((nf - 1 as libc::c_int) as isize) == 2 as libc::c_int
                         || *ftype.offset(1 as libc::c_int as isize) == 3 as libc::c_int)
                 {
                     dterr = DecodeDate(
@@ -5220,11 +4804,10 @@ pub unsafe extern "C" fn DecodeTimeOnly(
                         return dterr;
                     }
                 } else if *(*__ctype_b_loc())
-                    .offset(
-                        **field.offset(i as isize) as libc::c_uchar as libc::c_int
-                            as isize,
-                    ) as libc::c_int
-                    & _ISdigit as libc::c_int as libc::c_ushort as libc::c_int != 0
+                    .offset(**field.offset(i as isize) as libc::c_uchar as libc::c_int as isize)
+                    as libc::c_int
+                    & _ISdigit as libc::c_int as libc::c_ushort as libc::c_int
+                    != 0
                 {
                     let mut cp: *mut libc::c_char = 0 as *mut libc::c_char;
                     if fmask
@@ -5275,8 +4858,7 @@ pub unsafe extern "C" fn DecodeTimeOnly(
                             errstart_cold(21 as libc::c_int, 0 as *const libc::c_char)
                                 as libc::c_int
                         } else {
-                            errstart(21 as libc::c_int, 0 as *const libc::c_char)
-                                as libc::c_int
+                            errstart(21 as libc::c_int, 0 as *const libc::c_char) as libc::c_int
                         } != 0
                         {
                             errcode(
@@ -5297,13 +4879,13 @@ pub unsafe extern "C" fn DecodeTimeOnly(
                             );
                             errfinish(
                                 b"/home/petrosagg/projects/postgres-datetime/src/datetime.c\0"
-                                    as *const u8 as *const libc::c_char,
+                                    as *const u8
+                                    as *const libc::c_char,
                                 1859 as libc::c_int,
-                                (*::core::mem::transmute::<
-                                    &[u8; 15],
-                                    &[libc::c_char; 15],
-                                >(b"DecodeTimeOnly\0"))
-                                    .as_ptr(),
+                                (*::core::mem::transmute::<&[u8; 15], &[libc::c_char; 15]>(
+                                    b"DecodeTimeOnly\0",
+                                ))
+                                .as_ptr(),
                             );
                         }
                         if 0 != 0 && 21 as libc::c_int >= 21 as libc::c_int {
@@ -5358,11 +4940,7 @@ pub unsafe extern "C" fn DecodeTimeOnly(
                         _ => {}
                     }
                     *__errno_location() = 0 as libc::c_int;
-                    val_0 = strtoint(
-                        *field.offset(i as isize),
-                        &mut cp_0,
-                        10 as libc::c_int,
-                    );
+                    val_0 = strtoint(*field.offset(i as isize), &mut cp_0, 10 as libc::c_int);
                     if *__errno_location() == 34 as libc::c_int {
                         return -(2 as libc::c_int);
                     }
@@ -5372,7 +4950,7 @@ pub unsafe extern "C" fn DecodeTimeOnly(
                             _ => return -(1 as libc::c_int),
                         }
                     } else if *cp_0 as libc::c_int != '\0' as i32 {
-                        return -(1 as libc::c_int)
+                        return -(1 as libc::c_int);
                     }
                     match ptype {
                         25 => {
@@ -5380,8 +4958,7 @@ pub unsafe extern "C" fn DecodeTimeOnly(
                             tmask = (0x1 as libc::c_int) << 2 as libc::c_int;
                         }
                         23 => {
-                            if fmask & (0x1 as libc::c_int) << 1 as libc::c_int
-                                != 0 as libc::c_int
+                            if fmask & (0x1 as libc::c_int) << 1 as libc::c_int != 0 as libc::c_int
                                 && fmask & (0x1 as libc::c_int) << 10 as libc::c_int
                                     != 0 as libc::c_int
                             {
@@ -5455,12 +5032,11 @@ pub unsafe extern "C" fn DecodeTimeOnly(
                                     &mut (*tm).tm_sec,
                                     fsec,
                                 );
-                                tmask
-                                    |= (0x1 as libc::c_int) << 10 as libc::c_int
-                                        | (0x1 as libc::c_int) << 11 as libc::c_int
-                                        | ((0x1 as libc::c_int) << 12 as libc::c_int
-                                            | (0x1 as libc::c_int) << 13 as libc::c_int
-                                            | (0x1 as libc::c_int) << 14 as libc::c_int);
+                                tmask |= (0x1 as libc::c_int) << 10 as libc::c_int
+                                    | (0x1 as libc::c_int) << 11 as libc::c_int
+                                    | ((0x1 as libc::c_int) << 12 as libc::c_int
+                                        | (0x1 as libc::c_int) << 13 as libc::c_int
+                                        | (0x1 as libc::c_int) << 14 as libc::c_int);
                             }
                         }
                         3 => {
@@ -5500,9 +5076,9 @@ pub unsafe extern "C" fn DecodeTimeOnly(
                     flen = strlen(*field.offset(i as isize)) as libc::c_int;
                     cp_1 = strchr(*field.offset(i as isize), '.' as i32);
                     if !cp_1.is_null() {
-                        if i == 0 as libc::c_int && nf >= 2 as libc::c_int
-                            && *ftype.offset((nf - 1 as libc::c_int) as isize)
-                                == 2 as libc::c_int
+                        if i == 0 as libc::c_int
+                            && nf >= 2 as libc::c_int
+                            && *ftype.offset((nf - 1 as libc::c_int) as isize) == 2 as libc::c_int
                         {
                             dterr = DecodeDate(
                                 *field.offset(i as isize),
@@ -5534,7 +5110,7 @@ pub unsafe extern "C" fn DecodeTimeOnly(
                             }
                             *ftype.offset(i as isize) = dterr;
                         } else {
-                            return -(1 as libc::c_int)
+                            return -(1 as libc::c_int);
                         }
                     } else if flen > 4 as libc::c_int {
                         dterr = DecodeNumberField(
@@ -5575,12 +5151,7 @@ pub unsafe extern "C" fn DecodeTimeOnly(
                 current_block_201 = 18009804086567542307;
             }
             1 | 6 => {
-                type_0 = DecodeTimezoneAbbrev(
-                    i,
-                    *field.offset(i as isize),
-                    &mut val,
-                    &mut valtz,
-                );
+                type_0 = DecodeTimezoneAbbrev(i, *field.offset(i as isize), &mut val, &mut valtz);
                 if type_0 == 31 as libc::c_int {
                     type_0 = DecodeSpecial(i, *field.offset(i as isize), &mut val);
                 }
@@ -5589,33 +5160,31 @@ pub unsafe extern "C" fn DecodeTimeOnly(
                 } else {
                     tmask = (0x1 as libc::c_int) << type_0;
                     match type_0 {
-                        0 => {
-                            match val {
-                                12 => {
-                                    tmask = (0x1 as libc::c_int) << 10 as libc::c_int
-                                        | (0x1 as libc::c_int) << 11 as libc::c_int
-                                        | ((0x1 as libc::c_int) << 12 as libc::c_int
-                                            | (0x1 as libc::c_int) << 13 as libc::c_int
-                                            | (0x1 as libc::c_int) << 14 as libc::c_int);
-                                    *dtype = 3 as libc::c_int;
-                                    GetCurrentTimeUsec(tm, fsec, 0 as *mut libc::c_int);
-                                }
-                                16 => {
-                                    tmask = (0x1 as libc::c_int) << 10 as libc::c_int
-                                        | (0x1 as libc::c_int) << 11 as libc::c_int
-                                        | ((0x1 as libc::c_int) << 12 as libc::c_int
-                                            | (0x1 as libc::c_int) << 13 as libc::c_int
-                                            | (0x1 as libc::c_int) << 14 as libc::c_int)
-                                        | (0x1 as libc::c_int) << 5 as libc::c_int;
-                                    *dtype = 3 as libc::c_int;
-                                    (*tm).tm_hour = 0 as libc::c_int;
-                                    (*tm).tm_min = 0 as libc::c_int;
-                                    (*tm).tm_sec = 0 as libc::c_int;
-                                    (*tm).tm_isdst = 0 as libc::c_int;
-                                }
-                                _ => return -(1 as libc::c_int),
+                        0 => match val {
+                            12 => {
+                                tmask = (0x1 as libc::c_int) << 10 as libc::c_int
+                                    | (0x1 as libc::c_int) << 11 as libc::c_int
+                                    | ((0x1 as libc::c_int) << 12 as libc::c_int
+                                        | (0x1 as libc::c_int) << 13 as libc::c_int
+                                        | (0x1 as libc::c_int) << 14 as libc::c_int);
+                                *dtype = 3 as libc::c_int;
+                                GetCurrentTimeUsec(tm, fsec, 0 as *mut libc::c_int);
                             }
-                        }
+                            16 => {
+                                tmask = (0x1 as libc::c_int) << 10 as libc::c_int
+                                    | (0x1 as libc::c_int) << 11 as libc::c_int
+                                    | ((0x1 as libc::c_int) << 12 as libc::c_int
+                                        | (0x1 as libc::c_int) << 13 as libc::c_int
+                                        | (0x1 as libc::c_int) << 14 as libc::c_int)
+                                    | (0x1 as libc::c_int) << 5 as libc::c_int;
+                                *dtype = 3 as libc::c_int;
+                                (*tm).tm_hour = 0 as libc::c_int;
+                                (*tm).tm_min = 0 as libc::c_int;
+                                (*tm).tm_sec = 0 as libc::c_int;
+                                (*tm).tm_isdst = 0 as libc::c_int;
+                            }
+                            _ => return -(1 as libc::c_int),
+                        },
                         28 => {
                             tmask |= (0x1 as libc::c_int) << 6 as libc::c_int;
                             (*tm).tm_isdst = 1 as libc::c_int;
@@ -5708,9 +5277,7 @@ pub unsafe extern "C" fn DecodeTimeOnly(
     }
     if mer == 0 as libc::c_int && (*tm).tm_hour == 24 as libc::c_int / 2 as libc::c_int {
         (*tm).tm_hour = 0 as libc::c_int;
-    } else if mer == 1 as libc::c_int
-        && (*tm).tm_hour != 24 as libc::c_int / 2 as libc::c_int
-    {
+    } else if mer == 1 as libc::c_int && (*tm).tm_hour != 24 as libc::c_int / 2 as libc::c_int {
         (*tm).tm_hour += 24 as libc::c_int / 2 as libc::c_int;
     }
     if time_overflows((*tm).tm_hour, (*tm).tm_min, (*tm).tm_sec, *fsec) != 0 {
@@ -5772,7 +5339,8 @@ pub unsafe extern "C" fn DecodeTimeOnly(
         if fmask
             & ((0x1 as libc::c_int) << 2 as libc::c_int
                 | (0x1 as libc::c_int) << 1 as libc::c_int
-                | (0x1 as libc::c_int) << 3 as libc::c_int) == 0 as libc::c_int
+                | (0x1 as libc::c_int) << 3 as libc::c_int)
+            == 0 as libc::c_int
         {
             GetCurrentDateTime(tmp);
         } else {
@@ -5817,7 +5385,8 @@ pub unsafe extern "C" fn DecodeTimeOnly(
         if fmask
             & ((0x1 as libc::c_int) << 2 as libc::c_int
                 | (0x1 as libc::c_int) << 1 as libc::c_int
-                | (0x1 as libc::c_int) << 3 as libc::c_int) == 0 as libc::c_int
+                | (0x1 as libc::c_int) << 3 as libc::c_int)
+            == 0 as libc::c_int
         {
             GetCurrentDateTime(tmp_0);
         } else {
@@ -5864,7 +5433,8 @@ unsafe extern "C" fn DecodeDate(
     while *str as libc::c_int != '\0' as i32 && nf < 25 as libc::c_int {
         while *str as libc::c_int != '\0' as i32
             && *(*__ctype_b_loc()).offset(*str as libc::c_uchar as libc::c_int as isize)
-                as libc::c_int & _ISalnum as libc::c_int as libc::c_ushort as libc::c_int
+                as libc::c_int
+                & _ISalnum as libc::c_int as libc::c_ushort as libc::c_int
                 == 0
         {
             str = str.offset(1);
@@ -5873,23 +5443,26 @@ unsafe extern "C" fn DecodeDate(
             return -(1 as libc::c_int);
         }
         field[nf as usize] = str;
-        if *(*__ctype_b_loc()).offset(*str as libc::c_uchar as libc::c_int as isize)
-            as libc::c_int & _ISdigit as libc::c_int as libc::c_ushort as libc::c_int
+        if *(*__ctype_b_loc()).offset(*str as libc::c_uchar as libc::c_int as isize) as libc::c_int
+            & _ISdigit as libc::c_int as libc::c_ushort as libc::c_int
             != 0
         {
-            while *(*__ctype_b_loc())
-                .offset(*str as libc::c_uchar as libc::c_int as isize) as libc::c_int
-                & _ISdigit as libc::c_int as libc::c_ushort as libc::c_int != 0
+            while *(*__ctype_b_loc()).offset(*str as libc::c_uchar as libc::c_int as isize)
+                as libc::c_int
+                & _ISdigit as libc::c_int as libc::c_ushort as libc::c_int
+                != 0
             {
                 str = str.offset(1);
             }
-        } else if *(*__ctype_b_loc())
-            .offset(*str as libc::c_uchar as libc::c_int as isize) as libc::c_int
-            & _ISalpha as libc::c_int as libc::c_ushort as libc::c_int != 0
+        } else if *(*__ctype_b_loc()).offset(*str as libc::c_uchar as libc::c_int as isize)
+            as libc::c_int
+            & _ISalpha as libc::c_int as libc::c_ushort as libc::c_int
+            != 0
         {
-            while *(*__ctype_b_loc())
-                .offset(*str as libc::c_uchar as libc::c_int as isize) as libc::c_int
-                & _ISalpha as libc::c_int as libc::c_ushort as libc::c_int != 0
+            while *(*__ctype_b_loc()).offset(*str as libc::c_uchar as libc::c_int as isize)
+                as libc::c_int
+                & _ISalpha as libc::c_int as libc::c_ushort as libc::c_int
+                != 0
             {
                 str = str.offset(1);
             }
@@ -5903,9 +5476,9 @@ unsafe extern "C" fn DecodeDate(
     }
     i = 0 as libc::c_int;
     while i < nf {
-        if *(*__ctype_b_loc())
-            .offset(*field[i as usize] as libc::c_uchar as libc::c_int as isize)
-            as libc::c_int & _ISalpha as libc::c_int as libc::c_ushort as libc::c_int
+        if *(*__ctype_b_loc()).offset(*field[i as usize] as libc::c_uchar as libc::c_int as isize)
+            as libc::c_int
+            & _ISalpha as libc::c_int as libc::c_ushort as libc::c_int
             != 0
         {
             type_0 = DecodeSpecial(i, field[i as usize], &mut val);
@@ -5957,8 +5530,7 @@ unsafe extern "C" fn DecodeDate(
         i += 1;
     }
     if fmask
-        & !((0x1 as libc::c_int) << 15 as libc::c_int
-            | (0x1 as libc::c_int) << 5 as libc::c_int)
+        & !((0x1 as libc::c_int) << 15 as libc::c_int | (0x1 as libc::c_int) << 5 as libc::c_int)
         != (0x1 as libc::c_int) << 2 as libc::c_int
             | (0x1 as libc::c_int) << 1 as libc::c_int
             | (0x1 as libc::c_int) << 3 as libc::c_int
@@ -5992,7 +5564,7 @@ pub unsafe extern "C" fn ValidateDate(
                     (*tm).tm_year += 1900 as libc::c_int;
                 }
             } else if (*tm).tm_year <= 0 as libc::c_int {
-                return -(2 as libc::c_int)
+                return -(2 as libc::c_int);
             }
         }
     }
@@ -6058,8 +5630,7 @@ unsafe extern "C" fn DecodeTime(
         return -(1 as libc::c_int);
     }
     *__errno_location() = 0 as libc::c_int;
-    (*tm)
-        .tm_min = strtoint(
+    (*tm).tm_min = strtoint(
         cp.offset(1 as libc::c_int as isize),
         &mut cp,
         10 as libc::c_int,
@@ -6071,8 +5642,7 @@ unsafe extern "C" fn DecodeTime(
         (*tm).tm_sec = 0 as libc::c_int;
         *fsec = 0 as libc::c_int;
         if range
-            == (1 as libc::c_int) << 11 as libc::c_int
-                | (1 as libc::c_int) << 12 as libc::c_int
+            == (1 as libc::c_int) << 11 as libc::c_int | (1 as libc::c_int) << 12 as libc::c_int
         {
             (*tm).tm_sec = (*tm).tm_min;
             (*tm).tm_min = (*tm).tm_hour;
@@ -6088,8 +5658,7 @@ unsafe extern "C" fn DecodeTime(
         (*tm).tm_hour = 0 as libc::c_int;
     } else if *cp as libc::c_int == ':' as i32 {
         *__errno_location() = 0 as libc::c_int;
-        (*tm)
-            .tm_sec = strtoint(
+        (*tm).tm_sec = strtoint(
             cp.offset(1 as libc::c_int as isize),
             &mut cp,
             10 as libc::c_int,
@@ -6105,14 +5674,16 @@ unsafe extern "C" fn DecodeTime(
                 return dterr;
             }
         } else {
-            return -(1 as libc::c_int)
+            return -(1 as libc::c_int);
         }
     } else {
-        return -(1 as libc::c_int)
+        return -(1 as libc::c_int);
     }
-    if (*tm).tm_hour < 0 as libc::c_int || (*tm).tm_min < 0 as libc::c_int
+    if (*tm).tm_hour < 0 as libc::c_int
+        || (*tm).tm_min < 0 as libc::c_int
         || (*tm).tm_min > 60 as libc::c_int - 1 as libc::c_int
-        || (*tm).tm_sec < 0 as libc::c_int || (*tm).tm_sec > 60 as libc::c_int
+        || (*tm).tm_sec < 0 as libc::c_int
+        || (*tm).tm_sec > 60 as libc::c_int
         || (*fsec as libc::c_long) < 0 as libc::c_long
         || *fsec as libc::c_long > 1000000 as libc::c_long
     {
@@ -6166,14 +5737,15 @@ unsafe extern "C" fn DecodeNumber(
             return dterr;
         }
     } else if *cp as libc::c_int != '\0' as i32 {
-        return -(1 as libc::c_int)
+        return -(1 as libc::c_int);
     }
     if flen == 3 as libc::c_int
         && fmask
             & ((0x1 as libc::c_int) << 2 as libc::c_int
                 | (0x1 as libc::c_int) << 1 as libc::c_int
                 | (0x1 as libc::c_int) << 3 as libc::c_int)
-            == (0x1 as libc::c_int) << 2 as libc::c_int && val >= 1 as libc::c_int
+            == (0x1 as libc::c_int) << 2 as libc::c_int
+        && val >= 1 as libc::c_int
         && val <= 366 as libc::c_int
     {
         *tmask = (0x1 as libc::c_int) << 15 as libc::c_int
@@ -6354,13 +5926,21 @@ pub unsafe extern "C" fn DecodeTimezone(
         return -(1 as libc::c_int);
     }
     *__errno_location() = 0 as libc::c_int;
-    hr = strtoint(str.offset(1 as libc::c_int as isize), &mut cp, 10 as libc::c_int);
+    hr = strtoint(
+        str.offset(1 as libc::c_int as isize),
+        &mut cp,
+        10 as libc::c_int,
+    );
     if *__errno_location() == 34 as libc::c_int {
         return -(5 as libc::c_int);
     }
     if *cp as libc::c_int == ':' as i32 {
         *__errno_location() = 0 as libc::c_int;
-        min = strtoint(cp.offset(1 as libc::c_int as isize), &mut cp, 10 as libc::c_int);
+        min = strtoint(
+            cp.offset(1 as libc::c_int as isize),
+            &mut cp,
+            10 as libc::c_int,
+        );
         if *__errno_location() == 34 as libc::c_int {
             return -(5 as libc::c_int);
         }
@@ -6375,9 +5955,7 @@ pub unsafe extern "C" fn DecodeTimezone(
                 return -(5 as libc::c_int);
             }
         }
-    } else if *cp as libc::c_int == '\0' as i32
-        && strlen(str) > 3 as libc::c_int as libc::c_ulong
-    {
+    } else if *cp as libc::c_int == '\0' as i32 && strlen(str) > 3 as libc::c_int as libc::c_ulong {
         min = hr % 100 as libc::c_int;
         hr = hr / 100 as libc::c_int;
     } else {
@@ -6413,8 +5991,11 @@ pub unsafe extern "C" fn DecodeTimezoneAbbrev(
     let mut tp: *const datetkn = 0 as *const datetkn;
     tp = abbrevcache[field as usize];
     if tp.is_null()
-        || strncmp(lowtoken, ((*tp).token).as_ptr(), 10 as libc::c_int as libc::c_ulong)
-            != 0 as libc::c_int
+        || strncmp(
+            lowtoken,
+            ((*tp).token).as_ptr(),
+            10 as libc::c_int as libc::c_ulong,
+        ) != 0 as libc::c_int
     {
         if !zoneabbrevtbl.is_null() {
             tp = datebsearch(
@@ -6453,8 +6034,11 @@ pub unsafe extern "C" fn DecodeSpecial(
     let mut tp: *const datetkn = 0 as *const datetkn;
     tp = datecache[field as usize];
     if tp.is_null()
-        || strncmp(lowtoken, ((*tp).token).as_ptr(), 10 as libc::c_int as libc::c_ulong)
-            != 0 as libc::c_int
+        || strncmp(
+            lowtoken,
+            ((*tp).token).as_ptr(),
+            10 as libc::c_int as libc::c_ulong,
+        ) != 0 as libc::c_int
     {
         tp = datebsearch(lowtoken, datetktbl.as_ptr(), szdatetktbl);
     }
@@ -6524,7 +6108,7 @@ pub unsafe extern "C" fn DecodeInterval(
                     (*field.offset(i as isize)).offset(1 as libc::c_int as isize),
                     ':' as i32,
                 ))
-                    .is_null()
+                .is_null()
                     && DecodeTime(
                         (*field.offset(i as isize)).offset(1 as libc::c_int as isize),
                         fmask,
@@ -6621,7 +6205,8 @@ pub unsafe extern "C" fn DecodeInterval(
                         10 as libc::c_int,
                     );
                     if *__errno_location() == 34 as libc::c_int
-                        || val2 < 0 as libc::c_int || val2 >= 12 as libc::c_int
+                        || val2 < 0 as libc::c_int
+                        || val2 >= 12 as libc::c_int
                     {
                         return -(2 as libc::c_int);
                     }
@@ -6637,8 +6222,7 @@ pub unsafe extern "C" fn DecodeInterval(
                         > 2147483647 as libc::c_int as libc::c_double
                         || (val as libc::c_double * 12 as libc::c_int as libc::c_double
                             + val2 as libc::c_double)
-                            < (-(2147483647 as libc::c_int) - 1 as libc::c_int)
-                                as libc::c_double
+                            < (-(2147483647 as libc::c_int) - 1 as libc::c_int) as libc::c_double
                     {
                         return -(2 as libc::c_int);
                     }
@@ -6647,8 +6231,7 @@ pub unsafe extern "C" fn DecodeInterval(
                 } else if *cp as libc::c_int == '.' as i32 {
                     *__errno_location() = 0 as libc::c_int;
                     fval = strtod(cp, &mut cp);
-                    if *cp as libc::c_int != '\0' as i32
-                        || *__errno_location() != 0 as libc::c_int
+                    if *cp as libc::c_int != '\0' as i32 || *__errno_location() != 0 as libc::c_int
                     {
                         return -(1 as libc::c_int);
                     }
@@ -6658,13 +6241,13 @@ pub unsafe extern "C" fn DecodeInterval(
                 } else if *cp as libc::c_int == '\0' as i32 {
                     fval = 0 as libc::c_int as libc::c_double;
                 } else {
-                    return -(1 as libc::c_int)
+                    return -(1 as libc::c_int);
                 }
                 tmask = 0 as libc::c_int;
                 match type_0 {
                     30 => {
-                        *fsec = (*fsec as libc::c_double
-                            + rint(val as libc::c_double + fval)) as fsec_t;
+                        *fsec = (*fsec as libc::c_double + rint(val as libc::c_double + fval))
+                            as fsec_t;
                         tmask = (0x1 as libc::c_int) << 14 as libc::c_int;
                     }
                     29 => {
@@ -6718,16 +6301,14 @@ pub unsafe extern "C" fn DecodeInterval(
                     }
                     25 => {
                         (*tm).tm_year += val;
-                        (*tm)
-                            .tm_mon = ((*tm).tm_mon as libc::c_double
+                        (*tm).tm_mon = ((*tm).tm_mon as libc::c_double
                             + rint(fval * 12 as libc::c_int as libc::c_double))
                             as libc::c_int;
                         tmask = (0x1 as libc::c_int) << 2 as libc::c_int;
                     }
                     26 => {
                         (*tm).tm_year += val * 10 as libc::c_int;
-                        (*tm)
-                            .tm_mon = ((*tm).tm_mon as libc::c_double
+                        (*tm).tm_mon = ((*tm).tm_mon as libc::c_double
                             + rint(
                                 fval * 12 as libc::c_int as libc::c_double
                                     * 10 as libc::c_int as libc::c_double,
@@ -6736,8 +6317,7 @@ pub unsafe extern "C" fn DecodeInterval(
                     }
                     27 => {
                         (*tm).tm_year += val * 100 as libc::c_int;
-                        (*tm)
-                            .tm_mon = ((*tm).tm_mon as libc::c_double
+                        (*tm).tm_mon = ((*tm).tm_mon as libc::c_double
                             + rint(
                                 fval * 12 as libc::c_int as libc::c_double
                                     * 100 as libc::c_int as libc::c_double,
@@ -6746,8 +6326,7 @@ pub unsafe extern "C" fn DecodeInterval(
                     }
                     28 => {
                         (*tm).tm_year += val * 1000 as libc::c_int;
-                        (*tm)
-                            .tm_mon = ((*tm).tm_mon as libc::c_double
+                        (*tm).tm_mon = ((*tm).tm_mon as libc::c_double
                             + rint(
                                 fval * 12 as libc::c_int as libc::c_double
                                     * 1000 as libc::c_int as libc::c_double,
@@ -6777,8 +6356,7 @@ pub unsafe extern "C" fn DecodeInterval(
     if *fsec != 0 as libc::c_int {
         let mut sec: libc::c_int = 0;
         sec = (*fsec as libc::c_long / 1000000 as libc::c_long) as libc::c_int;
-        *fsec = (*fsec as libc::c_long - sec as libc::c_long * 1000000 as libc::c_long)
-            as fsec_t;
+        *fsec = (*fsec as libc::c_long - sec as libc::c_long * 1000000 as libc::c_long) as fsec_t;
         (*tm).tm_sec += sec;
     }
     if IntervalStyle == 2 as libc::c_int
@@ -6838,9 +6416,11 @@ unsafe extern "C" fn ParseISO8601Number(
     mut fpart: *mut libc::c_double,
 ) -> libc::c_int {
     let mut val: libc::c_double = 0.;
-    if !(*(*__ctype_b_loc()).offset(*str as libc::c_uchar as libc::c_int as isize)
-        as libc::c_int & _ISdigit as libc::c_int as libc::c_ushort as libc::c_int != 0
-        || *str as libc::c_int == '-' as i32 || *str as libc::c_int == '.' as i32)
+    if !(*(*__ctype_b_loc()).offset(*str as libc::c_uchar as libc::c_int as isize) as libc::c_int
+        & _ISdigit as libc::c_int as libc::c_ushort as libc::c_int
+        != 0
+        || *str as libc::c_int == '-' as i32
+        || *str as libc::c_int == '.' as i32)
     {
         return -(1 as libc::c_int);
     }
@@ -6862,14 +6442,14 @@ unsafe extern "C" fn ParseISO8601Number(
     *fpart = val - *ipart as libc::c_double;
     return 0 as libc::c_int;
 }
-unsafe extern "C" fn ISO8601IntegerWidth(
-    mut fieldstart: *mut libc::c_char,
-) -> libc::c_int {
+unsafe extern "C" fn ISO8601IntegerWidth(mut fieldstart: *mut libc::c_char) -> libc::c_int {
     if *fieldstart as libc::c_int == '-' as i32 {
         fieldstart = fieldstart.offset(1);
     }
-    return strspn(fieldstart, b"0123456789\0" as *const u8 as *const libc::c_char)
-        as libc::c_int;
+    return strspn(
+        fieldstart,
+        b"0123456789\0" as *const u8 as *const libc::c_char,
+    ) as libc::c_int;
 }
 #[no_mangle]
 pub unsafe extern "C" fn DecodeISO8601Interval(
@@ -6912,8 +6492,7 @@ pub unsafe extern "C" fn DecodeISO8601Interval(
                 match unit as libc::c_int {
                     89 => {
                         (*tm).tm_year += val;
-                        (*tm)
-                            .tm_mon = ((*tm).tm_mon as libc::c_double
+                        (*tm).tm_mon = ((*tm).tm_mon as libc::c_double
                             + rint(fval * 12 as libc::c_int as libc::c_double))
                             as libc::c_int;
                         current_block_100 = 5722677567366458307;
@@ -6934,12 +6513,9 @@ pub unsafe extern "C" fn DecodeISO8601Interval(
                         current_block_100 = 5722677567366458307;
                     }
                     84 | 0 => {
-                        if ISO8601IntegerWidth(fieldstart) == 8 as libc::c_int
-                            && havefield == 0
-                        {
+                        if ISO8601IntegerWidth(fieldstart) == 8 as libc::c_int && havefield == 0 {
                             (*tm).tm_year += val / 10000 as libc::c_int;
-                            (*tm).tm_mon
-                                += val / 100 as libc::c_int % 100 as libc::c_int;
+                            (*tm).tm_mon += val / 100 as libc::c_int % 100 as libc::c_int;
                             (*tm).tm_mday += val % 100 as libc::c_int;
                             AdjustFractSeconds(fval, tm, fsec, 86400 as libc::c_int);
                             if unit as libc::c_int == '\0' as i32 {
@@ -6964,8 +6540,7 @@ pub unsafe extern "C" fn DecodeISO8601Interval(
                             return -(1 as libc::c_int);
                         }
                         (*tm).tm_year += val;
-                        (*tm)
-                            .tm_mon = ((*tm).tm_mon as libc::c_double
+                        (*tm).tm_mon = ((*tm).tm_mon as libc::c_double
                             + rint(fval * 12 as libc::c_int as libc::c_double))
                             as libc::c_int;
                         if unit as libc::c_int == '\0' as i32 {
@@ -6976,12 +6551,7 @@ pub unsafe extern "C" fn DecodeISO8601Interval(
                             havefield = 0 as libc::c_int as bool_0;
                             continue;
                         } else {
-                            dterr = ParseISO8601Number(
-                                str,
-                                &mut str,
-                                &mut val,
-                                &mut fval,
-                            );
+                            dterr = ParseISO8601Number(str, &mut str, &mut val, &mut fval);
                             if dterr != 0 {
                                 return dterr;
                             }
@@ -6999,12 +6569,7 @@ pub unsafe extern "C" fn DecodeISO8601Interval(
                                     return -(1 as libc::c_int);
                                 }
                                 str = str.offset(1);
-                                dterr = ParseISO8601Number(
-                                    str,
-                                    &mut str,
-                                    &mut val,
-                                    &mut fval,
-                                );
+                                dterr = ParseISO8601Number(str, &mut str, &mut val, &mut fval);
                                 if dterr != 0 {
                                     return dterr;
                                 }
@@ -7018,7 +6583,7 @@ pub unsafe extern "C" fn DecodeISO8601Interval(
                                     havefield = 0 as libc::c_int as bool_0;
                                     continue;
                                 } else {
-                                    return -(1 as libc::c_int)
+                                    return -(1 as libc::c_int);
                                 }
                             }
                         }
@@ -7043,12 +6608,9 @@ pub unsafe extern "C" fn DecodeISO8601Interval(
                         current_block_97 = 9879896046554623444;
                     }
                     0 => {
-                        if ISO8601IntegerWidth(fieldstart) == 6 as libc::c_int
-                            && havefield == 0
-                        {
+                        if ISO8601IntegerWidth(fieldstart) == 6 as libc::c_int && havefield == 0 {
                             (*tm).tm_hour += val / 10000 as libc::c_int;
-                            (*tm).tm_min
-                                += val / 100 as libc::c_int % 100 as libc::c_int;
+                            (*tm).tm_min += val / 100 as libc::c_int % 100 as libc::c_int;
                             (*tm).tm_sec += val % 100 as libc::c_int;
                             AdjustFractSeconds(fval, tm, fsec, 1 as libc::c_int);
                             return 0 as libc::c_int;
@@ -7112,8 +6674,11 @@ pub unsafe extern "C" fn DecodeUnits(
     let mut tp: *const datetkn = 0 as *const datetkn;
     tp = deltacache[field as usize];
     if tp.is_null()
-        || strncmp(lowtoken, ((*tp).token).as_ptr(), 10 as libc::c_int as libc::c_ulong)
-            != 0 as libc::c_int
+        || strncmp(
+            lowtoken,
+            ((*tp).token).as_ptr(),
+            10 as libc::c_int as libc::c_ulong,
+        ) != 0 as libc::c_int
     {
         tp = datebsearch(lowtoken, deltatktbl.as_ptr(), szdeltatktbl);
     }
@@ -7144,14 +6709,10 @@ pub unsafe extern "C" fn DateTimeParseError(
             {
                 errcode(
                     ('2' as i32 - '0' as i32 & 0x3f as libc::c_int)
-                        + (('2' as i32 - '0' as i32 & 0x3f as libc::c_int)
-                            << 6 as libc::c_int)
-                        + (('0' as i32 - '0' as i32 & 0x3f as libc::c_int)
-                            << 12 as libc::c_int)
-                        + (('0' as i32 - '0' as i32 & 0x3f as libc::c_int)
-                            << 18 as libc::c_int)
-                        + (('8' as i32 - '0' as i32 & 0x3f as libc::c_int)
-                            << 24 as libc::c_int),
+                        + (('2' as i32 - '0' as i32 & 0x3f as libc::c_int) << 6 as libc::c_int)
+                        + (('0' as i32 - '0' as i32 & 0x3f as libc::c_int) << 12 as libc::c_int)
+                        + (('0' as i32 - '0' as i32 & 0x3f as libc::c_int) << 18 as libc::c_int)
+                        + (('8' as i32 - '0' as i32 & 0x3f as libc::c_int) << 24 as libc::c_int),
                 );
                 errmsg(
                     b"date/time field value out of range: \"%s\"\0" as *const u8
@@ -7159,14 +6720,13 @@ pub unsafe extern "C" fn DateTimeParseError(
                     str as *mut _,
                 );
                 errfinish(
-                    b"/home/petrosagg/projects/postgres-datetime/src/datetime.c\0"
-                        as *const u8 as *const libc::c_char,
+                    b"/home/petrosagg/projects/postgres-datetime/src/datetime.c\0" as *const u8
+                        as *const libc::c_char,
                     3772 as libc::c_int,
-                    (*::core::mem::transmute::<
-                        &[u8; 19],
-                        &[libc::c_char; 19],
-                    >(b"DateTimeParseError\0"))
-                        .as_ptr(),
+                    (*::core::mem::transmute::<&[u8; 19], &[libc::c_char; 19]>(
+                        b"DateTimeParseError\0",
+                    ))
+                    .as_ptr(),
                 );
             }
             if 0 != 0 && 21 as libc::c_int >= 21 as libc::c_int {
@@ -7183,14 +6743,10 @@ pub unsafe extern "C" fn DateTimeParseError(
             {
                 errcode(
                     ('2' as i32 - '0' as i32 & 0x3f as libc::c_int)
-                        + (('2' as i32 - '0' as i32 & 0x3f as libc::c_int)
-                            << 6 as libc::c_int)
-                        + (('0' as i32 - '0' as i32 & 0x3f as libc::c_int)
-                            << 12 as libc::c_int)
-                        + (('0' as i32 - '0' as i32 & 0x3f as libc::c_int)
-                            << 18 as libc::c_int)
-                        + (('8' as i32 - '0' as i32 & 0x3f as libc::c_int)
-                            << 24 as libc::c_int),
+                        + (('2' as i32 - '0' as i32 & 0x3f as libc::c_int) << 6 as libc::c_int)
+                        + (('0' as i32 - '0' as i32 & 0x3f as libc::c_int) << 12 as libc::c_int)
+                        + (('0' as i32 - '0' as i32 & 0x3f as libc::c_int) << 18 as libc::c_int)
+                        + (('8' as i32 - '0' as i32 & 0x3f as libc::c_int) << 24 as libc::c_int),
                 );
                 errmsg(
                     b"date/time field value out of range: \"%s\"\0" as *const u8
@@ -7202,14 +6758,13 @@ pub unsafe extern "C" fn DateTimeParseError(
                         as *const libc::c_char,
                 );
                 errfinish(
-                    b"/home/petrosagg/projects/postgres-datetime/src/datetime.c\0"
-                        as *const u8 as *const libc::c_char,
+                    b"/home/petrosagg/projects/postgres-datetime/src/datetime.c\0" as *const u8
+                        as *const libc::c_char,
                     3780 as libc::c_int,
-                    (*::core::mem::transmute::<
-                        &[u8; 19],
-                        &[libc::c_char; 19],
-                    >(b"DateTimeParseError\0"))
-                        .as_ptr(),
+                    (*::core::mem::transmute::<&[u8; 19], &[libc::c_char; 19]>(
+                        b"DateTimeParseError\0",
+                    ))
+                    .as_ptr(),
                 );
             }
             if 0 != 0 && 21 as libc::c_int >= 21 as libc::c_int {
@@ -7226,14 +6781,10 @@ pub unsafe extern "C" fn DateTimeParseError(
             {
                 errcode(
                     ('2' as i32 - '0' as i32 & 0x3f as libc::c_int)
-                        + (('2' as i32 - '0' as i32 & 0x3f as libc::c_int)
-                            << 6 as libc::c_int)
-                        + (('0' as i32 - '0' as i32 & 0x3f as libc::c_int)
-                            << 12 as libc::c_int)
-                        + (('1' as i32 - '0' as i32 & 0x3f as libc::c_int)
-                            << 18 as libc::c_int)
-                        + (('5' as i32 - '0' as i32 & 0x3f as libc::c_int)
-                            << 24 as libc::c_int),
+                        + (('2' as i32 - '0' as i32 & 0x3f as libc::c_int) << 6 as libc::c_int)
+                        + (('0' as i32 - '0' as i32 & 0x3f as libc::c_int) << 12 as libc::c_int)
+                        + (('1' as i32 - '0' as i32 & 0x3f as libc::c_int) << 18 as libc::c_int)
+                        + (('5' as i32 - '0' as i32 & 0x3f as libc::c_int) << 24 as libc::c_int),
                 );
                 errmsg(
                     b"interval field value out of range: \"%s\"\0" as *const u8
@@ -7241,14 +6792,13 @@ pub unsafe extern "C" fn DateTimeParseError(
                     str as *mut _,
                 );
                 errfinish(
-                    b"/home/petrosagg/projects/postgres-datetime/src/datetime.c\0"
-                        as *const u8 as *const libc::c_char,
+                    b"/home/petrosagg/projects/postgres-datetime/src/datetime.c\0" as *const u8
+                        as *const libc::c_char,
                     3786 as libc::c_int,
-                    (*::core::mem::transmute::<
-                        &[u8; 19],
-                        &[libc::c_char; 19],
-                    >(b"DateTimeParseError\0"))
-                        .as_ptr(),
+                    (*::core::mem::transmute::<&[u8; 19], &[libc::c_char; 19]>(
+                        b"DateTimeParseError\0",
+                    ))
+                    .as_ptr(),
                 );
             }
             if 0 != 0 && 21 as libc::c_int >= 21 as libc::c_int {
@@ -7265,14 +6815,10 @@ pub unsafe extern "C" fn DateTimeParseError(
             {
                 errcode(
                     ('2' as i32 - '0' as i32 & 0x3f as libc::c_int)
-                        + (('2' as i32 - '0' as i32 & 0x3f as libc::c_int)
-                            << 6 as libc::c_int)
-                        + (('0' as i32 - '0' as i32 & 0x3f as libc::c_int)
-                            << 12 as libc::c_int)
-                        + (('0' as i32 - '0' as i32 & 0x3f as libc::c_int)
-                            << 18 as libc::c_int)
-                        + (('9' as i32 - '0' as i32 & 0x3f as libc::c_int)
-                            << 24 as libc::c_int),
+                        + (('2' as i32 - '0' as i32 & 0x3f as libc::c_int) << 6 as libc::c_int)
+                        + (('0' as i32 - '0' as i32 & 0x3f as libc::c_int) << 12 as libc::c_int)
+                        + (('0' as i32 - '0' as i32 & 0x3f as libc::c_int) << 18 as libc::c_int)
+                        + (('9' as i32 - '0' as i32 & 0x3f as libc::c_int) << 24 as libc::c_int),
                 );
                 errmsg(
                     b"time zone displacement out of range: \"%s\"\0" as *const u8
@@ -7280,14 +6826,13 @@ pub unsafe extern "C" fn DateTimeParseError(
                     str as *mut _,
                 );
                 errfinish(
-                    b"/home/petrosagg/projects/postgres-datetime/src/datetime.c\0"
-                        as *const u8 as *const libc::c_char,
+                    b"/home/petrosagg/projects/postgres-datetime/src/datetime.c\0" as *const u8
+                        as *const libc::c_char,
                     3792 as libc::c_int,
-                    (*::core::mem::transmute::<
-                        &[u8; 19],
-                        &[libc::c_char; 19],
-                    >(b"DateTimeParseError\0"))
-                        .as_ptr(),
+                    (*::core::mem::transmute::<&[u8; 19], &[libc::c_char; 19]>(
+                        b"DateTimeParseError\0",
+                    ))
+                    .as_ptr(),
                 );
             }
             if 0 != 0 && 21 as libc::c_int >= 21 as libc::c_int {
@@ -7304,14 +6849,10 @@ pub unsafe extern "C" fn DateTimeParseError(
             {
                 errcode(
                     ('2' as i32 - '0' as i32 & 0x3f as libc::c_int)
-                        + (('2' as i32 - '0' as i32 & 0x3f as libc::c_int)
-                            << 6 as libc::c_int)
-                        + (('0' as i32 - '0' as i32 & 0x3f as libc::c_int)
-                            << 12 as libc::c_int)
-                        + (('0' as i32 - '0' as i32 & 0x3f as libc::c_int)
-                            << 18 as libc::c_int)
-                        + (('7' as i32 - '0' as i32 & 0x3f as libc::c_int)
-                            << 24 as libc::c_int),
+                        + (('2' as i32 - '0' as i32 & 0x3f as libc::c_int) << 6 as libc::c_int)
+                        + (('0' as i32 - '0' as i32 & 0x3f as libc::c_int) << 12 as libc::c_int)
+                        + (('0' as i32 - '0' as i32 & 0x3f as libc::c_int) << 18 as libc::c_int)
+                        + (('7' as i32 - '0' as i32 & 0x3f as libc::c_int) << 24 as libc::c_int),
                 );
                 errmsg2(
                     b"invalid input syntax for type %s: \"%s\"\0" as *const u8
@@ -7320,14 +6861,13 @@ pub unsafe extern "C" fn DateTimeParseError(
                     str as *mut _,
                 );
                 errfinish(
-                    b"/home/petrosagg/projects/postgres-datetime/src/datetime.c\0"
-                        as *const u8 as *const libc::c_char,
+                    b"/home/petrosagg/projects/postgres-datetime/src/datetime.c\0" as *const u8
+                        as *const libc::c_char,
                     3799 as libc::c_int,
-                    (*::core::mem::transmute::<
-                        &[u8; 19],
-                        &[libc::c_char; 19],
-                    >(b"DateTimeParseError\0"))
-                        .as_ptr(),
+                    (*::core::mem::transmute::<&[u8; 19], &[libc::c_char; 19]>(
+                        b"DateTimeParseError\0",
+                    ))
+                    .as_ptr(),
                 );
             }
             if 0 != 0 && 21 as libc::c_int >= 21 as libc::c_int {
@@ -7348,10 +6888,8 @@ unsafe extern "C" fn datebsearch(
         let mut position: *const datetkn = 0 as *const datetkn;
         let mut result: libc::c_int = 0;
         while last >= base {
-            position = base
-                .offset(
-                    (last.offset_from(base) as libc::c_long >> 1 as libc::c_int) as isize,
-                );
+            position =
+                base.offset((last.offset_from(base) as libc::c_long >> 1 as libc::c_int) as isize);
             result = *key.offset(0 as libc::c_int as isize) as libc::c_int
                 - (*position).token[0 as libc::c_int as usize] as libc::c_int;
             if result == 0 as libc::c_int {
@@ -7388,8 +6926,11 @@ unsafe extern "C" fn EncodeTimezone(
     min -= hour * 60 as libc::c_int;
     let fresh44 = str;
     str = str.offset(1);
-    *fresh44 = (if tz <= 0 as libc::c_int { '+' as i32 } else { '-' as i32 })
-        as libc::c_char;
+    *fresh44 = (if tz <= 0 as libc::c_int {
+        '+' as i32
+    } else {
+        '-' as i32
+    }) as libc::c_char;
     if sec != 0 as libc::c_int {
         str = pg_ultostr_zeropad(str, hour as uint32, 2 as libc::c_int);
         let fresh45 = str;
@@ -7585,8 +7126,11 @@ pub unsafe extern "C" fn EncodeDateTime(
             str = pg_ultostr_zeropad(str, (*tm).tm_mday as uint32, 2 as libc::c_int);
             let fresh62 = str;
             str = str.offset(1);
-            *fresh62 = (if style == 1 as libc::c_int { ' ' as i32 } else { 'T' as i32 })
-                as libc::c_char;
+            *fresh62 = (if style == 1 as libc::c_int {
+                ' ' as i32
+            } else {
+                'T' as i32
+            }) as libc::c_char;
             str = pg_ultostr_zeropad(str, (*tm).tm_hour as uint32, 2 as libc::c_int);
             let fresh63 = str;
             str = str.offset(1);
@@ -7715,16 +7259,14 @@ pub unsafe extern "C" fn EncodeDateTime(
                 *fresh77 = ' ' as i32 as libc::c_char;
                 memcpy(
                     str as *mut libc::c_void,
-                    months[((*tm).tm_mon - 1 as libc::c_int) as usize]
-                        as *const libc::c_void,
+                    months[((*tm).tm_mon - 1 as libc::c_int) as usize] as *const libc::c_void,
                     3 as libc::c_int as libc::c_ulong,
                 );
                 str = str.offset(3 as libc::c_int as isize);
             } else {
                 memcpy(
                     str as *mut libc::c_void,
-                    months[((*tm).tm_mon - 1 as libc::c_int) as usize]
-                        as *const libc::c_void,
+                    months[((*tm).tm_mon - 1 as libc::c_int) as usize] as *const libc::c_void,
                     3 as libc::c_int as libc::c_ulong,
                 );
                 str = str.offset(3 as libc::c_int as isize);
@@ -7885,29 +7427,35 @@ pub unsafe extern "C" fn EncodeInterval(
     match style {
         2 => {
             let mut has_negative: bool_0 = (year < 0 as libc::c_int
-                || mon < 0 as libc::c_int || mday < 0 as libc::c_int
-                || hour < 0 as libc::c_int || min < 0 as libc::c_int
-                || sec < 0 as libc::c_int || fsec < 0 as libc::c_int) as libc::c_int
-                as bool_0;
+                || mon < 0 as libc::c_int
+                || mday < 0 as libc::c_int
+                || hour < 0 as libc::c_int
+                || min < 0 as libc::c_int
+                || sec < 0 as libc::c_int
+                || fsec < 0 as libc::c_int)
+                as libc::c_int as bool_0;
             let mut has_positive: bool_0 = (year > 0 as libc::c_int
-                || mon > 0 as libc::c_int || mday > 0 as libc::c_int
-                || hour > 0 as libc::c_int || min > 0 as libc::c_int
-                || sec > 0 as libc::c_int || fsec > 0 as libc::c_int) as libc::c_int
-                as bool_0;
-            let mut has_year_month: bool_0 = (year != 0 as libc::c_int
-                || mon != 0 as libc::c_int) as libc::c_int as bool_0;
+                || mon > 0 as libc::c_int
+                || mday > 0 as libc::c_int
+                || hour > 0 as libc::c_int
+                || min > 0 as libc::c_int
+                || sec > 0 as libc::c_int
+                || fsec > 0 as libc::c_int)
+                as libc::c_int as bool_0;
+            let mut has_year_month: bool_0 =
+                (year != 0 as libc::c_int || mon != 0 as libc::c_int) as libc::c_int as bool_0;
             let mut has_day_time: bool_0 = (mday != 0 as libc::c_int
-                || hour != 0 as libc::c_int || min != 0 as libc::c_int
-                || sec != 0 as libc::c_int || fsec != 0 as libc::c_int) as libc::c_int
-                as bool_0;
-            let mut has_day: bool_0 = (mday != 0 as libc::c_int) as libc::c_int
-                as bool_0;
+                || hour != 0 as libc::c_int
+                || min != 0 as libc::c_int
+                || sec != 0 as libc::c_int
+                || fsec != 0 as libc::c_int)
+                as libc::c_int as bool_0;
+            let mut has_day: bool_0 = (mday != 0 as libc::c_int) as libc::c_int as bool_0;
             let mut sql_standard_value: bool_0 = (!(has_negative as libc::c_int != 0
                 && has_positive as libc::c_int != 0)
-                && !(has_year_month as libc::c_int != 0
-                    && has_day_time as libc::c_int != 0)) as libc::c_int as bool_0;
-            if has_negative as libc::c_int != 0 && sql_standard_value as libc::c_int != 0
-            {
+                && !(has_year_month as libc::c_int != 0 && has_day_time as libc::c_int != 0))
+                as libc::c_int as bool_0;
+            if has_negative as libc::c_int != 0 && sql_standard_value as libc::c_int != 0 {
                 let fresh84 = cp;
                 cp = cp.offset(1);
                 *fresh84 = '-' as i32 as libc::c_char;
@@ -7922,20 +7470,20 @@ pub unsafe extern "C" fn EncodeInterval(
             if has_negative == 0 && has_positive == 0 {
                 pg_sprintf(cp, b"0\0" as *const u8 as *const libc::c_char);
             } else if sql_standard_value == 0 {
-                let mut year_sign: libc::c_char = (if year < 0 as libc::c_int
-                    || mon < 0 as libc::c_int
-                {
-                    '-' as i32
-                } else {
-                    '+' as i32
-                }) as libc::c_char;
+                let mut year_sign: libc::c_char =
+                    (if year < 0 as libc::c_int || mon < 0 as libc::c_int {
+                        '-' as i32
+                    } else {
+                        '+' as i32
+                    }) as libc::c_char;
                 let mut day_sign: libc::c_char = (if mday < 0 as libc::c_int {
                     '-' as i32
                 } else {
                     '+' as i32
                 }) as libc::c_char;
                 let mut sec_sign: libc::c_char = (if hour < 0 as libc::c_int
-                    || min < 0 as libc::c_int || sec < 0 as libc::c_int
+                    || min < 0 as libc::c_int
+                    || sec < 0 as libc::c_int
                     || fsec < 0 as libc::c_int
                 {
                     '-' as i32
@@ -7955,13 +7503,7 @@ pub unsafe extern "C" fn EncodeInterval(
                     abs(min),
                 );
                 cp = cp.offset(strlen(cp) as isize);
-                cp = AppendSeconds(
-                    cp,
-                    sec,
-                    fsec,
-                    6 as libc::c_int,
-                    1 as libc::c_int as bool_0,
-                );
+                cp = AppendSeconds(cp, sec, fsec, 6 as libc::c_int, 1 as libc::c_int as bool_0);
                 *cp = '\0' as i32 as libc::c_char;
             } else if has_year_month != 0 {
                 pg_sprintf(
@@ -7979,13 +7521,7 @@ pub unsafe extern "C" fn EncodeInterval(
                     min,
                 );
                 cp = cp.offset(strlen(cp) as isize);
-                cp = AppendSeconds(
-                    cp,
-                    sec,
-                    fsec,
-                    6 as libc::c_int,
-                    1 as libc::c_int as bool_0,
-                );
+                cp = AppendSeconds(cp, sec, fsec, 6 as libc::c_int, 1 as libc::c_int as bool_0);
                 *cp = '\0' as i32 as libc::c_char;
             } else {
                 pg_sprintf(
@@ -7995,20 +7531,17 @@ pub unsafe extern "C" fn EncodeInterval(
                     min,
                 );
                 cp = cp.offset(strlen(cp) as isize);
-                cp = AppendSeconds(
-                    cp,
-                    sec,
-                    fsec,
-                    6 as libc::c_int,
-                    1 as libc::c_int as bool_0,
-                );
+                cp = AppendSeconds(cp, sec, fsec, 6 as libc::c_int, 1 as libc::c_int as bool_0);
                 *cp = '\0' as i32 as libc::c_char;
             }
         }
         3 => {
-            if year == 0 as libc::c_int && mon == 0 as libc::c_int
-                && mday == 0 as libc::c_int && hour == 0 as libc::c_int
-                && min == 0 as libc::c_int && sec == 0 as libc::c_int
+            if year == 0 as libc::c_int
+                && mon == 0 as libc::c_int
+                && mday == 0 as libc::c_int
+                && hour == 0 as libc::c_int
+                && min == 0 as libc::c_int
+                && sec == 0 as libc::c_int
                 && fsec == 0 as libc::c_int
             {
                 pg_sprintf(cp, b"PT0S\0" as *const u8 as *const libc::c_char);
@@ -8019,8 +7552,10 @@ pub unsafe extern "C" fn EncodeInterval(
                 cp = AddISO8601IntPart(cp, year, 'Y' as i32 as libc::c_char);
                 cp = AddISO8601IntPart(cp, mon, 'M' as i32 as libc::c_char);
                 cp = AddISO8601IntPart(cp, mday, 'D' as i32 as libc::c_char);
-                if hour != 0 as libc::c_int || min != 0 as libc::c_int
-                    || sec != 0 as libc::c_int || fsec != 0 as libc::c_int
+                if hour != 0 as libc::c_int
+                    || min != 0 as libc::c_int
+                    || sec != 0 as libc::c_int
+                    || fsec != 0 as libc::c_int
                 {
                     let fresh86 = cp;
                     cp = cp.offset(1);
@@ -8034,13 +7569,7 @@ pub unsafe extern "C" fn EncodeInterval(
                         cp = cp.offset(1);
                         *fresh87 = '-' as i32 as libc::c_char;
                     }
-                    cp = AppendSeconds(
-                        cp,
-                        sec,
-                        fsec,
-                        6 as libc::c_int,
-                        0 as libc::c_int as bool_0,
-                    );
+                    cp = AppendSeconds(cp, sec, fsec, 6 as libc::c_int, 0 as libc::c_int as bool_0);
                     let fresh88 = cp;
                     cp = cp.offset(1);
                     *fresh88 = 'S' as i32 as libc::c_char;
@@ -8072,13 +7601,17 @@ pub unsafe extern "C" fn EncodeInterval(
                 &mut is_zero,
                 &mut is_before,
             );
-            if is_zero as libc::c_int != 0 || hour != 0 as libc::c_int
-                || min != 0 as libc::c_int || sec != 0 as libc::c_int
+            if is_zero as libc::c_int != 0
+                || hour != 0 as libc::c_int
+                || min != 0 as libc::c_int
+                || sec != 0 as libc::c_int
                 || fsec != 0 as libc::c_int
             {
                 let mut minus: bool_0 = (hour < 0 as libc::c_int
-                    || min < 0 as libc::c_int || sec < 0 as libc::c_int
-                    || fsec < 0 as libc::c_int) as libc::c_int as bool_0;
+                    || min < 0 as libc::c_int
+                    || sec < 0 as libc::c_int
+                    || fsec < 0 as libc::c_int)
+                    as libc::c_int as bool_0;
                 pg_sprintf(
                     cp,
                     b"%s%s%02d:%02d:\0" as *const u8 as *const libc::c_char,
@@ -8098,13 +7631,7 @@ pub unsafe extern "C" fn EncodeInterval(
                     abs(min),
                 );
                 cp = cp.offset(strlen(cp) as isize);
-                cp = AppendSeconds(
-                    cp,
-                    sec,
-                    fsec,
-                    6 as libc::c_int,
-                    1 as libc::c_int as bool_0,
-                );
+                cp = AppendSeconds(cp, sec, fsec, 6 as libc::c_int, 1 as libc::c_int as bool_0);
                 *cp = '\0' as i32 as libc::c_char;
             }
         }
@@ -8150,9 +7677,7 @@ pub unsafe extern "C" fn EncodeInterval(
                 let fresh90 = cp;
                 cp = cp.offset(1);
                 *fresh90 = ' ' as i32 as libc::c_char;
-                if sec < 0 as libc::c_int
-                    || sec == 0 as libc::c_int && fsec < 0 as libc::c_int
-                {
+                if sec < 0 as libc::c_int || sec == 0 as libc::c_int && fsec < 0 as libc::c_int {
                     if is_zero != 0 {
                         is_before = 1 as libc::c_int as bool_0;
                     } else if is_before == 0 {
@@ -8165,13 +7690,7 @@ pub unsafe extern "C" fn EncodeInterval(
                     cp = cp.offset(1);
                     *fresh92 = '-' as i32 as libc::c_char;
                 }
-                cp = AppendSeconds(
-                    cp,
-                    sec,
-                    fsec,
-                    6 as libc::c_int,
-                    0 as libc::c_int as bool_0,
-                );
+                cp = AppendSeconds(cp, sec, fsec, 6 as libc::c_int, 0 as libc::c_int as bool_0);
                 pg_sprintf(
                     cp,
                     b" sec%s\0" as *const u8 as *const libc::c_char,
@@ -8201,8 +7720,7 @@ unsafe extern "C" fn CheckDateTokenTable(
     let mut i: libc::c_int = 0;
     i = 0 as libc::c_int;
     while i < nel {
-        if strlen(((*base.offset(i as isize)).token).as_ptr())
-            > 10 as libc::c_int as libc::c_ulong
+        if strlen(((*base.offset(i as isize)).token).as_ptr()) > 10 as libc::c_int as libc::c_ulong
         {
             let mut __errno_location_0: libc::c_int = 0;
             if if 0 != 0 && 15 as libc::c_int >= 21 as libc::c_int {
@@ -8212,21 +7730,19 @@ unsafe extern "C" fn CheckDateTokenTable(
             } != 0
             {
                 errmsg_internal(
-                    b"token too long in %s table: \"%.*s\"\0" as *const u8
-                        as *const libc::c_char,
+                    b"token too long in %s table: \"%.*s\"\0" as *const u8 as *const libc::c_char,
                     tablename,
                     10 as libc::c_int + 1 as libc::c_int,
                     ((*base.offset(i as isize)).token).as_ptr(),
                 );
                 errfinish(
-                    b"/home/petrosagg/projects/postgres-datetime/src/datetime.c\0"
-                        as *const u8 as *const libc::c_char,
+                    b"/home/petrosagg/projects/postgres-datetime/src/datetime.c\0" as *const u8
+                        as *const libc::c_char,
                     4446 as libc::c_int,
-                    (*::core::mem::transmute::<
-                        &[u8; 20],
-                        &[libc::c_char; 20],
-                    >(b"CheckDateTokenTable\0"))
-                        .as_ptr(),
+                    (*::core::mem::transmute::<&[u8; 20], &[libc::c_char; 20]>(
+                        b"CheckDateTokenTable\0",
+                    ))
+                    .as_ptr(),
                 );
             }
             if 0 != 0 && 15 as libc::c_int >= 21 as libc::c_int {
@@ -8243,8 +7759,7 @@ unsafe extern "C" fn CheckDateTokenTable(
             {
                 let mut __errno_location_1: libc::c_int = 0;
                 if if 0 != 0 && 15 as libc::c_int >= 21 as libc::c_int {
-                    errstart_cold(15 as libc::c_int, 0 as *const libc::c_char)
-                        as libc::c_int
+                    errstart_cold(15 as libc::c_int, 0 as *const libc::c_char) as libc::c_int
                 } else {
                     errstart(15 as libc::c_int, 0 as *const libc::c_char) as libc::c_int
                 } != 0
@@ -8257,14 +7772,13 @@ unsafe extern "C" fn CheckDateTokenTable(
                         ((*base.offset(i as isize)).token).as_ptr(),
                     );
                     errfinish(
-                        b"/home/petrosagg/projects/postgres-datetime/src/datetime.c\0"
-                            as *const u8 as *const libc::c_char,
+                        b"/home/petrosagg/projects/postgres-datetime/src/datetime.c\0" as *const u8
+                            as *const libc::c_char,
                         4457 as libc::c_int,
-                        (*::core::mem::transmute::<
-                            &[u8; 20],
-                            &[libc::c_char; 20],
-                        >(b"CheckDateTokenTable\0"))
-                            .as_ptr(),
+                        (*::core::mem::transmute::<&[u8; 20], &[libc::c_char; 20]>(
+                            b"CheckDateTokenTable\0",
+                        ))
+                        .as_ptr(),
                     );
                 }
                 if 0 != 0 && 15 as libc::c_int >= 21 as libc::c_int {
@@ -8295,23 +7809,20 @@ pub unsafe extern "C" fn CheckDateTokenTables() -> bool_0 {
     return ok;
 }
 #[no_mangle]
-pub unsafe extern "C" fn TemporalSimplify(
-    mut max_precis: int32,
-    mut node: *mut Node,
-) -> *mut Node {
+pub unsafe extern "C" fn TemporalSimplify(mut max_precis: int32, mut node: *mut Node) -> *mut Node {
     let mut expr: *mut FuncExpr = node as *mut FuncExpr;
     let mut ret: *mut Node = 0 as *mut Node;
     let mut typmod: *mut Node = 0 as *mut Node;
     typmod = (*list_nth_cell((*expr).args, 1 as libc::c_int)).ptr_value as *mut Node;
-    if (*(typmod as *const Node)).type_0 as libc::c_uint
-        == T_Const as libc::c_int as libc::c_uint
+    if (*(typmod as *const Node)).type_0 as libc::c_uint == T_Const as libc::c_int as libc::c_uint
         && (*(typmod as *mut Const)).constisnull == 0
     {
-        let mut source: *mut Node = (*list_nth_cell((*expr).args, 0 as libc::c_int))
-            .ptr_value as *mut Node;
+        let mut source: *mut Node =
+            (*list_nth_cell((*expr).args, 0 as libc::c_int)).ptr_value as *mut Node;
         let mut old_precis: int32 = exprTypmod(source);
         let mut new_precis: int32 = (*(typmod as *mut Const)).constvalue as int32;
-        if new_precis < 0 as libc::c_int || new_precis == max_precis
+        if new_precis < 0 as libc::c_int
+            || new_precis == max_precis
             || old_precis >= 0 as libc::c_int && new_precis >= old_precis
         {
             ret = relabel_to_typmod(source, new_precis);
@@ -8327,13 +7838,10 @@ pub unsafe extern "C" fn ConvertTimeZoneAbbrevs(
     let mut tbl: *mut TimeZoneAbbrevTable = 0 as *mut TimeZoneAbbrevTable;
     let mut tbl_size: Size = 0;
     let mut i: libc::c_int = 0;
-    tbl_size = (12 as libc::c_ulong)
-        .wrapping_add(
-            (n as libc::c_ulong)
-                .wrapping_mul(::core::mem::size_of::<datetkn>() as libc::c_ulong),
-        );
-    tbl_size = tbl_size
-        .wrapping_add((8 as libc::c_int - 1 as libc::c_int) as libc::c_ulong)
+    tbl_size = (12 as libc::c_ulong).wrapping_add(
+        (n as libc::c_ulong).wrapping_mul(::core::mem::size_of::<datetkn>() as libc::c_ulong),
+    );
+    tbl_size = tbl_size.wrapping_add((8 as libc::c_int - 1 as libc::c_int) as libc::c_ulong)
         & !((8 as libc::c_int - 1 as libc::c_int) as uintptr_t);
     i = 0 as libc::c_int;
     while i < n {
@@ -8343,13 +7851,10 @@ pub unsafe extern "C" fn ConvertTimeZoneAbbrevs(
             dsize = (8 as libc::c_ulong)
                 .wrapping_add(strlen((*abbr).zone))
                 .wrapping_add(1 as libc::c_int as libc::c_ulong);
-            tbl_size = (tbl_size as libc::c_ulong)
-                .wrapping_add(
-                    dsize
-                        .wrapping_add(
-                            (8 as libc::c_int - 1 as libc::c_int) as libc::c_ulong,
-                        ) & !((8 as libc::c_int - 1 as libc::c_int) as uintptr_t),
-                ) as Size as Size;
+            tbl_size = (tbl_size as libc::c_ulong).wrapping_add(
+                dsize.wrapping_add((8 as libc::c_int - 1 as libc::c_int) as libc::c_ulong)
+                    & !((8 as libc::c_int - 1 as libc::c_int) as uintptr_t),
+            ) as Size as Size;
         }
         i += 1;
     }
@@ -8359,13 +7864,10 @@ pub unsafe extern "C" fn ConvertTimeZoneAbbrevs(
     }
     (*tbl).tblsize = tbl_size;
     (*tbl).numabbrevs = n;
-    tbl_size = (12 as libc::c_ulong)
-        .wrapping_add(
-            (n as libc::c_ulong)
-                .wrapping_mul(::core::mem::size_of::<datetkn>() as libc::c_ulong),
-        );
-    tbl_size = tbl_size
-        .wrapping_add((8 as libc::c_int - 1 as libc::c_int) as libc::c_ulong)
+    tbl_size = (12 as libc::c_ulong).wrapping_add(
+        (n as libc::c_ulong).wrapping_mul(::core::mem::size_of::<datetkn>() as libc::c_ulong),
+    );
+    tbl_size = tbl_size.wrapping_add((8 as libc::c_int - 1 as libc::c_int) as libc::c_ulong)
         & !((8 as libc::c_int - 1 as libc::c_int) as uintptr_t);
     i = 0 as libc::c_int;
     while i < n {
@@ -8379,8 +7881,7 @@ pub unsafe extern "C" fn ConvertTimeZoneAbbrevs(
         if !((*abbr_0).zone).is_null() {
             let mut dtza: *mut DynamicZoneAbbrev = 0 as *mut DynamicZoneAbbrev;
             let mut dsize_0: Size = 0;
-            dtza = (tbl as *mut libc::c_char).offset(tbl_size as isize)
-                as *mut DynamicZoneAbbrev;
+            dtza = (tbl as *mut libc::c_char).offset(tbl_size as isize) as *mut DynamicZoneAbbrev;
             (*dtza).tz = 0 as *mut pg_tz;
             strcpy(((*dtza).zone).as_mut_ptr(), (*abbr_0).zone);
             (*dtoken).type_0 = 7 as libc::c_int as libc::c_char;
@@ -8388,16 +7889,12 @@ pub unsafe extern "C" fn ConvertTimeZoneAbbrevs(
             dsize_0 = (8 as libc::c_ulong)
                 .wrapping_add(strlen((*abbr_0).zone))
                 .wrapping_add(1 as libc::c_int as libc::c_ulong);
-            tbl_size = (tbl_size as libc::c_ulong)
-                .wrapping_add(
-                    dsize_0
-                        .wrapping_add(
-                            (8 as libc::c_int - 1 as libc::c_int) as libc::c_ulong,
-                        ) & !((8 as libc::c_int - 1 as libc::c_int) as uintptr_t),
-                ) as Size as Size;
+            tbl_size = (tbl_size as libc::c_ulong).wrapping_add(
+                dsize_0.wrapping_add((8 as libc::c_int - 1 as libc::c_int) as libc::c_ulong)
+                    & !((8 as libc::c_int - 1 as libc::c_int) as uintptr_t),
+            ) as Size as Size;
         } else {
-            (*dtoken)
-                .type_0 = (if (*abbr_0).is_dst as libc::c_int != 0 {
+            (*dtoken).type_0 = (if (*abbr_0).is_dst as libc::c_int != 0 {
                 6 as libc::c_int
             } else {
                 5 as libc::c_int
@@ -8422,8 +7919,7 @@ unsafe extern "C" fn FetchDynamicTimeZone(
     mut tp: *const datetkn,
 ) -> *mut pg_tz {
     let mut dtza: *mut DynamicZoneAbbrev = 0 as *mut DynamicZoneAbbrev;
-    dtza = (tbl as *mut libc::c_char).offset((*tp).value as isize)
-        as *mut DynamicZoneAbbrev;
+    dtza = (tbl as *mut libc::c_char).offset((*tp).value as isize) as *mut DynamicZoneAbbrev;
     if ((*dtza).tz).is_null() {
         (*dtza).tz = pg_tzset(((*dtza).zone).as_mut_ptr());
         if ((*dtza).tz).is_null() {
@@ -8436,18 +7932,13 @@ unsafe extern "C" fn FetchDynamicTimeZone(
             {
                 errcode(
                     ('F' as i32 - '0' as i32 & 0x3f as libc::c_int)
-                        + (('0' as i32 - '0' as i32 & 0x3f as libc::c_int)
-                            << 6 as libc::c_int)
-                        + (('0' as i32 - '0' as i32 & 0x3f as libc::c_int)
-                            << 12 as libc::c_int)
-                        + (('0' as i32 - '0' as i32 & 0x3f as libc::c_int)
-                            << 18 as libc::c_int)
-                        + (('0' as i32 - '0' as i32 & 0x3f as libc::c_int)
-                            << 24 as libc::c_int),
+                        + (('0' as i32 - '0' as i32 & 0x3f as libc::c_int) << 6 as libc::c_int)
+                        + (('0' as i32 - '0' as i32 & 0x3f as libc::c_int) << 12 as libc::c_int)
+                        + (('0' as i32 - '0' as i32 & 0x3f as libc::c_int) << 18 as libc::c_int)
+                        + (('0' as i32 - '0' as i32 & 0x3f as libc::c_int) << 24 as libc::c_int),
                 );
                 errmsg(
-                    b"time zone \"%s\" not recognized\0" as *const u8
-                        as *const libc::c_char,
+                    b"time zone \"%s\" not recognized\0" as *const u8 as *const libc::c_char,
                     ((*dtza).zone).as_mut_ptr() as *mut _,
                 );
                 errdetail(
@@ -8456,14 +7947,13 @@ unsafe extern "C" fn FetchDynamicTimeZone(
                     ((*tp).token).as_ptr() as *mut _,
                 );
                 errfinish(
-                    b"/home/petrosagg/projects/postgres-datetime/src/datetime.c\0"
-                        as *const u8 as *const libc::c_char,
+                    b"/home/petrosagg/projects/postgres-datetime/src/datetime.c\0" as *const u8
+                        as *const libc::c_char,
                     4647 as libc::c_int,
-                    (*::core::mem::transmute::<
-                        &[u8; 21],
-                        &[libc::c_char; 21],
-                    >(b"FetchDynamicTimeZone\0"))
-                        .as_ptr(),
+                    (*::core::mem::transmute::<&[u8; 21], &[libc::c_char; 21]>(
+                        b"FetchDynamicTimeZone\0",
+                    ))
+                    .as_ptr(),
                 );
             }
             if 0 != 0 && 21 as libc::c_int >= 21 as libc::c_int {
@@ -8505,8 +7995,7 @@ pub unsafe extern "C" fn pg_timezone_abbrevs(mut fcinfo: FunctionCallInfo) -> Da
         let mut oldcontext: MemoryContext = 0 as *mut MemoryContextData;
         funcctx = init_MultiFuncCall(fcinfo);
         oldcontext = MemoryContextSwitchTo((*funcctx).multi_call_memory_ctx);
-        pindex = palloc(::core::mem::size_of::<libc::c_int>() as libc::c_ulong)
-            as *mut libc::c_int;
+        pindex = palloc(::core::mem::size_of::<libc::c_int>() as libc::c_ulong) as *mut libc::c_int;
         *pindex = 0 as libc::c_int;
         (*funcctx).user_fctx = pindex as *mut libc::c_void;
         tupdesc = CreateTemplateTupleDesc(3 as libc::c_int);
@@ -8547,7 +8036,9 @@ pub unsafe extern "C" fn pg_timezone_abbrevs(mut fcinfo: FunctionCallInfo) -> Da
         (*fcinfo).isnull = 1 as libc::c_int as bool_0;
         return 0 as libc::c_int as Datum;
     }
-    tp = ((*zoneabbrevtbl).abbrevs).as_mut_ptr().offset(*pindex as isize);
+    tp = ((*zoneabbrevtbl).abbrevs)
+        .as_mut_ptr()
+        .offset(*pindex as isize);
     match (*tp).type_0 as libc::c_int {
         5 => {
             gmtoffset = (*tp).value;
@@ -8563,12 +8054,8 @@ pub unsafe extern "C" fn pg_timezone_abbrevs(mut fcinfo: FunctionCallInfo) -> Da
             let mut isdst: libc::c_int = 0;
             tzp = FetchDynamicTimeZone(zoneabbrevtbl, tp);
             now = GetCurrentTransactionStartTimestamp();
-            gmtoffset = -DetermineTimeZoneAbbrevOffsetTS(
-                now,
-                ((*tp).token).as_ptr(),
-                tzp,
-                &mut isdst,
-            );
+            gmtoffset =
+                -DetermineTimeZoneAbbrevOffsetTS(now, ((*tp).token).as_ptr(), tzp, &mut isdst);
             is_dst = isdst as bool_0;
         }
         _ => {
@@ -8580,19 +8067,17 @@ pub unsafe extern "C" fn pg_timezone_abbrevs(mut fcinfo: FunctionCallInfo) -> Da
             } != 0
             {
                 errmsg_internal(
-                    b"unrecognized timezone type %d\0" as *const u8
-                        as *const libc::c_char,
+                    b"unrecognized timezone type %d\0" as *const u8 as *const libc::c_char,
                     (*tp).type_0 as libc::c_int,
                 );
                 errfinish(
-                    b"/home/petrosagg/projects/postgres-datetime/src/datetime.c\0"
-                        as *const u8 as *const libc::c_char,
+                    b"/home/petrosagg/projects/postgres-datetime/src/datetime.c\0" as *const u8
+                        as *const libc::c_char,
                     4746 as libc::c_int,
-                    (*::core::mem::transmute::<
-                        &[u8; 20],
-                        &[libc::c_char; 20],
-                    >(b"pg_timezone_abbrevs\0"))
-                        .as_ptr(),
+                    (*::core::mem::transmute::<&[u8; 20], &[libc::c_char; 20]>(
+                        b"pg_timezone_abbrevs\0",
+                    ))
+                    .as_ptr(),
                 );
             }
             if 0 != 0 && 21 as libc::c_int >= 21 as libc::c_int {
@@ -8612,13 +8097,14 @@ pub unsafe extern "C" fn pg_timezone_abbrevs(mut fcinfo: FunctionCallInfo) -> Da
         && _len
             & (::core::mem::size_of::<libc::c_long>() as libc::c_ulong)
                 .wrapping_sub(1 as libc::c_int as libc::c_ulong)
-            == 0 as libc::c_int as libc::c_ulong && _val == 0 as libc::c_int
+            == 0 as libc::c_int as libc::c_ulong
+        && _val == 0 as libc::c_int
         && _len <= 1024 as libc::c_int as libc::c_ulong
         && 1024 as libc::c_int != 0 as libc::c_int
     {
         let mut _start: *mut libc::c_long = _vstart as *mut libc::c_long;
-        let mut _stop: *mut libc::c_long = (_start as *mut libc::c_char)
-            .offset(_len as isize) as *mut libc::c_long;
+        let mut _stop: *mut libc::c_long =
+            (_start as *mut libc::c_char).offset(_len as isize) as *mut libc::c_long;
         while _start < _stop {
             let fresh93 = _start;
             _start = _start.offset(1);
@@ -8648,13 +8134,14 @@ pub unsafe extern "C" fn pg_timezone_abbrevs(mut fcinfo: FunctionCallInfo) -> Da
         && _len_0
             & (::core::mem::size_of::<libc::c_long>() as libc::c_ulong)
                 .wrapping_sub(1 as libc::c_int as libc::c_ulong)
-            == 0 as libc::c_int as libc::c_ulong && _val_0 == 0 as libc::c_int
+            == 0 as libc::c_int as libc::c_ulong
+        && _val_0 == 0 as libc::c_int
         && _len_0 <= 1024 as libc::c_int as libc::c_ulong
         && 1024 as libc::c_int != 0 as libc::c_int
     {
         let mut _start_0: *mut libc::c_long = _vstart_0 as *mut libc::c_long;
-        let mut _stop_0: *mut libc::c_long = (_start_0 as *mut libc::c_char)
-            .offset(_len_0 as isize) as *mut libc::c_long;
+        let mut _stop_0: *mut libc::c_long =
+            (_start_0 as *mut libc::c_char).offset(_len_0 as isize) as *mut libc::c_long;
         while _start_0 < _stop_0 {
             let fresh94 = _start_0;
             _start_0 = _start_0.offset(1);
@@ -8664,12 +8151,10 @@ pub unsafe extern "C" fn pg_timezone_abbrevs(mut fcinfo: FunctionCallInfo) -> Da
         memset(_vstart_0, _val_0, _len_0);
     }
     tm.tm_sec = gmtoffset;
-    resInterval = palloc(::core::mem::size_of::<Interval>() as libc::c_ulong)
-        as *mut Interval;
+    resInterval = palloc(::core::mem::size_of::<Interval>() as libc::c_ulong) as *mut Interval;
     tm2interval(&mut tm, 0 as libc::c_int, resInterval);
     values[1 as libc::c_int as usize] = resInterval as Datum;
-    values[2 as libc::c_int
-        as usize] = (if is_dst as libc::c_int != 0 {
+    values[2 as libc::c_int as usize] = (if is_dst as libc::c_int != 0 {
         1 as libc::c_int
     } else {
         0 as libc::c_int
@@ -8741,27 +8226,20 @@ pub unsafe extern "C" fn pg_timezone_names(mut fcinfo: FunctionCallInfo) -> Datu
         {
             errcode(
                 ('0' as i32 - '0' as i32 & 0x3f as libc::c_int)
-                    + (('A' as i32 - '0' as i32 & 0x3f as libc::c_int)
-                        << 6 as libc::c_int)
-                    + (('0' as i32 - '0' as i32 & 0x3f as libc::c_int)
-                        << 12 as libc::c_int)
-                    + (('0' as i32 - '0' as i32 & 0x3f as libc::c_int)
-                        << 18 as libc::c_int)
-                    + (('0' as i32 - '0' as i32 & 0x3f as libc::c_int)
-                        << 24 as libc::c_int),
+                    + (('A' as i32 - '0' as i32 & 0x3f as libc::c_int) << 6 as libc::c_int)
+                    + (('0' as i32 - '0' as i32 & 0x3f as libc::c_int) << 12 as libc::c_int)
+                    + (('0' as i32 - '0' as i32 & 0x3f as libc::c_int) << 18 as libc::c_int)
+                    + (('0' as i32 - '0' as i32 & 0x3f as libc::c_int) << 24 as libc::c_int),
             );
             errmsg0(
-                b"set-valued function called in context that cannot accept a set\0"
-                    as *const u8 as *const libc::c_char,
+                b"set-valued function called in context that cannot accept a set\0" as *const u8
+                    as *const libc::c_char,
             );
             errfinish(
-                b"/home/petrosagg/projects/postgres-datetime/src/datetime.c\0"
-                    as *const u8 as *const libc::c_char,
+                b"/home/petrosagg/projects/postgres-datetime/src/datetime.c\0" as *const u8
+                    as *const libc::c_char,
                 4808 as libc::c_int,
-                (*::core::mem::transmute::<
-                    &[u8; 18],
-                    &[libc::c_char; 18],
-                >(b"pg_timezone_names\0"))
+                (*::core::mem::transmute::<&[u8; 18], &[libc::c_char; 18]>(b"pg_timezone_names\0"))
                     .as_ptr(),
             );
         }
@@ -8779,27 +8257,20 @@ pub unsafe extern "C" fn pg_timezone_names(mut fcinfo: FunctionCallInfo) -> Datu
         {
             errcode(
                 ('4' as i32 - '0' as i32 & 0x3f as libc::c_int)
-                    + (('2' as i32 - '0' as i32 & 0x3f as libc::c_int)
-                        << 6 as libc::c_int)
-                    + (('6' as i32 - '0' as i32 & 0x3f as libc::c_int)
-                        << 12 as libc::c_int)
-                    + (('0' as i32 - '0' as i32 & 0x3f as libc::c_int)
-                        << 18 as libc::c_int)
-                    + (('1' as i32 - '0' as i32 & 0x3f as libc::c_int)
-                        << 24 as libc::c_int),
+                    + (('2' as i32 - '0' as i32 & 0x3f as libc::c_int) << 6 as libc::c_int)
+                    + (('6' as i32 - '0' as i32 & 0x3f as libc::c_int) << 12 as libc::c_int)
+                    + (('0' as i32 - '0' as i32 & 0x3f as libc::c_int) << 18 as libc::c_int)
+                    + (('1' as i32 - '0' as i32 & 0x3f as libc::c_int) << 24 as libc::c_int),
             );
             errmsg0(
-                b"materialize mode required, but it is not allowed in this context\0"
-                    as *const u8 as *const libc::c_char,
+                b"materialize mode required, but it is not allowed in this context\0" as *const u8
+                    as *const libc::c_char,
             );
             errfinish(
-                b"/home/petrosagg/projects/postgres-datetime/src/datetime.c\0"
-                    as *const u8 as *const libc::c_char,
+                b"/home/petrosagg/projects/postgres-datetime/src/datetime.c\0" as *const u8
+                    as *const libc::c_char,
                 4812 as libc::c_int,
-                (*::core::mem::transmute::<
-                    &[u8; 18],
-                    &[libc::c_char; 18],
-                >(b"pg_timezone_names\0"))
+                (*::core::mem::transmute::<&[u8; 18], &[libc::c_char; 18]>(b"pg_timezone_names\0"))
                     .as_ptr(),
             );
         }
@@ -8822,13 +8293,10 @@ pub unsafe extern "C" fn pg_timezone_names(mut fcinfo: FunctionCallInfo) -> Datu
                 b"return type must be a row type\0" as *const u8 as *const libc::c_char,
             );
             errfinish(
-                b"/home/petrosagg/projects/postgres-datetime/src/datetime.c\0"
-                    as *const u8 as *const libc::c_char,
+                b"/home/petrosagg/projects/postgres-datetime/src/datetime.c\0" as *const u8
+                    as *const libc::c_char,
                 4818 as libc::c_int,
-                (*::core::mem::transmute::<
-                    &[u8; 18],
-                    &[libc::c_char; 18],
-                >(b"pg_timezone_names\0"))
+                (*::core::mem::transmute::<&[u8; 18], &[libc::c_char; 18]>(b"pg_timezone_names\0"))
                     .as_ptr(),
             );
         }
@@ -8873,13 +8341,14 @@ pub unsafe extern "C" fn pg_timezone_names(mut fcinfo: FunctionCallInfo) -> Datu
             && _len
                 & (::core::mem::size_of::<libc::c_long>() as libc::c_ulong)
                     .wrapping_sub(1 as libc::c_int as libc::c_ulong)
-                == 0 as libc::c_int as libc::c_ulong && _val == 0 as libc::c_int
+                == 0 as libc::c_int as libc::c_ulong
+            && _val == 0 as libc::c_int
             && _len <= 1024 as libc::c_int as libc::c_ulong
             && 1024 as libc::c_int != 0 as libc::c_int
         {
             let mut _start: *mut libc::c_long = _vstart as *mut libc::c_long;
-            let mut _stop: *mut libc::c_long = (_start as *mut libc::c_char)
-                .offset(_len as isize) as *mut libc::c_long;
+            let mut _stop: *mut libc::c_long =
+                (_start as *mut libc::c_char).offset(_len as isize) as *mut libc::c_long;
             while _start < _stop {
                 let fresh95 = _start;
                 _start = _start.offset(1);
@@ -8888,14 +8357,13 @@ pub unsafe extern "C" fn pg_timezone_names(mut fcinfo: FunctionCallInfo) -> Datu
         } else {
             memset(_vstart, _val, _len);
         }
-        values[0 as libc::c_int
-            as usize] = cstring_to_text(pg_get_timezone_name(tz)) as Datum;
-        values[1 as libc::c_int
-            as usize] = cstring_to_text(
-            if !tzn.is_null() { tzn } else { b"\0" as *const u8 as *const libc::c_char },
-        ) as Datum;
-        let mut _vstart_0: *mut libc::c_void = &mut itm as *mut pg_tm
-            as *mut libc::c_void;
+        values[0 as libc::c_int as usize] = cstring_to_text(pg_get_timezone_name(tz)) as Datum;
+        values[1 as libc::c_int as usize] = cstring_to_text(if !tzn.is_null() {
+            tzn
+        } else {
+            b"\0" as *const u8 as *const libc::c_char
+        }) as Datum;
+        let mut _vstart_0: *mut libc::c_void = &mut itm as *mut pg_tm as *mut libc::c_void;
         let mut _val_0: libc::c_int = 0 as libc::c_int;
         let mut _len_0: Size = ::core::mem::size_of::<pg_tm>() as libc::c_ulong;
         if _vstart_0 as uintptr_t
@@ -8905,13 +8373,14 @@ pub unsafe extern "C" fn pg_timezone_names(mut fcinfo: FunctionCallInfo) -> Datu
             && _len_0
                 & (::core::mem::size_of::<libc::c_long>() as libc::c_ulong)
                     .wrapping_sub(1 as libc::c_int as libc::c_ulong)
-                == 0 as libc::c_int as libc::c_ulong && _val_0 == 0 as libc::c_int
+                == 0 as libc::c_int as libc::c_ulong
+            && _val_0 == 0 as libc::c_int
             && _len_0 <= 1024 as libc::c_int as libc::c_ulong
             && 1024 as libc::c_int != 0 as libc::c_int
         {
             let mut _start_0: *mut libc::c_long = _vstart_0 as *mut libc::c_long;
-            let mut _stop_0: *mut libc::c_long = (_start_0 as *mut libc::c_char)
-                .offset(_len_0 as isize) as *mut libc::c_long;
+            let mut _stop_0: *mut libc::c_long =
+                (_start_0 as *mut libc::c_char).offset(_len_0 as isize) as *mut libc::c_long;
             while _start_0 < _stop_0 {
                 let fresh96 = _start_0;
                 _start_0 = _start_0.offset(1);
@@ -8921,12 +8390,10 @@ pub unsafe extern "C" fn pg_timezone_names(mut fcinfo: FunctionCallInfo) -> Datu
             memset(_vstart_0, _val_0, _len_0);
         }
         itm.tm_sec = -tzoff;
-        resInterval = palloc(::core::mem::size_of::<Interval>() as libc::c_ulong)
-            as *mut Interval;
+        resInterval = palloc(::core::mem::size_of::<Interval>() as libc::c_ulong) as *mut Interval;
         tm2interval(&mut itm, 0 as libc::c_int, resInterval);
         values[2 as libc::c_int as usize] = resInterval as Datum;
-        values[3 as libc::c_int
-            as usize] = (if tm.tm_isdst > 0 as libc::c_int {
+        values[3 as libc::c_int as usize] = (if tm.tm_isdst > 0 as libc::c_int {
             1 as libc::c_int
         } else {
             0 as libc::c_int
@@ -8938,9 +8405,11 @@ pub unsafe extern "C" fn pg_timezone_names(mut fcinfo: FunctionCallInfo) -> Datu
 }
 unsafe extern "C" fn run_static_initializers() {
     szdatetktbl = (::core::mem::size_of::<[datetkn; 71]>() as libc::c_ulong)
-        .wrapping_div(::core::mem::size_of::<datetkn>() as libc::c_ulong) as libc::c_int;
+        .wrapping_div(::core::mem::size_of::<datetkn>() as libc::c_ulong)
+        as libc::c_int;
     szdeltatktbl = (::core::mem::size_of::<[datetkn; 61]>() as libc::c_ulong)
-        .wrapping_div(::core::mem::size_of::<datetkn>() as libc::c_ulong) as libc::c_int;
+        .wrapping_div(::core::mem::size_of::<datetkn>() as libc::c_ulong)
+        as libc::c_int;
 }
 #[used]
 #[cfg_attr(target_os = "linux", link_section = ".init_array")]

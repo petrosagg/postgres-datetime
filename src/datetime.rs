@@ -1,6 +1,6 @@
-use std::ffi::{CString, CStr};
+use std::ffi::CString;
 
-use crate::datetime_raw::{fsec_t, DateADT, pg_tm, ParseDateTime, DecodeDateTime};
+use crate::datetime_raw::{fsec_t, pg_tm, DateADT, DecodeDateTime, ParseDateTime};
 
 const MAXDATEFIELDS: usize = 25;
 const MAXDATELEN: usize = 128;
@@ -91,11 +91,9 @@ impl From<i32> for FieldType {
 }
 
 pub fn parse(s: &str) -> Result<Vec<(String, FieldType)>, i32> {
-    let timestr = CString::new(s).unwrap();
-	let mut nf = 0i32;
-	let mut dterr = 0i32;
-	let mut fields = [0i8 as *mut libc::c_char; MAXDATEFIELDS];
-	let mut ftypes = [0; MAXDATEFIELDS];
+    let mut dterr = 0i32;
+    let mut fields = Vec::with_capacity(MAXDATEFIELDS);
+    let mut ftypes = Vec::with_capacity(MAXDATEFIELDS);
 
     if dterr != 0 {
         return Err(dterr);
@@ -104,21 +102,11 @@ pub fn parse(s: &str) -> Result<Vec<(String, FieldType)>, i32> {
     unsafe {
         let workbuf = CString::from_vec_unchecked(vec![0; MAXDATELEN]);
 
-        dterr = ParseDateTime(
-            timestr.as_ptr(),
-            workbuf.into_raw(),
-            (MAXDATELEN + 1) as u64,
-            fields.as_mut().as_mut_ptr(),
-            ftypes.as_mut().as_mut_ptr(),
-            MAXDATEFIELDS as i32,
-            &mut nf as *mut _,
-        );
+        dterr = ParseDateTime(s, &mut fields, &mut ftypes, MAXDATEFIELDS as i32);
 
-        let mut ret = Vec::with_capacity(nf as usize);
-        for i in 0..nf {
-            let field = CStr::from_ptr(fields[i as usize]);
-            let field = field.to_str().unwrap().to_string();
-            let typ = FieldType::from(ftypes[i as usize]);
+        let mut ret = Vec::with_capacity(fields.len());
+        for (field, typ) in fields.into_iter().zip(ftypes) {
+            let typ = FieldType::from(typ);
             ret.push((field, typ));
         }
         Ok(ret)
@@ -134,9 +122,9 @@ pub fn decode(fields: Vec<(String, FieldType)>) -> Result<(pg_tm, fsec_t, i32, i
         ftype.push(typ as i32);
     }
 
-	let date: DateADT = 0;
-	let mut fsec: fsec_t = 0;
-	let mut dterr = 0i32;
+    let date: DateADT = 0;
+    let mut fsec: fsec_t = 0;
+    let mut dterr = 0i32;
     let mut tt = pg_tm {
         tm_sec: 0,
         tm_min: 0,
@@ -150,8 +138,8 @@ pub fn decode(fields: Vec<(String, FieldType)>) -> Result<(pg_tm, fsec_t, i32, i
         tm_gmtoff: 0,
         tm_zone: 0 as *const libc::c_char,
     };
-	let mut tzp: i32 = 0;
-	let mut dtype: i32 = 0;
+    let mut tzp: i32 = 0;
+    let mut dtype: i32 = 0;
     unsafe {
         dterr = DecodeDateTime(
             field.as_mut_ptr(),
@@ -160,7 +148,7 @@ pub fn decode(fields: Vec<(String, FieldType)>) -> Result<(pg_tm, fsec_t, i32, i
             &mut dtype as *mut _,
             &mut tt as *mut _,
             &mut fsec as *mut _,
-            &mut tzp as *mut _
+            &mut tzp as *mut _,
         );
     }
     if dterr != 0 {

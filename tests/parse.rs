@@ -1,6 +1,6 @@
 use datadriven::walk;
 
-use postgres_datetime::datetime::{parse, decode};
+use postgres_datetime::datetime::{decode, parse};
 
 #[cfg(test)]
 mod tests {
@@ -9,9 +9,7 @@ mod tests {
     #[test]
     fn run() {
         walk("tests/testdata/parse", |f| {
-            f.run(|test_case| -> String {
-                format!("{:?}\n", parse(&test_case.input))
-            })
+            f.run(|test_case| -> String { format!("{:?}\n", parse(&test_case.input)) })
         });
 
         walk("tests/testdata/decode", |f| {
