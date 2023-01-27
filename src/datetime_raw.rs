@@ -5,6 +5,7 @@ use crate::datetime::FieldType;
 const HOURS_PER_DAY: libc::c_int = 24;
 const MINS_PER_HOUR: libc::c_int = 60;
 const SECS_PER_DAY: libc::c_int = 86400;
+const SECS_PER_HOUR: libc::c_int = 3600;
 const SECS_PER_MINUTE: libc::c_int = 60;
 const USECS_PER_DAY: libc::c_long = 86400000000;
 const USECS_PER_HOUR: libc::c_long = 3600000000;
@@ -1947,79 +1948,157 @@ pub static mut days: [*const libc::c_char; 8] = [
     b"Saturday\0" as *const u8 as *const libc::c_char,
     0 as *const libc::c_char,
 ];
-static DATE_TOKEN_TABLE: &'static [&'static str] = &[
-    "-infinity",
-    "ad",
-    "allballs",
-    "am",
-    "apr",
-    "april",
-    "at",
-    "aug",
-    "august",
-    "bc",
-    "d",
-    "dec",
-    "december",
-    "dow",
-    "doy",
-    "dst",
-    "epoch",
-    "feb",
-    "february",
-    "fri",
-    "friday",
-    "h",
-    "infinity",
-    "isodow",
-    "isoyear",
-    "j",
-    "jan",
-    "january",
-    "jd",
-    "jul",
-    "julian",
-    "july",
-    "jun",
-    "june",
-    "m",
-    "mar",
-    "march",
-    "may",
-    "mm",
-    "mon",
-    "monday",
-    "nov",
-    "november",
-    "now",
-    "oct",
-    "october",
-    "on",
-    "pm",
-    "s",
-    "sat",
-    "saturday",
-    "sep",
-    "sept",
-    "september",
-    "sun",
-    "sunday",
-    "t",
-    "thu",
-    "thur",
-    "thurs",
-    "thursday",
-    "today",
-    "tomorrow",
-    "tue",
-    "tues",
-    "tuesday",
-    "wed",
-    "wednesday",
-    "weds",
-    "y",
-    "yesterday",
+
+const EPOCH: &'static str = "epoch";
+const INVALID: &'static str = "invalid";
+const EARLY: &'static str = "-infinity";
+const LATE: &'static str = "infinity";
+const NOW: &'static str = "now";
+const TODAY: &'static str = "today";
+const TOMORROW: &'static str = "tomorrow";
+const YESTERDAY: &'static str = "yesterday";
+const DA_D: &'static str = "ad";
+const DB_C: &'static str = "bc";
+
+// Fundamental time field definitions for parsing.
+//
+// Meridian:  am, pm, or 24-hour style.
+// Millennium: ad, bc
+const AM: i32 = 0;
+const PM: i32 = 1;
+const HR24: i32 = 1;
+
+const AD: i32 = 0;
+const BC: i32 = 1;
+
+// Field types for time decoding.
+//
+// Can't have more of these than there are bits in an unsigned int
+// since these are turned into bit masks during parsing and decoding.
+//
+// Furthermore, the values for YEAR, MONTH, DAY, HOUR, MINUTE, SECOND
+// must be in the range 0..14 so that the associated bitmasks can fit
+// into the left half of an INTERVAL's typmod value.  Since those bits
+// are stored in typmods, you can't change them without initdb!
+const RESERV: i32 = 0;
+const MONTH: i32 = 1;
+const YEAR: i32 = 2;
+const DAY: i32 = 3;
+const JULIAN: i32 = 4;
+const TZ: i32 = 5; /* fixed-offset timezone abbreviation */
+const DTZ: i32 = 6; /* fixed-offset timezone abbrev, DST */
+const DYNTZ: i32 = 7; /* dynamic timezone abbreviation */
+const IGNORE_DTF: i32 = 8;
+const AMPM: i32 = 9;
+const HOUR: i32 = 10;
+const MINUTE: i32 = 11;
+const SECOND: i32 = 12;
+const MILLISECOND: i32 = 13;
+const MICROSECOND: i32 = 14;
+const DOY: i32 = 15;
+const DOW: i32 = 16;
+const UNITS: i32 = 17;
+const ADBC: i32 = 18;
+/* these are only for relative dates */
+const AGO: i32 = 19;
+const ABS_BEFORE: i32 = 20;
+const ABS_AFTER: i32 = 21;
+/* generic fields to help with parsing */
+const ISODATE: i32 = 22;
+const ISOTIME: i32 = 23;
+/* these are only for parsing intervals */
+const WEEK: i32 = 24;
+const DECADE: i32 = 25;
+const CENTURY: i32 = 26;
+const MILLENNIUM: i32 = 27;
+/* hack for parsing two-word timezone specs "MET DST" etc */
+const DTZMOD: i32 = 28; /* "DST" as a separate word */
+/* reserved for unrecognized string values */
+const UNKNOWN_FIELD: i32 = 31;
+
+/// holds date/time keywords.
+///
+/// Note that this table must be strictly alphabetically ordered to allow an
+/// O(ln(N)) search algorithm to be used.
+///
+/// The static table contains no TZ, DTZ, or DYNTZ entries; rather those
+/// are loaded from configuration files and stored in zoneabbrevtbl, whose
+/// abbrevs[] field has the same format as the static DATE_TOKEN_TABLE.
+static DATE_TOKEN_TABLE: &'static [(&'static str, i32, i32)] = &[
+    /* token, type, value */
+    (EARLY, RESERV, FieldType::Early as i32), /* "-infinity" reserved for "early time" */
+    (DA_D, ADBC, AD),                         /* "ad" for years > 0 */
+    ("allballs", RESERV, FieldType::Zulu as i32), /* 00:00:00 */
+    ("am", AMPM, AM),
+    ("apr", MONTH, 4),
+    ("april", MONTH, 4),
+    ("at", IGNORE_DTF, 0), /* "at" (throwaway) */
+    ("aug", MONTH, 8),
+    ("august", MONTH, 8),
+    (DB_C, ADBC, BC),                    /* "bc" for years <= 0 */
+    ("d", UNITS, FieldType::Day as i32), /* "day of month" for ISO input */
+    ("dec", MONTH, 12),
+    ("december", MONTH, 12),
+    ("dow", UNITS, FieldType::Dow as i32), /* day of week */
+    ("doy", UNITS, FieldType::Doy as i32), /* day of year */
+    ("dst", DTZMOD, SECS_PER_HOUR),
+    (EPOCH, RESERV, FieldType::Epoch as i32), /* "epoch" reserved for system epoch time */
+    ("feb", MONTH, 2),
+    ("february", MONTH, 2),
+    ("fri", DOW, 5),
+    ("friday", DOW, 5),
+    ("h", UNITS, FieldType::Hour as i32),          /* "hour" */
+    (LATE, RESERV, FieldType::Late as i32),        /* "infinity" reserved for "late time" */
+    ("isodow", UNITS, FieldType::IsoDow as i32),   /* ISO day of week, Sunday == 7 */
+    ("isoyear", UNITS, FieldType::IsoYear as i32), /* year in terms of the ISO week date */
+    ("j", UNITS, FieldType::Julian as i32),
+    ("jan", MONTH, 1),
+    ("january", MONTH, 1),
+    ("jd", UNITS, FieldType::Julian as i32),
+    ("jul", MONTH, 7),
+    ("julian", UNITS, FieldType::Julian as i32),
+    ("july", MONTH, 7),
+    ("jun", MONTH, 6),
+    ("june", MONTH, 6),
+    ("m", UNITS, FieldType::Month as i32), /* "month" for ISO input */
+    ("mar", MONTH, 3),
+    ("march", MONTH, 3),
+    ("may", MONTH, 5),
+    ("mm", UNITS, FieldType::Minute as i32), /* "minute" for ISO input */
+    ("mon", DOW, 1),
+    ("monday", DOW, 1),
+    ("nov", MONTH, 11),
+    ("november", MONTH, 11),
+    (NOW, RESERV, FieldType::Now as i32), /* current transaction time */
+    ("oct", MONTH, 10),
+    ("october", MONTH, 10),
+    ("on", IGNORE_DTF, 0), /* "on" (throwaway) */
+    ("pm", AMPM, PM),
+    ("s", UNITS, FieldType::Second as i32), /* "seconds" for ISO input */
+    ("sat", DOW, 6),
+    ("saturday", DOW, 6),
+    ("sep", MONTH, 9),
+    ("sept", MONTH, 9),
+    ("september", MONTH, 9),
+    ("sun", DOW, 0),
+    ("sunday", DOW, 0),
+    ("t", ISOTIME, FieldType::Time as i32), /* Filler for ISO time fields */
+    ("thu", DOW, 4),
+    ("thur", DOW, 4),
+    ("thurs", DOW, 4),
+    ("thursday", DOW, 4),
+    (TODAY, RESERV, FieldType::Today as i32), /* midnight */
+    (TOMORROW, RESERV, FieldType::Tomorrow as i32), /* tomorrow midnight */
+    ("tue", DOW, 2),
+    ("tues", DOW, 2),
+    ("tuesday", DOW, 2),
+    ("wed", DOW, 3),
+    ("wednesday", DOW, 3),
+    ("weds", DOW, 3),
+    ("y", UNITS, FieldType::Year as i32), /* "year" for ISO input */
+    (YESTERDAY, RESERV, FieldType::Yesterday as i32), /* yesterday midnight */
 ];
+
 static mut datetktbl: [datetkn; 71] = unsafe {
     [
         {
@@ -3828,7 +3907,10 @@ pub fn parse_datetime(input: &str) -> Result<Vec<(String, FieldType)>, i32> {
                 is_date = true;
             } else if *chars.peek().unwrap() == '+' || chars.peek().unwrap().is_ascii_digit() {
                 // we need search only the core token table, not TZ names
-                if !DATE_TOKEN_TABLE.binary_search(&&*fdata).is_ok() {
+                if !DATE_TOKEN_TABLE
+                    .binary_search_by(|(token, _, _)| token.cmp(&&*fdata))
+                    .is_ok()
+                {
                     is_date = true;
                 }
             }
