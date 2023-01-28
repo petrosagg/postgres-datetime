@@ -1045,8 +1045,7 @@ pub fn parse_datetime(input: &str) -> Result<Vec<(String, TokenFieldType)>, i32>
     // outer loop through fields
     while chars.peek().is_some() {
         // Ignore spaces between fields
-        if chars.peek().unwrap().is_ascii_whitespace() {
-            chars.next();
+        if chars.next_if(|c| c.is_ascii_whitespace()).is_some() {
             continue;
         }
 
@@ -1055,40 +1054,42 @@ pub fn parse_datetime(input: &str) -> Result<Vec<(String, TokenFieldType)>, i32>
         let mut ftype: TokenFieldType;
 
         // leading digit? then date or time
-        if chars.peek().unwrap().is_ascii_digit() {
+        if let Some(c) = chars.next_if(|c| c.is_ascii_digit()) {
+            fdata.push(c);
             while let Some(c) = chars.next_if(|c| c.is_ascii_digit()) {
                 fdata.push(c);
             }
 
             // time field?
-            if *chars.peek().unwrap() == ':' {
+            if let Some(c) = chars.next_if_eq(&':') {
                 ftype = TokenFieldType::Time;
 
+                fdata.push(c);
                 while let Some(c) = chars.next_if(|&c| c.is_ascii_digit() || c == ':' || c == '.') {
                     fdata.push(c);
                 }
             // date field? allow embedded text month
-            } else if matches!(*chars.peek().unwrap(), '-' | '/' | '.') {
+            } else if let Some(c) = chars.next_if(|&c| c == '-' || c == '/' || c == '.') {
                 // save delimiting character to use later
-                let delim = *chars.peek().unwrap();
-
-                fdata.push(chars.next().unwrap());
+                let delim = c;
+                fdata.push(c);
 
                 // second field is all digits? then no embedded text month
-                if chars.peek().unwrap().is_ascii_digit() {
+                if let Some(c) = chars.next_if(|c| c.is_ascii_digit()) {
                     ftype = match delim {
                         '.' => TokenFieldType::Number,
                         _ => TokenFieldType::Date,
                     };
+                    fdata.push(c);
                     while let Some(c) = chars.next_if(|c| c.is_ascii_digit()) {
                         fdata.push(c);
                     }
 
                     // insist that the delimiters match to get a three-field date.
-                    if *chars.peek().unwrap() == delim {
+                    if let Some(c) = chars.next_if_eq(&delim) {
                         ftype = TokenFieldType::Date;
 
-                        fdata.push(chars.next().unwrap());
+                        fdata.push(c);
                         while let Some(c) = chars.next_if(|&c| c.is_ascii_digit() || c == delim) {
                             fdata.push(c);
                         }
@@ -1106,15 +1107,17 @@ pub fn parse_datetime(input: &str) -> Result<Vec<(String, TokenFieldType)>, i32>
                 ftype = TokenFieldType::Number;
             }
         // Leading decimal point? Then fractional seconds...
-        } else if *chars.peek().unwrap() == '.' {
-            fdata.push(chars.next().unwrap());
+        } else if let Some(c) = chars.next_if_eq(&'.') {
+            fdata.push(c);
             while let Some(c) = chars.next_if(|&c| c.is_ascii_digit()) {
                 fdata.push(c);
             }
             ftype = TokenFieldType::Number;
         // text? then date string, month, day of week, special, or timezone
-        } else if chars.peek().unwrap().is_ascii_alphabetic() {
+        } else if let Some(c) = chars.next_if(|c| c.is_ascii_alphabetic()) {
             ftype = TokenFieldType::String;
+
+            fdata.push(c.to_ascii_lowercase());
             while let Some(c) = chars.next_if(|&c| c.is_ascii_alphabetic()) {
                 fdata.push(c.to_ascii_lowercase());
             }
@@ -1145,23 +1148,25 @@ pub fn parse_datetime(input: &str) -> Result<Vec<(String, TokenFieldType)>, i32>
                 }
             }
         // sign? then special or numeric timezone
-        } else if matches!(*chars.peek().unwrap(), '+' | '-') {
-            fdata.push(chars.next().unwrap());
+        } else if let Some(c) = chars.next_if(|&c| c == '+' || c == '-') {
+            fdata.push(c);
             // soak up leading whitespace
             while chars.next_if(|c| c.is_ascii_whitespace()).is_some() {}
             // numeric timezone?
             // note that "DTK_TZ" could also be a signed float or yyyy-mm
-            if chars.peek().unwrap().is_ascii_digit() {
+            if let Some(c) = chars.next_if(|c| c.is_ascii_digit()) {
                 ftype = TokenFieldType::Tz;
-                fdata.push(chars.next().unwrap());
+                fdata.push(c);
                 while let Some(c) =
                     chars.next_if(|&c| c.is_ascii_digit() || matches!(c, ':' | '.' | '-'))
                 {
                     fdata.push(c.to_ascii_lowercase());
                 }
             // special?
-            } else if chars.peek().unwrap().is_ascii_alphabetic() {
+            } else if let Some(c) = chars.next_if(|c| c.is_ascii_alphabetic()) {
                 ftype = TokenFieldType::Special;
+
+                fdata.push(c.to_ascii_lowercase());
                 while let Some(c) = chars.next_if(|&c| c.is_ascii_alphabetic()) {
                     fdata.push(c.to_ascii_lowercase());
                 }
@@ -1170,8 +1175,7 @@ pub fn parse_datetime(input: &str) -> Result<Vec<(String, TokenFieldType)>, i32>
                 return Err(-1);
             }
         // ignore other punctuation but use as delimiter
-        } else if chars.peek().unwrap().is_ascii_punctuation() {
-            chars.next();
+        } else if chars.next_if(|c| c.is_ascii_punctuation()).is_some() {
             continue;
         // otherwise, something is not right...
         } else {
