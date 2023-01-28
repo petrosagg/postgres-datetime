@@ -5,7 +5,7 @@ use once_cell::sync::Lazy;
 
 use crate::datetime_raw::{fsec_t, pg_tm, DateADT, DecodeDateTime};
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 #[repr(i32)]
 pub enum TokenFieldType {
     Number = 0,
@@ -44,6 +44,52 @@ pub enum TokenFieldType {
     TzMinute = 35,
     IsoYear = 36,
     IsoDow = 37,
+}
+
+impl TryFrom<i32> for TokenFieldType {
+    type Error = i32;
+
+    fn try_from(n: i32) -> Result<Self, Self::Error> {
+        match n {
+            0 => Ok(Self::Number),
+            1 => Ok(Self::String),
+            2 => Ok(Self::Date),
+            3 => Ok(Self::Time),
+            4 => Ok(Self::Tz),
+            5 => Ok(Self::Ago),
+            6 => Ok(Self::Special),
+            9 => Ok(Self::Early),
+            10 => Ok(Self::Late),
+            11 => Ok(Self::Epoch),
+            12 => Ok(Self::Now),
+            13 => Ok(Self::Yesterday),
+            14 => Ok(Self::Today),
+            15 => Ok(Self::Tomorrow),
+            16 => Ok(Self::Zulu),
+            17 => Ok(Self::Delta),
+            18 => Ok(Self::Second),
+            19 => Ok(Self::Minute),
+            20 => Ok(Self::Hour),
+            21 => Ok(Self::Day),
+            22 => Ok(Self::Week),
+            23 => Ok(Self::Month),
+            24 => Ok(Self::Quarter),
+            25 => Ok(Self::Year),
+            26 => Ok(Self::Decade),
+            27 => Ok(Self::Century),
+            28 => Ok(Self::Millennium),
+            29 => Ok(Self::Millisec),
+            30 => Ok(Self::Microsec),
+            31 => Ok(Self::Julian),
+            32 => Ok(Self::Dow),
+            33 => Ok(Self::Doy),
+            34 => Ok(Self::TzHour),
+            35 => Ok(Self::TzMinute),
+            36 => Ok(Self::IsoYear),
+            37 => Ok(Self::IsoDow),
+            _ => Err(n),
+        }
+    }
 }
 
 // Field types for time decoding.

@@ -4017,7 +4017,7 @@ pub unsafe extern "C" fn DecodeDateTime(
     let mut tmask = FieldMask::none();
     let mut type_0 = RealFieldType::Reserved;
     let mut i: libc::c_int = 0;
-    let mut ptype: libc::c_int = 0 as libc::c_int; // "prefix type" for ISO y2001m02d04 format
+    let mut ptype = TokenFieldType::Number; // "prefix type" for ISO y2001m02d04 format
     let mut val: libc::c_int = 0;
     let mut dterr: libc::c_int = 0;
     let mut mer: libc::c_int = 2 as libc::c_int;
@@ -4061,7 +4061,7 @@ pub unsafe extern "C" fn DecodeDateTime(
     while i < nf {
         match *ftype.offset(i as isize) {
             2 => {
-                if ptype == 31 as libc::c_int {
+                if ptype == TokenFieldType::Julian {
                     let mut cp: *mut libc::c_char = 0 as *mut libc::c_char;
                     let mut val_0: libc::c_int = 0;
                     if tzp.is_null() {
@@ -4085,7 +4085,7 @@ pub unsafe extern "C" fn DecodeDateTime(
                         return dterr;
                     }
                     tmask = *FIELD_MASK_DATE | *FIELD_MASK_TIME | RealFieldType::Tz;
-                    ptype = 0;
+                    ptype = TokenFieldType::Number;
                 // Already have a date? Then this might be a time zone name
                 // with embedded punctuation (e.g. "America/New_York") or a
                 // run-together time with trailing time zone (e.g. hhmmss-zz).
@@ -4094,7 +4094,9 @@ pub unsafe extern "C" fn DecodeDateTime(
                 // We consider it a time zone if we already have month & day.
                 // This is to allow the form "mmm dd hhmmss tz year", which
                 // we've historically accepted.
-                } else if ptype != 0 || fmask.contains(RealFieldType::Month | RealFieldType::Day) {
+                } else if ptype != TokenFieldType::Number
+                    || fmask.contains(RealFieldType::Month | RealFieldType::Day)
+                {
                     // No time zone accepted? Then quit...
                     if tzp.is_null() {
                         eprintln!("tzp is null");
@@ -4105,15 +4107,15 @@ pub unsafe extern "C" fn DecodeDateTime(
                         as libc::c_int
                         & _ISdigit as libc::c_int as libc::c_ushort as libc::c_int
                         != 0
-                        || ptype != 0 as libc::c_int
+                        || ptype != TokenFieldType::Number
                     {
                         let mut cp_0: *mut libc::c_char = 0 as *mut libc::c_char;
-                        if ptype != 0 as libc::c_int {
-                            if ptype != 3 as libc::c_int {
-                                eprintln!("ptype is not 3: {}", ptype);
+                        if ptype != TokenFieldType::Number {
+                            if ptype != TokenFieldType::Time {
+                                eprintln!("ptype is not Time: {:?}", ptype);
                                 return -(1 as libc::c_int);
                             }
-                            ptype = 0;
+                            ptype = TokenFieldType::Number;
                         }
                         // Starts with a digit but we already have a time
                         // field? Then we are in trouble with a date and time
@@ -4206,12 +4208,12 @@ pub unsafe extern "C" fn DecodeDateTime(
                 current_block_236 = 13797367574128857302;
             }
             3 => {
-                if ptype != 0 as libc::c_int {
-                    if ptype != 3 as libc::c_int {
-                        eprintln!("ptype is not 3: {}", ptype);
+                if ptype != TokenFieldType::Number {
+                    if ptype != TokenFieldType::Time {
+                        eprintln!("ptype is not Time: {:?}", ptype);
                         return -(1 as libc::c_int);
                     }
-                    ptype = 0 as libc::c_int;
+                    ptype = TokenFieldType::Number
                 }
                 dterr = DecodeTime(
                     *field.offset(i as isize),
@@ -4244,7 +4246,7 @@ pub unsafe extern "C" fn DecodeDateTime(
                 current_block_236 = 13797367574128857302;
             }
             0 => {
-                if ptype != 0 as libc::c_int {
+                if ptype != TokenFieldType::Number {
                     let mut cp_1: *mut libc::c_char = 0 as *mut libc::c_char;
                     let mut val_1: libc::c_int = 0;
                     *__errno_location() = 0 as libc::c_int;
@@ -4254,9 +4256,11 @@ pub unsafe extern "C" fn DecodeDateTime(
                     }
                     if *cp_1 as libc::c_int == '.' as i32 {
                         match ptype {
-                            31 | 3 | 18 => {}
+                            TokenFieldType::Julian
+                            | TokenFieldType::Time
+                            | TokenFieldType::Second => {}
                             _ => {
-                                eprintln!("ptype is not 31 3 or 18: {}", ptype);
+                                eprintln!("ptype is not Julian, Time, or Second: {:?}", ptype);
                                 return -(1 as libc::c_int);
                             }
                         }
@@ -4265,11 +4269,11 @@ pub unsafe extern "C" fn DecodeDateTime(
                         return -(1 as libc::c_int);
                     }
                     match ptype {
-                        25 => {
+                        TokenFieldType::Year => {
                             (*tm).tm_year = val_1;
                             tmask = FieldMask::from(RealFieldType::Year);
                         }
-                        23 => {
+                        TokenFieldType::Month => {
                             // already have a month and hour? then assume minutes
                             if fmask.contains(RealFieldType::Month | RealFieldType::Hour) {
                                 (*tm).tm_min = val_1;
@@ -4279,19 +4283,19 @@ pub unsafe extern "C" fn DecodeDateTime(
                                 tmask = FieldMask::from(RealFieldType::Month);
                             }
                         }
-                        21 => {
+                        TokenFieldType::Day => {
                             (*tm).tm_mday = val_1;
                             tmask = FieldMask::from(RealFieldType::Day);
                         }
-                        20 => {
+                        TokenFieldType::Hour => {
                             (*tm).tm_hour = val_1;
                             tmask = FieldMask::from(RealFieldType::Hour);
                         }
-                        19 => {
+                        TokenFieldType::Minute => {
                             (*tm).tm_min = val_1;
                             tmask = FieldMask::from(RealFieldType::Minute);
                         }
-                        18 => {
+                        TokenFieldType::Second => {
                             (*tm).tm_sec = val_1;
                             tmask = FieldMask::from(RealFieldType::Second);
                             if *cp_1 as libc::c_int == '.' as i32 {
@@ -4302,14 +4306,14 @@ pub unsafe extern "C" fn DecodeDateTime(
                                 tmask = *FIELD_MASK_ALL_SECS;
                             }
                         }
-                        4 => {
+                        TokenFieldType::Tz => {
                             tmask = FieldMask::from(RealFieldType::Tz);
                             dterr = DecodeTimezone(*field.offset(i as isize), tzp);
                             if dterr != 0 {
                                 return dterr;
                             }
                         }
-                        31 => {
+                        TokenFieldType::Julian => {
                             if val_1 < 0 as libc::c_int {
                                 return -(2 as libc::c_int);
                             }
@@ -4342,7 +4346,7 @@ pub unsafe extern "C" fn DecodeDateTime(
                                 tmask.set(*FIELD_MASK_TIME);
                             }
                         }
-                        3 => {
+                        TokenFieldType::Time => {
                             dterr = DecodeNumberField(
                                 strlen(*field.offset(i as isize)) as libc::c_int,
                                 *field.offset(i as isize),
@@ -4361,11 +4365,11 @@ pub unsafe extern "C" fn DecodeDateTime(
                             }
                         }
                         typ => {
-                            eprintln!("unexpected ptype: {}", typ);
+                            eprintln!("unexpected ptype: {:?}", typ);
                             return -(1 as libc::c_int);
                         }
                     }
-                    ptype = 0 as libc::c_int;
+                    ptype = TokenFieldType::Number;
                     *dtype = 2 as libc::c_int;
                 } else {
                     let mut cp_2: *mut libc::c_char = 0 as *mut libc::c_char;
@@ -4555,7 +4559,7 @@ pub unsafe extern "C" fn DecodeDateTime(
                         }
                         RealFieldType::Units => {
                             tmask = FieldMask::none();
-                            ptype = val;
+                            ptype = val.try_into().unwrap();
                         }
                         RealFieldType::IsoTime => {
                             // This is a filler field "t" indicating that the next
@@ -4583,7 +4587,7 @@ pub unsafe extern "C" fn DecodeDateTime(
                                 eprintln!("next field are not the right type");
                                 return -(1 as libc::c_int);
                             }
-                            ptype = val;
+                            ptype = val.try_into().unwrap();
                         }
                         RealFieldType::UnknownField => {
                             // Before giving up and declaring error, check to see
@@ -6072,7 +6076,7 @@ pub unsafe extern "C" fn DecodeTimezoneAbbrev(
                 *offset = 0 as libc::c_int;
                 *tz = FetchDynamicTimeZone(zoneabbrevtbl, tp);
                 RealFieldType::DynTz
-            },
+            }
             typ => {
                 *offset = (*tp).value;
                 *tz = 0 as *mut pg_tz;
