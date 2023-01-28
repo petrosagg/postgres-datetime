@@ -1,7 +1,7 @@
 use ::libc;
 
 use crate::datetime::{
-    FieldMask, RealFieldType, TokenFieldType, FIELD_MASK_ALL_SECS, FIELD_MASK_DATE, FIELD_MASK_TIME,
+    FieldMask, FieldType, TokenFieldType, FIELD_MASK_ALL_SECS, FIELD_MASK_DATE, FIELD_MASK_TIME,
 };
 
 const HOURS_PER_DAY: libc::c_int = 24;
@@ -367,7 +367,7 @@ pub struct pg_tm {
 #[repr(C)]
 struct datetkn {
     token: [libc::c_char; 11],
-    type_0: RealFieldType,
+    type_0: FieldType,
     value: int32,
 }
 #[derive(Copy, Clone)]
@@ -449,7 +449,7 @@ const BC: i32 = 1;
 
 struct DateToken {
     token: &'static str,
-    typ: RealFieldType,
+    typ: FieldType,
     value: i32,
 }
 /// holds date/time keywords.
@@ -464,379 +464,379 @@ static DATE_TOKEN_TABLE: &'static [DateToken] = &[
     // "-infinity" reserved for "early time"
     DateToken {
         token: EARLY,
-        typ: RealFieldType::Reserved,
+        typ: FieldType::Reserved,
         value: TokenFieldType::Early as i32,
     },
     // "ad" for years > 0
     DateToken {
         token: DA_D,
-        typ: RealFieldType::Adbc,
+        typ: FieldType::Adbc,
         value: AD,
     },
     // 00:00:00
     DateToken {
         token: "allballs",
-        typ: RealFieldType::Reserved,
+        typ: FieldType::Reserved,
         value: TokenFieldType::Zulu as i32,
     },
     DateToken {
         token: "am",
-        typ: RealFieldType::AmPm,
+        typ: FieldType::AmPm,
         value: AM,
     },
     DateToken {
         token: "apr",
-        typ: RealFieldType::Month,
+        typ: FieldType::Month,
         value: 4,
     },
     DateToken {
         token: "april",
-        typ: RealFieldType::Month,
+        typ: FieldType::Month,
         value: 4,
     },
     // "at" (throwaway)
     DateToken {
         token: "at",
-        typ: RealFieldType::IgnoreDtf,
+        typ: FieldType::IgnoreDtf,
         value: 0,
     },
     DateToken {
         token: "aug",
-        typ: RealFieldType::Month,
+        typ: FieldType::Month,
         value: 8,
     },
     DateToken {
         token: "august",
-        typ: RealFieldType::Month,
+        typ: FieldType::Month,
         value: 8,
     },
     // "bc" for years <= 0
     DateToken {
         token: DB_C,
-        typ: RealFieldType::Adbc,
+        typ: FieldType::Adbc,
         value: BC,
     },
     // "day of month" for ISO input
     DateToken {
         token: "d",
-        typ: RealFieldType::Units,
+        typ: FieldType::Units,
         value: TokenFieldType::Day as i32,
     },
     DateToken {
         token: "dec",
-        typ: RealFieldType::Month,
+        typ: FieldType::Month,
         value: 12,
     },
     DateToken {
         token: "december",
-        typ: RealFieldType::Month,
+        typ: FieldType::Month,
         value: 12,
     },
     // day of week
     DateToken {
         token: "dow",
-        typ: RealFieldType::Units,
+        typ: FieldType::Units,
         value: TokenFieldType::Dow as i32,
     },
     // day of year
     DateToken {
         token: "doy",
-        typ: RealFieldType::Units,
+        typ: FieldType::Units,
         value: TokenFieldType::Doy as i32,
     },
     DateToken {
         token: "dst",
-        typ: RealFieldType::DtzMod,
+        typ: FieldType::DtzMod,
         value: SECS_PER_HOUR,
     },
     // "epoch" reserved for system epoch time
     DateToken {
         token: EPOCH,
-        typ: RealFieldType::Reserved,
+        typ: FieldType::Reserved,
         value: TokenFieldType::Epoch as i32,
     },
     DateToken {
         token: "feb",
-        typ: RealFieldType::Month,
+        typ: FieldType::Month,
         value: 2,
     },
     DateToken {
         token: "february",
-        typ: RealFieldType::Month,
+        typ: FieldType::Month,
         value: 2,
     },
     DateToken {
         token: "fri",
-        typ: RealFieldType::Dow,
+        typ: FieldType::Dow,
         value: 5,
     },
     DateToken {
         token: "friday",
-        typ: RealFieldType::Dow,
+        typ: FieldType::Dow,
         value: 5,
     },
     // "hour"
     DateToken {
         token: "h",
-        typ: RealFieldType::Units,
+        typ: FieldType::Units,
         value: TokenFieldType::Hour as i32,
     },
     // "infinity" reserved for "late time"
     DateToken {
         token: LATE,
-        typ: RealFieldType::Reserved,
+        typ: FieldType::Reserved,
         value: TokenFieldType::Late as i32,
     },
     // ISO day of week, Sunday == 7
     DateToken {
         token: "isodow",
-        typ: RealFieldType::Units,
+        typ: FieldType::Units,
         value: TokenFieldType::IsoDow as i32,
     },
     // year in terms of the ISO week date
     DateToken {
         token: "isoyear",
-        typ: RealFieldType::Units,
+        typ: FieldType::Units,
         value: TokenFieldType::IsoYear as i32,
     },
     DateToken {
         token: "j",
-        typ: RealFieldType::Units,
+        typ: FieldType::Units,
         value: TokenFieldType::Julian as i32,
     },
     DateToken {
         token: "jan",
-        typ: RealFieldType::Month,
+        typ: FieldType::Month,
         value: 1,
     },
     DateToken {
         token: "january",
-        typ: RealFieldType::Month,
+        typ: FieldType::Month,
         value: 1,
     },
     DateToken {
         token: "jd",
-        typ: RealFieldType::Units,
+        typ: FieldType::Units,
         value: TokenFieldType::Julian as i32,
     },
     DateToken {
         token: "jul",
-        typ: RealFieldType::Month,
+        typ: FieldType::Month,
         value: 7,
     },
     DateToken {
         token: "julian",
-        typ: RealFieldType::Units,
+        typ: FieldType::Units,
         value: TokenFieldType::Julian as i32,
     },
     DateToken {
         token: "july",
-        typ: RealFieldType::Month,
+        typ: FieldType::Month,
         value: 7,
     },
     DateToken {
         token: "jun",
-        typ: RealFieldType::Month,
+        typ: FieldType::Month,
         value: 6,
     },
     DateToken {
         token: "june",
-        typ: RealFieldType::Month,
+        typ: FieldType::Month,
         value: 6,
     },
     // "month" for ISO input
     DateToken {
         token: "m",
-        typ: RealFieldType::Units,
+        typ: FieldType::Units,
         value: TokenFieldType::Month as i32,
     },
     DateToken {
         token: "mar",
-        typ: RealFieldType::Month,
+        typ: FieldType::Month,
         value: 3,
     },
     DateToken {
         token: "march",
-        typ: RealFieldType::Month,
+        typ: FieldType::Month,
         value: 3,
     },
     DateToken {
         token: "may",
-        typ: RealFieldType::Month,
+        typ: FieldType::Month,
         value: 5,
     },
     // "minute" for ISO input
     DateToken {
         token: "mm",
-        typ: RealFieldType::Units,
+        typ: FieldType::Units,
         value: TokenFieldType::Minute as i32,
     },
     DateToken {
         token: "mon",
-        typ: RealFieldType::Dow,
+        typ: FieldType::Dow,
         value: 1,
     },
     DateToken {
         token: "monday",
-        typ: RealFieldType::Dow,
+        typ: FieldType::Dow,
         value: 1,
     },
     DateToken {
         token: "nov",
-        typ: RealFieldType::Month,
+        typ: FieldType::Month,
         value: 11,
     },
     DateToken {
         token: "november",
-        typ: RealFieldType::Month,
+        typ: FieldType::Month,
         value: 11,
     },
     // current transaction time
     DateToken {
         token: NOW,
-        typ: RealFieldType::Reserved,
+        typ: FieldType::Reserved,
         value: TokenFieldType::Now as i32,
     },
     DateToken {
         token: "oct",
-        typ: RealFieldType::Month,
+        typ: FieldType::Month,
         value: 10,
     },
     DateToken {
         token: "october",
-        typ: RealFieldType::Month,
+        typ: FieldType::Month,
         value: 10,
     },
     // "on" (throwaway)
     DateToken {
         token: "on",
-        typ: RealFieldType::IgnoreDtf,
+        typ: FieldType::IgnoreDtf,
         value: 0,
     },
     DateToken {
         token: "pm",
-        typ: RealFieldType::AmPm,
+        typ: FieldType::AmPm,
         value: PM,
     },
     // "seconds" for ISO input
     DateToken {
         token: "s",
-        typ: RealFieldType::Units,
+        typ: FieldType::Units,
         value: TokenFieldType::Second as i32,
     },
     DateToken {
         token: "sat",
-        typ: RealFieldType::Dow,
+        typ: FieldType::Dow,
         value: 6,
     },
     DateToken {
         token: "saturday",
-        typ: RealFieldType::Dow,
+        typ: FieldType::Dow,
         value: 6,
     },
     DateToken {
         token: "sep",
-        typ: RealFieldType::Month,
+        typ: FieldType::Month,
         value: 9,
     },
     DateToken {
         token: "sept",
-        typ: RealFieldType::Month,
+        typ: FieldType::Month,
         value: 9,
     },
     DateToken {
         token: "september",
-        typ: RealFieldType::Month,
+        typ: FieldType::Month,
         value: 9,
     },
     DateToken {
         token: "sun",
-        typ: RealFieldType::Dow,
+        typ: FieldType::Dow,
         value: 0,
     },
     DateToken {
         token: "sunday",
-        typ: RealFieldType::Dow,
+        typ: FieldType::Dow,
         value: 0,
     },
     // Filler for ISO time fields
     DateToken {
         token: "t",
-        typ: RealFieldType::IsoTime,
+        typ: FieldType::IsoTime,
         value: TokenFieldType::Time as i32,
     },
     DateToken {
         token: "thu",
-        typ: RealFieldType::Dow,
+        typ: FieldType::Dow,
         value: 4,
     },
     DateToken {
         token: "thur",
-        typ: RealFieldType::Dow,
+        typ: FieldType::Dow,
         value: 4,
     },
     DateToken {
         token: "thurs",
-        typ: RealFieldType::Dow,
+        typ: FieldType::Dow,
         value: 4,
     },
     DateToken {
         token: "thursday",
-        typ: RealFieldType::Dow,
+        typ: FieldType::Dow,
         value: 4,
     },
     // midnight
     DateToken {
         token: TODAY,
-        typ: RealFieldType::Reserved,
+        typ: FieldType::Reserved,
         value: TokenFieldType::Today as i32,
     },
     // tomorrow midnight
     DateToken {
         token: TOMORROW,
-        typ: RealFieldType::Reserved,
+        typ: FieldType::Reserved,
         value: TokenFieldType::Tomorrow as i32,
     },
     DateToken {
         token: "tue",
-        typ: RealFieldType::Dow,
+        typ: FieldType::Dow,
         value: 2,
     },
     DateToken {
         token: "tues",
-        typ: RealFieldType::Dow,
+        typ: FieldType::Dow,
         value: 2,
     },
     DateToken {
         token: "tuesday",
-        typ: RealFieldType::Dow,
+        typ: FieldType::Dow,
         value: 2,
     },
     DateToken {
         token: "wed",
-        typ: RealFieldType::Dow,
+        typ: FieldType::Dow,
         value: 3,
     },
     DateToken {
         token: "wednesday",
-        typ: RealFieldType::Dow,
+        typ: FieldType::Dow,
         value: 3,
     },
     DateToken {
         token: "weds",
-        typ: RealFieldType::Dow,
+        typ: FieldType::Dow,
         value: 3,
     },
     // "year" for ISO input
     DateToken {
         token: "y",
-        typ: RealFieldType::Units,
+        typ: FieldType::Units,
         value: TokenFieldType::Year as i32,
     },
     // yesterday midnight
     DateToken {
         token: YESTERDAY,
-        typ: RealFieldType::Reserved,
+        typ: FieldType::Reserved,
         value: TokenFieldType::Yesterday as i32,
     },
 ];
@@ -1284,7 +1284,7 @@ pub unsafe fn DecodeDateTime(
                     if dterr != 0 {
                         return dterr;
                     }
-                    tmask = *FIELD_MASK_DATE | *FIELD_MASK_TIME | RealFieldType::Tz;
+                    tmask = *FIELD_MASK_DATE | *FIELD_MASK_TIME | FieldType::Tz;
                     ptype = TokenFieldType::Number;
                 // Already have a date? Then this might be a time zone name
                 // with embedded punctuation (e.g. "America/New_York") or a
@@ -1295,7 +1295,7 @@ pub unsafe fn DecodeDateTime(
                 // This is to allow the form "mmm dd hhmmss tz year", which
                 // we've historically accepted.
                 } else if ptype != TokenFieldType::Number
-                    || fmask.contains(RealFieldType::Month | RealFieldType::Day)
+                    || fmask.contains(FieldType::Month | FieldType::Day)
                 {
                     // No time zone accepted? Then quit...
                     if tzp.is_null() {
@@ -1346,7 +1346,7 @@ pub unsafe fn DecodeDateTime(
                             return dterr;
                         }
                         // modify tmask after returning from DecodeNumberField()
-                        tmask.set(RealFieldType::Tz);
+                        tmask.set(FieldType::Tz);
                     } else {
                         namedTz = pg_tzset(*field.offset(i as isize));
                         if namedTz.is_null() {
@@ -1390,7 +1390,7 @@ pub unsafe fn DecodeDateTime(
                             }
                         }
                         // we'll apply the zone setting below
-                        tmask = FieldMask::from(RealFieldType::Tz);
+                        tmask = FieldMask::from(FieldType::Tz);
                     }
                 } else {
                     let dterr = DecodeDate(
@@ -1441,7 +1441,7 @@ pub unsafe fn DecodeDateTime(
                     return dterr;
                 }
                 *tzp = tz;
-                tmask = FieldMask::from(RealFieldType::Tz);
+                tmask = FieldMask::from(FieldType::Tz);
                 current_block_236 = 13797367574128857302;
             }
             0 => {
@@ -1469,33 +1469,33 @@ pub unsafe fn DecodeDateTime(
                     match ptype {
                         TokenFieldType::Year => {
                             (*tm).tm_year = val_1;
-                            tmask = FieldMask::from(RealFieldType::Year);
+                            tmask = FieldMask::from(FieldType::Year);
                         }
                         TokenFieldType::Month => {
                             // already have a month and hour? then assume minutes
-                            if fmask.contains(RealFieldType::Month | RealFieldType::Hour) {
+                            if fmask.contains(FieldType::Month | FieldType::Hour) {
                                 (*tm).tm_min = val_1;
-                                tmask = FieldMask::from(RealFieldType::Minute);
+                                tmask = FieldMask::from(FieldType::Minute);
                             } else {
                                 (*tm).tm_mon = val_1;
-                                tmask = FieldMask::from(RealFieldType::Month);
+                                tmask = FieldMask::from(FieldType::Month);
                             }
                         }
                         TokenFieldType::Day => {
                             (*tm).tm_mday = val_1;
-                            tmask = FieldMask::from(RealFieldType::Day);
+                            tmask = FieldMask::from(FieldType::Day);
                         }
                         TokenFieldType::Hour => {
                             (*tm).tm_hour = val_1;
-                            tmask = FieldMask::from(RealFieldType::Hour);
+                            tmask = FieldMask::from(FieldType::Hour);
                         }
                         TokenFieldType::Minute => {
                             (*tm).tm_min = val_1;
-                            tmask = FieldMask::from(RealFieldType::Minute);
+                            tmask = FieldMask::from(FieldType::Minute);
                         }
                         TokenFieldType::Second => {
                             (*tm).tm_sec = val_1;
-                            tmask = FieldMask::from(RealFieldType::Second);
+                            tmask = FieldMask::from(FieldType::Second);
                             if *cp_1 as libc::c_int == '.' as i32 {
                                 let dterr = ParseFractionalSecond(cp_1, fsec);
                                 if dterr != 0 {
@@ -1505,7 +1505,7 @@ pub unsafe fn DecodeDateTime(
                             }
                         }
                         TokenFieldType::Tz => {
-                            tmask = FieldMask::from(RealFieldType::Tz);
+                            tmask = FieldMask::from(FieldType::Tz);
                             let dterr = DecodeTimezone(*field.offset(i as isize), tzp);
                             if dterr != 0 {
                                 return dterr;
@@ -1635,17 +1635,17 @@ pub unsafe fn DecodeDateTime(
             1 | 6 => {
                 let mut type_0 =
                     DecodeTimezoneAbbrev(i, *field.offset(i as isize), &mut val, &mut valtz);
-                if type_0 == RealFieldType::UnknownField {
+                if type_0 == FieldType::UnknownField {
                     type_0 = DecodeSpecial(i, *field.offset(i as isize), &mut val);
                 }
-                if type_0 == RealFieldType::IgnoreDtf {
+                if type_0 == FieldType::IgnoreDtf {
                     current_block_236 = 12209867499936983673;
                 } else {
                     tmask = FieldMask::from(type_0);
                     match type_0 {
-                        RealFieldType::Reserved => match val {
+                        FieldType::Reserved => match val {
                             12 => {
-                                tmask = *FIELD_MASK_DATE | *FIELD_MASK_TIME | RealFieldType::Tz;
+                                tmask = *FIELD_MASK_DATE | *FIELD_MASK_TIME | FieldType::Tz;
                                 *dtype = 2 as libc::c_int;
                                 GetCurrentTimeUsec(tm, fsec, tzp);
                             }
@@ -1682,7 +1682,7 @@ pub unsafe fn DecodeDateTime(
                                 );
                             }
                             16 => {
-                                tmask = *FIELD_MASK_TIME | RealFieldType::Tz;
+                                tmask = *FIELD_MASK_TIME | FieldType::Tz;
                                 *dtype = 2 as libc::c_int;
                                 (*tm).tm_hour = 0 as libc::c_int;
                                 (*tm).tm_min = 0 as libc::c_int;
@@ -1695,22 +1695,22 @@ pub unsafe fn DecodeDateTime(
                                 *dtype = val;
                             }
                         },
-                        RealFieldType::Month => {
+                        FieldType::Month => {
                             // already have a (numeric) month? then see if we can substitute...
-                            if fmask.contains(RealFieldType::Month)
+                            if fmask.contains(FieldType::Month)
                                 && !haveTextMonth
-                                && !fmask.contains(RealFieldType::Day)
+                                && !fmask.contains(FieldType::Day)
                                 && (*tm).tm_mon >= 1 as libc::c_int
                                 && (*tm).tm_mon <= 31 as libc::c_int
                             {
                                 (*tm).tm_mday = (*tm).tm_mon;
-                                tmask = FieldMask::from(RealFieldType::Day);
+                                tmask = FieldMask::from(FieldType::Day);
                             }
                             haveTextMonth = true;
                             (*tm).tm_mon = val;
                         }
-                        RealFieldType::DtzMod => {
-                            tmask.set(RealFieldType::DTz);
+                        FieldType::DtzMod => {
+                            tmask.set(FieldType::DTz);
                             (*tm).tm_isdst = Some(true);
                             if tzp.is_null() {
                                 eprintln!("tzp is null");
@@ -1718,8 +1718,8 @@ pub unsafe fn DecodeDateTime(
                             }
                             *tzp -= val;
                         }
-                        RealFieldType::DTz => {
-                            tmask.set(RealFieldType::Tz);
+                        FieldType::DTz => {
+                            tmask.set(FieldType::Tz);
                             (*tm).tm_isdst = Some(true);
                             if tzp.is_null() {
                                 eprintln!("tzp is null");
@@ -1727,7 +1727,7 @@ pub unsafe fn DecodeDateTime(
                             }
                             *tzp = -val;
                         }
-                        RealFieldType::Tz => {
+                        FieldType::Tz => {
                             (*tm).tm_isdst = Some(false);
                             if tzp.is_null() {
                                 eprintln!("tzp is null");
@@ -1735,8 +1735,8 @@ pub unsafe fn DecodeDateTime(
                             }
                             *tzp = -val;
                         }
-                        RealFieldType::DynTz => {
-                            tmask.set(RealFieldType::Tz);
+                        FieldType::DynTz => {
+                            tmask.set(FieldType::Tz);
                             if tzp.is_null() {
                                 eprintln!("tzp is null");
                                 return -(1 as libc::c_int);
@@ -1744,20 +1744,20 @@ pub unsafe fn DecodeDateTime(
                             abbrevTz = valtz;
                             abbrev = *field.offset(i as isize);
                         }
-                        RealFieldType::AmPm => {
+                        FieldType::AmPm => {
                             mer = val;
                         }
-                        RealFieldType::Adbc => {
+                        FieldType::Adbc => {
                             bc = val == 1;
                         }
-                        RealFieldType::Dow => {
+                        FieldType::Dow => {
                             (*tm).tm_wday = val;
                         }
-                        RealFieldType::Units => {
+                        FieldType::Units => {
                             tmask = FieldMask::none();
                             ptype = val.try_into().unwrap();
                         }
-                        RealFieldType::IsoTime => {
+                        FieldType::IsoTime => {
                             // This is a filler field "t" indicating that the next
                             // field is time. Try to verify that this is sensible.
                             tmask = FieldMask::none();
@@ -1785,7 +1785,7 @@ pub unsafe fn DecodeDateTime(
                             }
                             ptype = val.try_into().unwrap();
                         }
-                        RealFieldType::UnknownField => {
+                        FieldType::UnknownField => {
                             // Before giving up and declaring error, check to see
                             // if it is an all-alpha timezone name.
                             namedTz = pg_tzset(*field.offset(i as isize));
@@ -1793,7 +1793,7 @@ pub unsafe fn DecodeDateTime(
                                 eprintln!("namedTz is null");
                                 return -(1 as libc::c_int);
                             }
-                            tmask = FieldMask::from(RealFieldType::Tz);
+                            tmask = FieldMask::from(FieldType::Tz);
                         }
                         typ => {
                             eprintln!("unexpected field type: {:?}", typ);
@@ -1842,22 +1842,22 @@ pub unsafe fn DecodeDateTime(
         // it before, because we need the date to resolve DST status).
         if !namedTz.is_null() {
             // daylight savings time modifier disallowed with full TZ
-            if fmask.contains(RealFieldType::DtzMod) {
+            if fmask.contains(FieldType::DtzMod) {
                 return -(1 as libc::c_int);
             }
             *tzp = DetermineTimeZoneOffset(tm, namedTz);
         }
         // Likewise, if we had a dynamic timezone abbreviation, resolve it now.
         if !abbrevTz.is_null() {
-            if fmask.contains(RealFieldType::DtzMod) {
+            if fmask.contains(FieldType::DtzMod) {
                 return -(1 as libc::c_int);
             }
             *tzp = DetermineTimeZoneAbbrevOffset(tm, abbrev, abbrevTz);
         }
         // timezone not specified? then use session timezone
-        if !tzp.is_null() && !fmask.contains(RealFieldType::Tz) {
+        if !tzp.is_null() && !fmask.contains(FieldType::Tz) {
             // daylight savings time modifier but no standard timezone? then error
-            if fmask.contains(RealFieldType::DtzMod) {
+            if fmask.contains(FieldType::DtzMod) {
                 return -(1 as libc::c_int);
             }
             *tzp = DetermineTimeZoneOffset(tm, session_timezone);
@@ -2066,10 +2066,10 @@ unsafe fn DecodeDate(
             != 0
         {
             let type_0 = DecodeSpecial(i, field[i as usize], &mut val);
-            if type_0 != RealFieldType::IgnoreDtf {
+            if type_0 != FieldType::IgnoreDtf {
                 dmask = FieldMask::from(type_0);
                 match type_0 {
-                    RealFieldType::Month => {
+                    FieldType::Month => {
                         (*tm).tm_mon = val;
                         haveTextMonth = true;
                     }
@@ -2113,7 +2113,7 @@ unsafe fn DecodeDate(
             *tmask |= dmask;
         }
     }
-    if fmask & !(RealFieldType::Doy | RealFieldType::Tz) != *FIELD_MASK_DATE {
+    if fmask & !(FieldType::Doy | FieldType::Tz) != *FIELD_MASK_DATE {
         return -(1 as libc::c_int);
     }
 
@@ -2130,7 +2130,7 @@ unsafe fn ValidateDate(
     bc: bool,
     mut tm: *mut pg_tm,
 ) -> libc::c_int {
-    if fmask.contains(RealFieldType::Year) {
+    if fmask.contains(FieldType::Year) {
         if !isjulian {
             if bc {
                 if (*tm).tm_year <= 0 as libc::c_int {
@@ -2152,7 +2152,7 @@ unsafe fn ValidateDate(
         }
     }
     // now that we have correct year, decode DOY
-    if fmask.contains(RealFieldType::Doy) {
+    if fmask.contains(FieldType::Doy) {
         j2date(
             date2j((*tm).tm_year, 1 as libc::c_int, 1 as libc::c_int) + (*tm).tm_yday
                 - 1 as libc::c_int,
@@ -2162,13 +2162,13 @@ unsafe fn ValidateDate(
         );
     }
     // check for valid month
-    if fmask.contains(RealFieldType::Month) {
+    if fmask.contains(FieldType::Month) {
         if (*tm).tm_mon < 1 as libc::c_int || (*tm).tm_mon > 12 as libc::c_int {
             return -(3 as libc::c_int);
         }
     }
     // minimal check for valid day
-    if fmask.contains(RealFieldType::Day) {
+    if fmask.contains(FieldType::Day) {
         if (*tm).tm_mday < 1 as libc::c_int || (*tm).tm_mday > 31 as libc::c_int {
             return -(3 as libc::c_int);
         }
@@ -2316,11 +2316,11 @@ unsafe fn DecodeNumber(
     }
     /* Special case for day of year */
     if flen == 3 as libc::c_int
-        && fmask & *FIELD_MASK_DATE == FieldMask::from(RealFieldType::Year)
+        && fmask & *FIELD_MASK_DATE == FieldMask::from(FieldType::Year)
         && val >= 1 as libc::c_int
         && val <= 366 as libc::c_int
     {
-        *tmask = RealFieldType::Doy | RealFieldType::Month | RealFieldType::Day;
+        *tmask = FieldType::Doy | FieldType::Month | FieldType::Day;
         (*tm).tm_yday = val;
         // tm_mon and tm_mday can't actually be set yet ...
         return 0 as libc::c_int;
@@ -2329,32 +2329,32 @@ unsafe fn DecodeNumber(
     match *(fmask & *FIELD_MASK_DATE) {
         0 => {
             if flen >= 3 as libc::c_int || DateOrder == 0 as libc::c_int {
-                *tmask = FieldMask::from(RealFieldType::Year);
+                *tmask = FieldMask::from(FieldType::Year);
                 (*tm).tm_year = val;
             } else if DateOrder == 1 as libc::c_int {
-                *tmask = FieldMask::from(RealFieldType::Day);
+                *tmask = FieldMask::from(FieldType::Day);
                 (*tm).tm_mday = val;
             } else {
-                *tmask = FieldMask::from(RealFieldType::Month);
+                *tmask = FieldMask::from(FieldType::Month);
                 (*tm).tm_mon = val;
             }
         }
         4 => {
             // Must be at second field of YY-MM-DD
-            *tmask = FieldMask::from(RealFieldType::Month);
+            *tmask = FieldMask::from(FieldType::Month);
             (*tm).tm_mon = val;
         }
         2 => {
             if haveTextMonth {
                 if flen >= 3 as libc::c_int || DateOrder == 0 as libc::c_int {
-                    *tmask = FieldMask::from(RealFieldType::Year);
+                    *tmask = FieldMask::from(FieldType::Year);
                     (*tm).tm_year = val;
                 } else {
-                    *tmask = FieldMask::from(RealFieldType::Day);
+                    *tmask = FieldMask::from(FieldType::Day);
                     (*tm).tm_mday = val;
                 }
             } else {
-                *tmask = FieldMask::from(RealFieldType::Day);
+                *tmask = FieldMask::from(FieldType::Day);
                 (*tm).tm_mday = val;
             }
         }
@@ -2364,27 +2364,27 @@ unsafe fn DecodeNumber(
                 if flen >= 3 as libc::c_int && *is2digits as libc::c_int != 0 {
                     // Guess that first numeric field is day was wrong
                     // YEAR is already set
-                    *tmask = FieldMask::from(RealFieldType::Day);
+                    *tmask = FieldMask::from(FieldType::Day);
                     (*tm).tm_mday = (*tm).tm_year;
                     (*tm).tm_year = val;
                     *is2digits = false;
                 } else {
-                    *tmask = FieldMask::from(RealFieldType::Day);
+                    *tmask = FieldMask::from(FieldType::Day);
                     (*tm).tm_mday = val;
                 }
             } else {
                 // Must be at third field of YY-MM-DD
-                *tmask = FieldMask::from(RealFieldType::Day);
+                *tmask = FieldMask::from(FieldType::Day);
                 (*tm).tm_mday = val;
             }
         }
         8 => {
             // Must be at second field of DD-MM-YY
-            *tmask = FieldMask::from(RealFieldType::Month);
+            *tmask = FieldMask::from(FieldType::Month);
             (*tm).tm_mon = val;
         }
         10 => {
-            *tmask = FieldMask::from(RealFieldType::Year);
+            *tmask = FieldMask::from(FieldType::Year);
             (*tm).tm_year = val;
         }
         14 => {
@@ -2397,7 +2397,7 @@ unsafe fn DecodeNumber(
         _ => return -(1 as libc::c_int),
     }
     // When processing a year field, mark it for adjustment if it's only one or two digits.
-    if *tmask == FieldMask::from(RealFieldType::Year) {
+    if *tmask == FieldMask::from(FieldType::Year) {
         *is2digits = flen <= 2;
     }
     return 0 as libc::c_int;
@@ -2529,7 +2529,7 @@ unsafe fn DecodeTimezoneAbbrev(
     lowtoken: *mut libc::c_char,
     offset: *mut libc::c_int,
     tz: *mut *mut pg_tz,
-) -> RealFieldType {
+) -> FieldType {
     let mut tp = abbrevcache[field as usize];
     if tp.is_null()
         || strncmp(
@@ -2551,11 +2551,11 @@ unsafe fn DecodeTimezoneAbbrev(
     if tp.is_null() {
         *offset = 0 as libc::c_int;
         *tz = 0 as *mut pg_tz;
-        RealFieldType::UnknownField
+        FieldType::UnknownField
     } else {
         abbrevcache[field as usize] = tp;
         match (*tp).type_0 {
-            RealFieldType::DynTz => {
+            FieldType::DynTz => {
                 *offset = 0 as libc::c_int;
                 *tz = FetchDynamicTimeZone(zoneabbrevtbl, tp);
             }
@@ -2572,7 +2572,7 @@ unsafe fn DecodeSpecial(
     _field_for_cache: libc::c_int,
     lowtoken: *mut libc::c_char,
     val: *mut libc::c_int,
-) -> RealFieldType {
+) -> FieldType {
     let lowtoken = std::ffi::CStr::from_ptr(lowtoken).to_str().unwrap();
     match DATE_TOKEN_TABLE.binary_search_by(|tk| tk.token.cmp(lowtoken)) {
         Ok(idx) => {
@@ -2582,7 +2582,7 @@ unsafe fn DecodeSpecial(
         }
         Err(_) => {
             *val = 0;
-            RealFieldType::UnknownField
+            FieldType::UnknownField
         }
     }
 }

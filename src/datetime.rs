@@ -104,7 +104,7 @@ bitmask! {
     pub mask FieldMask: u32 where
 
     #[derive(Debug)]
-    flags RealFieldType {
+    flags FieldType {
         Reserved = 1 << 0,
         Month = 1 << 1,
         Year = 1 << 2,
@@ -143,7 +143,7 @@ bitmask! {
     }
 }
 
-impl From<u32> for RealFieldType {
+impl From<u32> for FieldType {
     fn from(n: u32) -> Self {
         match n {
             0b00000000_00000000_00000000_00000001 => Self::Reserved,
@@ -182,11 +182,11 @@ impl From<u32> for RealFieldType {
 }
 
 pub static FIELD_MASK_ALL_SECS: Lazy<FieldMask> =
-    Lazy::new(|| RealFieldType::Second | RealFieldType::Millisecond | RealFieldType::Microsecond);
+    Lazy::new(|| FieldType::Second | FieldType::Millisecond | FieldType::Microsecond);
 pub static FIELD_MASK_DATE: Lazy<FieldMask> =
-    Lazy::new(|| RealFieldType::Year | RealFieldType::Month | RealFieldType::Day);
+    Lazy::new(|| FieldType::Year | FieldType::Month | FieldType::Day);
 pub static FIELD_MASK_TIME: Lazy<FieldMask> =
-    Lazy::new(|| RealFieldType::Hour | RealFieldType::Minute | *FIELD_MASK_ALL_SECS);
+    Lazy::new(|| FieldType::Hour | FieldType::Minute | *FIELD_MASK_ALL_SECS);
 
 pub fn decode(fields: Vec<(String, TokenFieldType)>) -> Result<(pg_tm, fsec_t, i32, i32), i32> {
     let nf = fields.len() as i32;
