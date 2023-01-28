@@ -447,6 +447,11 @@ const PM: i32 = 1;
 const AD: i32 = 0;
 const BC: i32 = 1;
 
+struct DateToken {
+    token: &'static str,
+    typ: RealFieldType,
+    value: i32,
+}
 /// holds date/time keywords.
 ///
 /// Note that this table must be strictly alphabetically ordered to allow an
@@ -455,850 +460,389 @@ const BC: i32 = 1;
 /// The static table contains no TZ, DTZ, or DYNTZ entries; rather those
 /// are loaded from configuration files and stored in zoneabbrevtbl, whose
 /// abbrevs[] field has the same format as the static DATE_TOKEN_TABLE.
-static DATE_TOKEN_TABLE: &'static [(&'static str, RealFieldType, i32)] = &[
-    /* token, type, value */
-    (EARLY, RealFieldType::Reserved, TokenFieldType::Early as i32), /* "-infinity" reserved for "early time" */
-    (DA_D, RealFieldType::Adbc, AD),                                /* "ad" for years > 0 */
-    (
-        "allballs",
-        RealFieldType::Reserved,
-        TokenFieldType::Zulu as i32,
-    ), /* 00:00:00 */
-    ("am", RealFieldType::AmPm, AM),
-    ("apr", RealFieldType::Month, 4),
-    ("april", RealFieldType::Month, 4),
-    ("at", RealFieldType::IgnoreDtf, 0), /* "at" (throwaway) */
-    ("aug", RealFieldType::Month, 8),
-    ("august", RealFieldType::Month, 8),
-    (DB_C, RealFieldType::Adbc, BC), /* "bc" for years <= 0 */
-    ("d", RealFieldType::Units, TokenFieldType::Day as i32), /* "day of month" for ISO input */
-    ("dec", RealFieldType::Month, 12),
-    ("december", RealFieldType::Month, 12),
-    ("dow", RealFieldType::Units, TokenFieldType::Dow as i32), /* day of week */
-    ("doy", RealFieldType::Units, TokenFieldType::Doy as i32), /* day of year */
-    ("dst", RealFieldType::DtzMod, SECS_PER_HOUR),
-    (EPOCH, RealFieldType::Reserved, TokenFieldType::Epoch as i32), /* "epoch" reserved for system epoch time */
-    ("feb", RealFieldType::Month, 2),
-    ("february", RealFieldType::Month, 2),
-    ("fri", RealFieldType::Dow, 5),
-    ("friday", RealFieldType::Dow, 5),
-    ("h", RealFieldType::Units, TokenFieldType::Hour as i32), /* "hour" */
-    (LATE, RealFieldType::Reserved, TokenFieldType::Late as i32), /* "infinity" reserved for "late time" */
-    (
-        "isodow",
-        RealFieldType::Units,
-        TokenFieldType::IsoDow as i32,
-    ), /* ISO day of week, Sunday == 7 */
-    (
-        "isoyear",
-        RealFieldType::Units,
-        TokenFieldType::IsoYear as i32,
-    ), /* year in terms of the ISO week date */
-    ("j", RealFieldType::Units, TokenFieldType::Julian as i32),
-    ("jan", RealFieldType::Month, 1),
-    ("january", RealFieldType::Month, 1),
-    ("jd", RealFieldType::Units, TokenFieldType::Julian as i32),
-    ("jul", RealFieldType::Month, 7),
-    (
-        "julian",
-        RealFieldType::Units,
-        TokenFieldType::Julian as i32,
-    ),
-    ("july", RealFieldType::Month, 7),
-    ("jun", RealFieldType::Month, 6),
-    ("june", RealFieldType::Month, 6),
-    ("m", RealFieldType::Units, TokenFieldType::Month as i32), /* "month" for ISO input */
-    ("mar", RealFieldType::Month, 3),
-    ("march", RealFieldType::Month, 3),
-    ("may", RealFieldType::Month, 5),
-    ("mm", RealFieldType::Units, TokenFieldType::Minute as i32), /* "minute" for ISO input */
-    ("mon", RealFieldType::Dow, 1),
-    ("monday", RealFieldType::Dow, 1),
-    ("nov", RealFieldType::Month, 11),
-    ("november", RealFieldType::Month, 11),
-    (NOW, RealFieldType::Reserved, TokenFieldType::Now as i32), /* current transaction time */
-    ("oct", RealFieldType::Month, 10),
-    ("october", RealFieldType::Month, 10),
-    ("on", RealFieldType::IgnoreDtf, 0), /* "on" (throwaway) */
-    ("pm", RealFieldType::AmPm, PM),
-    ("s", RealFieldType::Units, TokenFieldType::Second as i32), /* "seconds" for ISO input */
-    ("sat", RealFieldType::Dow, 6),
-    ("saturday", RealFieldType::Dow, 6),
-    ("sep", RealFieldType::Month, 9),
-    ("sept", RealFieldType::Month, 9),
-    ("september", RealFieldType::Month, 9),
-    ("sun", RealFieldType::Dow, 0),
-    ("sunday", RealFieldType::Dow, 0),
-    ("t", RealFieldType::IsoTime, TokenFieldType::Time as i32), /* Filler for ISO time fields */
-    ("thu", RealFieldType::Dow, 4),
-    ("thur", RealFieldType::Dow, 4),
-    ("thurs", RealFieldType::Dow, 4),
-    ("thursday", RealFieldType::Dow, 4),
-    (TODAY, RealFieldType::Reserved, TokenFieldType::Today as i32), /* midnight */
-    (
-        TOMORROW,
-        RealFieldType::Reserved,
-        TokenFieldType::Tomorrow as i32,
-    ), /* tomorrow midnight */
-    ("tue", RealFieldType::Dow, 2),
-    ("tues", RealFieldType::Dow, 2),
-    ("tuesday", RealFieldType::Dow, 2),
-    ("wed", RealFieldType::Dow, 3),
-    ("wednesday", RealFieldType::Dow, 3),
-    ("weds", RealFieldType::Dow, 3),
-    ("y", RealFieldType::Units, TokenFieldType::Year as i32), /* "year" for ISO input */
-    (
-        YESTERDAY,
-        RealFieldType::Reserved,
-        TokenFieldType::Yesterday as i32,
-    ), /* yesterday midnight */
+static DATE_TOKEN_TABLE: &'static [DateToken] = &[
+    // "-infinity" reserved for "early time"
+    DateToken {
+        token: EARLY,
+        typ: RealFieldType::Reserved,
+        value: TokenFieldType::Early as i32,
+    },
+    // "ad" for years > 0
+    DateToken {
+        token: DA_D,
+        typ: RealFieldType::Adbc,
+        value: AD,
+    },
+    // 00:00:00
+    DateToken {
+        token: "allballs",
+        typ: RealFieldType::Reserved,
+        value: TokenFieldType::Zulu as i32,
+    },
+    DateToken {
+        token: "am",
+        typ: RealFieldType::AmPm,
+        value: AM,
+    },
+    DateToken {
+        token: "apr",
+        typ: RealFieldType::Month,
+        value: 4,
+    },
+    DateToken {
+        token: "april",
+        typ: RealFieldType::Month,
+        value: 4,
+    },
+    // "at" (throwaway)
+    DateToken {
+        token: "at",
+        typ: RealFieldType::IgnoreDtf,
+        value: 0,
+    },
+    DateToken {
+        token: "aug",
+        typ: RealFieldType::Month,
+        value: 8,
+    },
+    DateToken {
+        token: "august",
+        typ: RealFieldType::Month,
+        value: 8,
+    },
+    // "bc" for years <= 0
+    DateToken {
+        token: DB_C,
+        typ: RealFieldType::Adbc,
+        value: BC,
+    },
+    // "day of month" for ISO input
+    DateToken {
+        token: "d",
+        typ: RealFieldType::Units,
+        value: TokenFieldType::Day as i32,
+    },
+    DateToken {
+        token: "dec",
+        typ: RealFieldType::Month,
+        value: 12,
+    },
+    DateToken {
+        token: "december",
+        typ: RealFieldType::Month,
+        value: 12,
+    },
+    // day of week
+    DateToken {
+        token: "dow",
+        typ: RealFieldType::Units,
+        value: TokenFieldType::Dow as i32,
+    },
+    // day of year
+    DateToken {
+        token: "doy",
+        typ: RealFieldType::Units,
+        value: TokenFieldType::Doy as i32,
+    },
+    DateToken {
+        token: "dst",
+        typ: RealFieldType::DtzMod,
+        value: SECS_PER_HOUR,
+    },
+    // "epoch" reserved for system epoch time
+    DateToken {
+        token: EPOCH,
+        typ: RealFieldType::Reserved,
+        value: TokenFieldType::Epoch as i32,
+    },
+    DateToken {
+        token: "feb",
+        typ: RealFieldType::Month,
+        value: 2,
+    },
+    DateToken {
+        token: "february",
+        typ: RealFieldType::Month,
+        value: 2,
+    },
+    DateToken {
+        token: "fri",
+        typ: RealFieldType::Dow,
+        value: 5,
+    },
+    DateToken {
+        token: "friday",
+        typ: RealFieldType::Dow,
+        value: 5,
+    },
+    // "hour"
+    DateToken {
+        token: "h",
+        typ: RealFieldType::Units,
+        value: TokenFieldType::Hour as i32,
+    },
+    // "infinity" reserved for "late time"
+    DateToken {
+        token: LATE,
+        typ: RealFieldType::Reserved,
+        value: TokenFieldType::Late as i32,
+    },
+    // ISO day of week, Sunday == 7
+    DateToken {
+        token: "isodow",
+        typ: RealFieldType::Units,
+        value: TokenFieldType::IsoDow as i32,
+    },
+    // year in terms of the ISO week date
+    DateToken {
+        token: "isoyear",
+        typ: RealFieldType::Units,
+        value: TokenFieldType::IsoYear as i32,
+    },
+    DateToken {
+        token: "j",
+        typ: RealFieldType::Units,
+        value: TokenFieldType::Julian as i32,
+    },
+    DateToken {
+        token: "jan",
+        typ: RealFieldType::Month,
+        value: 1,
+    },
+    DateToken {
+        token: "january",
+        typ: RealFieldType::Month,
+        value: 1,
+    },
+    DateToken {
+        token: "jd",
+        typ: RealFieldType::Units,
+        value: TokenFieldType::Julian as i32,
+    },
+    DateToken {
+        token: "jul",
+        typ: RealFieldType::Month,
+        value: 7,
+    },
+    DateToken {
+        token: "julian",
+        typ: RealFieldType::Units,
+        value: TokenFieldType::Julian as i32,
+    },
+    DateToken {
+        token: "july",
+        typ: RealFieldType::Month,
+        value: 7,
+    },
+    DateToken {
+        token: "jun",
+        typ: RealFieldType::Month,
+        value: 6,
+    },
+    DateToken {
+        token: "june",
+        typ: RealFieldType::Month,
+        value: 6,
+    },
+    // "month" for ISO input
+    DateToken {
+        token: "m",
+        typ: RealFieldType::Units,
+        value: TokenFieldType::Month as i32,
+    },
+    DateToken {
+        token: "mar",
+        typ: RealFieldType::Month,
+        value: 3,
+    },
+    DateToken {
+        token: "march",
+        typ: RealFieldType::Month,
+        value: 3,
+    },
+    DateToken {
+        token: "may",
+        typ: RealFieldType::Month,
+        value: 5,
+    },
+    // "minute" for ISO input
+    DateToken {
+        token: "mm",
+        typ: RealFieldType::Units,
+        value: TokenFieldType::Minute as i32,
+    },
+    DateToken {
+        token: "mon",
+        typ: RealFieldType::Dow,
+        value: 1,
+    },
+    DateToken {
+        token: "monday",
+        typ: RealFieldType::Dow,
+        value: 1,
+    },
+    DateToken {
+        token: "nov",
+        typ: RealFieldType::Month,
+        value: 11,
+    },
+    DateToken {
+        token: "november",
+        typ: RealFieldType::Month,
+        value: 11,
+    },
+    // current transaction time
+    DateToken {
+        token: NOW,
+        typ: RealFieldType::Reserved,
+        value: TokenFieldType::Now as i32,
+    },
+    DateToken {
+        token: "oct",
+        typ: RealFieldType::Month,
+        value: 10,
+    },
+    DateToken {
+        token: "october",
+        typ: RealFieldType::Month,
+        value: 10,
+    },
+    // "on" (throwaway)
+    DateToken {
+        token: "on",
+        typ: RealFieldType::IgnoreDtf,
+        value: 0,
+    },
+    DateToken {
+        token: "pm",
+        typ: RealFieldType::AmPm,
+        value: PM,
+    },
+    // "seconds" for ISO input
+    DateToken {
+        token: "s",
+        typ: RealFieldType::Units,
+        value: TokenFieldType::Second as i32,
+    },
+    DateToken {
+        token: "sat",
+        typ: RealFieldType::Dow,
+        value: 6,
+    },
+    DateToken {
+        token: "saturday",
+        typ: RealFieldType::Dow,
+        value: 6,
+    },
+    DateToken {
+        token: "sep",
+        typ: RealFieldType::Month,
+        value: 9,
+    },
+    DateToken {
+        token: "sept",
+        typ: RealFieldType::Month,
+        value: 9,
+    },
+    DateToken {
+        token: "september",
+        typ: RealFieldType::Month,
+        value: 9,
+    },
+    DateToken {
+        token: "sun",
+        typ: RealFieldType::Dow,
+        value: 0,
+    },
+    DateToken {
+        token: "sunday",
+        typ: RealFieldType::Dow,
+        value: 0,
+    },
+    // Filler for ISO time fields
+    DateToken {
+        token: "t",
+        typ: RealFieldType::IsoTime,
+        value: TokenFieldType::Time as i32,
+    },
+    DateToken {
+        token: "thu",
+        typ: RealFieldType::Dow,
+        value: 4,
+    },
+    DateToken {
+        token: "thur",
+        typ: RealFieldType::Dow,
+        value: 4,
+    },
+    DateToken {
+        token: "thurs",
+        typ: RealFieldType::Dow,
+        value: 4,
+    },
+    DateToken {
+        token: "thursday",
+        typ: RealFieldType::Dow,
+        value: 4,
+    },
+    // midnight
+    DateToken {
+        token: TODAY,
+        typ: RealFieldType::Reserved,
+        value: TokenFieldType::Today as i32,
+    },
+    // tomorrow midnight
+    DateToken {
+        token: TOMORROW,
+        typ: RealFieldType::Reserved,
+        value: TokenFieldType::Tomorrow as i32,
+    },
+    DateToken {
+        token: "tue",
+        typ: RealFieldType::Dow,
+        value: 2,
+    },
+    DateToken {
+        token: "tues",
+        typ: RealFieldType::Dow,
+        value: 2,
+    },
+    DateToken {
+        token: "tuesday",
+        typ: RealFieldType::Dow,
+        value: 2,
+    },
+    DateToken {
+        token: "wed",
+        typ: RealFieldType::Dow,
+        value: 3,
+    },
+    DateToken {
+        token: "wednesday",
+        typ: RealFieldType::Dow,
+        value: 3,
+    },
+    DateToken {
+        token: "weds",
+        typ: RealFieldType::Dow,
+        value: 3,
+    },
+    // "year" for ISO input
+    DateToken {
+        token: "y",
+        typ: RealFieldType::Units,
+        value: TokenFieldType::Year as i32,
+    },
+    // yesterday midnight
+    DateToken {
+        token: YESTERDAY,
+        typ: RealFieldType::Reserved,
+        value: TokenFieldType::Yesterday as i32,
+    },
 ];
 
-static mut datetktbl: [datetkn; 71] = unsafe {
-    [
-        {
-            let init = datetkn {
-                token: *::core::mem::transmute::<&[u8; 11], &mut [libc::c_char; 11]>(
-                    b"-infinity\0\0",
-                ),
-                type_0: RealFieldType::Reserved,
-                value: 9 as libc::c_int,
-            };
-            init
-        },
-        {
-            let init = datetkn {
-                token: *::core::mem::transmute::<&[u8; 11], &mut [libc::c_char; 11]>(
-                    b"ad\0\0\0\0\0\0\0\0\0",
-                ),
-                type_0: RealFieldType::Adbc,
-                value: 0 as libc::c_int,
-            };
-            init
-        },
-        {
-            let init = datetkn {
-                token: *::core::mem::transmute::<&[u8; 11], &mut [libc::c_char; 11]>(
-                    b"allballs\0\0\0",
-                ),
-                type_0: RealFieldType::Reserved,
-                value: 16 as libc::c_int,
-            };
-            init
-        },
-        {
-            let init = datetkn {
-                token: *::core::mem::transmute::<&[u8; 11], &mut [libc::c_char; 11]>(
-                    b"am\0\0\0\0\0\0\0\0\0",
-                ),
-                type_0: RealFieldType::AmPm,
-                value: 0 as libc::c_int,
-            };
-            init
-        },
-        {
-            let init = datetkn {
-                token: *::core::mem::transmute::<&[u8; 11], &mut [libc::c_char; 11]>(
-                    b"apr\0\0\0\0\0\0\0\0",
-                ),
-                type_0: RealFieldType::Month,
-                value: 4 as libc::c_int,
-            };
-            init
-        },
-        {
-            let init = datetkn {
-                token: *::core::mem::transmute::<&[u8; 11], &mut [libc::c_char; 11]>(
-                    b"april\0\0\0\0\0\0",
-                ),
-                type_0: RealFieldType::Month,
-                value: 4 as libc::c_int,
-            };
-            init
-        },
-        {
-            let init = datetkn {
-                token: *::core::mem::transmute::<&[u8; 11], &mut [libc::c_char; 11]>(
-                    b"at\0\0\0\0\0\0\0\0\0",
-                ),
-                type_0: RealFieldType::IgnoreDtf,
-                value: 0 as libc::c_int,
-            };
-            init
-        },
-        {
-            let init = datetkn {
-                token: *::core::mem::transmute::<&[u8; 11], &mut [libc::c_char; 11]>(
-                    b"aug\0\0\0\0\0\0\0\0",
-                ),
-                type_0: RealFieldType::Month,
-                value: 8 as libc::c_int,
-            };
-            init
-        },
-        {
-            let init = datetkn {
-                token: *::core::mem::transmute::<&[u8; 11], &mut [libc::c_char; 11]>(
-                    b"august\0\0\0\0\0",
-                ),
-                type_0: RealFieldType::Month,
-                value: 8 as libc::c_int,
-            };
-            init
-        },
-        {
-            let init = datetkn {
-                token: *::core::mem::transmute::<&[u8; 11], &mut [libc::c_char; 11]>(
-                    b"bc\0\0\0\0\0\0\0\0\0",
-                ),
-                type_0: RealFieldType::Adbc,
-                value: 1 as libc::c_int,
-            };
-            init
-        },
-        {
-            let init = datetkn {
-                token: *::core::mem::transmute::<&[u8; 11], &mut [libc::c_char; 11]>(
-                    b"d\0\0\0\0\0\0\0\0\0\0",
-                ),
-                type_0: RealFieldType::Units,
-                value: 21 as libc::c_int,
-            };
-            init
-        },
-        {
-            let init = datetkn {
-                token: *::core::mem::transmute::<&[u8; 11], &mut [libc::c_char; 11]>(
-                    b"dec\0\0\0\0\0\0\0\0",
-                ),
-                type_0: RealFieldType::Month,
-                value: 12 as libc::c_int,
-            };
-            init
-        },
-        {
-            let init = datetkn {
-                token: *::core::mem::transmute::<&[u8; 11], &mut [libc::c_char; 11]>(
-                    b"december\0\0\0",
-                ),
-                type_0: RealFieldType::Month,
-                value: 12 as libc::c_int,
-            };
-            init
-        },
-        {
-            let init = datetkn {
-                token: *::core::mem::transmute::<&[u8; 11], &mut [libc::c_char; 11]>(
-                    b"dow\0\0\0\0\0\0\0\0",
-                ),
-                type_0: RealFieldType::Units,
-                value: 32 as libc::c_int,
-            };
-            init
-        },
-        {
-            let init = datetkn {
-                token: *::core::mem::transmute::<&[u8; 11], &mut [libc::c_char; 11]>(
-                    b"doy\0\0\0\0\0\0\0\0",
-                ),
-                type_0: RealFieldType::Units,
-                value: 33 as libc::c_int,
-            };
-            init
-        },
-        {
-            let init = datetkn {
-                token: *::core::mem::transmute::<&[u8; 11], &mut [libc::c_char; 11]>(
-                    b"dst\0\0\0\0\0\0\0\0",
-                ),
-                type_0: RealFieldType::DtzMod,
-                value: 3600 as libc::c_int,
-            };
-            init
-        },
-        {
-            let init = datetkn {
-                token: *::core::mem::transmute::<&[u8; 11], &mut [libc::c_char; 11]>(
-                    b"epoch\0\0\0\0\0\0",
-                ),
-                type_0: RealFieldType::Reserved,
-                value: 11 as libc::c_int,
-            };
-            init
-        },
-        {
-            let init = datetkn {
-                token: *::core::mem::transmute::<&[u8; 11], &mut [libc::c_char; 11]>(
-                    b"feb\0\0\0\0\0\0\0\0",
-                ),
-                type_0: RealFieldType::Month,
-                value: 2 as libc::c_int,
-            };
-            init
-        },
-        {
-            let init = datetkn {
-                token: *::core::mem::transmute::<&[u8; 11], &mut [libc::c_char; 11]>(
-                    b"february\0\0\0",
-                ),
-                type_0: RealFieldType::Month,
-                value: 2 as libc::c_int,
-            };
-            init
-        },
-        {
-            let init = datetkn {
-                token: *::core::mem::transmute::<&[u8; 11], &mut [libc::c_char; 11]>(
-                    b"fri\0\0\0\0\0\0\0\0",
-                ),
-                type_0: RealFieldType::Dow,
-                value: 5 as libc::c_int,
-            };
-            init
-        },
-        {
-            let init = datetkn {
-                token: *::core::mem::transmute::<&[u8; 11], &mut [libc::c_char; 11]>(
-                    b"friday\0\0\0\0\0",
-                ),
-                type_0: RealFieldType::Dow,
-                value: 5 as libc::c_int,
-            };
-            init
-        },
-        {
-            let init = datetkn {
-                token: *::core::mem::transmute::<&[u8; 11], &mut [libc::c_char; 11]>(
-                    b"h\0\0\0\0\0\0\0\0\0\0",
-                ),
-                type_0: RealFieldType::Units,
-                value: 20 as libc::c_int,
-            };
-            init
-        },
-        {
-            let init = datetkn {
-                token: *::core::mem::transmute::<&[u8; 11], &mut [libc::c_char; 11]>(
-                    b"infinity\0\0\0",
-                ),
-                type_0: RealFieldType::Reserved,
-                value: 10 as libc::c_int,
-            };
-            init
-        },
-        {
-            let init = datetkn {
-                token: *::core::mem::transmute::<&[u8; 11], &mut [libc::c_char; 11]>(
-                    b"isodow\0\0\0\0\0",
-                ),
-                type_0: RealFieldType::Units,
-                value: 37 as libc::c_int,
-            };
-            init
-        },
-        {
-            let init = datetkn {
-                token: *::core::mem::transmute::<&[u8; 11], &mut [libc::c_char; 11]>(
-                    b"isoyear\0\0\0\0",
-                ),
-                type_0: RealFieldType::Units,
-                value: 36 as libc::c_int,
-            };
-            init
-        },
-        {
-            let init = datetkn {
-                token: *::core::mem::transmute::<&[u8; 11], &mut [libc::c_char; 11]>(
-                    b"j\0\0\0\0\0\0\0\0\0\0",
-                ),
-                type_0: RealFieldType::Units,
-                value: 31 as libc::c_int,
-            };
-            init
-        },
-        {
-            let init = datetkn {
-                token: *::core::mem::transmute::<&[u8; 11], &mut [libc::c_char; 11]>(
-                    b"jan\0\0\0\0\0\0\0\0",
-                ),
-                type_0: RealFieldType::Month,
-                value: 1 as libc::c_int,
-            };
-            init
-        },
-        {
-            let init = datetkn {
-                token: *::core::mem::transmute::<&[u8; 11], &mut [libc::c_char; 11]>(
-                    b"january\0\0\0\0",
-                ),
-                type_0: RealFieldType::Month,
-                value: 1 as libc::c_int,
-            };
-            init
-        },
-        {
-            let init = datetkn {
-                token: *::core::mem::transmute::<&[u8; 11], &mut [libc::c_char; 11]>(
-                    b"jd\0\0\0\0\0\0\0\0\0",
-                ),
-                type_0: RealFieldType::Units,
-                value: 31 as libc::c_int,
-            };
-            init
-        },
-        {
-            let init = datetkn {
-                token: *::core::mem::transmute::<&[u8; 11], &mut [libc::c_char; 11]>(
-                    b"jul\0\0\0\0\0\0\0\0",
-                ),
-                type_0: RealFieldType::Month,
-                value: 7 as libc::c_int,
-            };
-            init
-        },
-        {
-            let init = datetkn {
-                token: *::core::mem::transmute::<&[u8; 11], &mut [libc::c_char; 11]>(
-                    b"julian\0\0\0\0\0",
-                ),
-                type_0: RealFieldType::Units,
-                value: 31 as libc::c_int,
-            };
-            init
-        },
-        {
-            let init = datetkn {
-                token: *::core::mem::transmute::<&[u8; 11], &mut [libc::c_char; 11]>(
-                    b"july\0\0\0\0\0\0\0",
-                ),
-                type_0: RealFieldType::Month,
-                value: 7 as libc::c_int,
-            };
-            init
-        },
-        {
-            let init = datetkn {
-                token: *::core::mem::transmute::<&[u8; 11], &mut [libc::c_char; 11]>(
-                    b"jun\0\0\0\0\0\0\0\0",
-                ),
-                type_0: RealFieldType::Month,
-                value: 6 as libc::c_int,
-            };
-            init
-        },
-        {
-            let init = datetkn {
-                token: *::core::mem::transmute::<&[u8; 11], &mut [libc::c_char; 11]>(
-                    b"june\0\0\0\0\0\0\0",
-                ),
-                type_0: RealFieldType::Month,
-                value: 6 as libc::c_int,
-            };
-            init
-        },
-        {
-            let init = datetkn {
-                token: *::core::mem::transmute::<&[u8; 11], &mut [libc::c_char; 11]>(
-                    b"m\0\0\0\0\0\0\0\0\0\0",
-                ),
-                type_0: RealFieldType::Units,
-                value: 23 as libc::c_int,
-            };
-            init
-        },
-        {
-            let init = datetkn {
-                token: *::core::mem::transmute::<&[u8; 11], &mut [libc::c_char; 11]>(
-                    b"mar\0\0\0\0\0\0\0\0",
-                ),
-                type_0: RealFieldType::Month,
-                value: 3 as libc::c_int,
-            };
-            init
-        },
-        {
-            let init = datetkn {
-                token: *::core::mem::transmute::<&[u8; 11], &mut [libc::c_char; 11]>(
-                    b"march\0\0\0\0\0\0",
-                ),
-                type_0: RealFieldType::Month,
-                value: 3 as libc::c_int,
-            };
-            init
-        },
-        {
-            let init = datetkn {
-                token: *::core::mem::transmute::<&[u8; 11], &mut [libc::c_char; 11]>(
-                    b"may\0\0\0\0\0\0\0\0",
-                ),
-                type_0: RealFieldType::Month,
-                value: 5 as libc::c_int,
-            };
-            init
-        },
-        {
-            let init = datetkn {
-                token: *::core::mem::transmute::<&[u8; 11], &mut [libc::c_char; 11]>(
-                    b"mm\0\0\0\0\0\0\0\0\0",
-                ),
-                type_0: RealFieldType::Units,
-                value: 19 as libc::c_int,
-            };
-            init
-        },
-        {
-            let init = datetkn {
-                token: *::core::mem::transmute::<&[u8; 11], &mut [libc::c_char; 11]>(
-                    b"mon\0\0\0\0\0\0\0\0",
-                ),
-                type_0: RealFieldType::Dow,
-                value: 1 as libc::c_int,
-            };
-            init
-        },
-        {
-            let init = datetkn {
-                token: *::core::mem::transmute::<&[u8; 11], &mut [libc::c_char; 11]>(
-                    b"monday\0\0\0\0\0",
-                ),
-                type_0: RealFieldType::Dow,
-                value: 1 as libc::c_int,
-            };
-            init
-        },
-        {
-            let init = datetkn {
-                token: *::core::mem::transmute::<&[u8; 11], &mut [libc::c_char; 11]>(
-                    b"nov\0\0\0\0\0\0\0\0",
-                ),
-                type_0: RealFieldType::Month,
-                value: 11 as libc::c_int,
-            };
-            init
-        },
-        {
-            let init = datetkn {
-                token: *::core::mem::transmute::<&[u8; 11], &mut [libc::c_char; 11]>(
-                    b"november\0\0\0",
-                ),
-                type_0: RealFieldType::Month,
-                value: 11 as libc::c_int,
-            };
-            init
-        },
-        {
-            let init = datetkn {
-                token: *::core::mem::transmute::<&[u8; 11], &mut [libc::c_char; 11]>(
-                    b"now\0\0\0\0\0\0\0\0",
-                ),
-                type_0: RealFieldType::Reserved,
-                value: 12 as libc::c_int,
-            };
-            init
-        },
-        {
-            let init = datetkn {
-                token: *::core::mem::transmute::<&[u8; 11], &mut [libc::c_char; 11]>(
-                    b"oct\0\0\0\0\0\0\0\0",
-                ),
-                type_0: RealFieldType::Month,
-                value: 10 as libc::c_int,
-            };
-            init
-        },
-        {
-            let init = datetkn {
-                token: *::core::mem::transmute::<&[u8; 11], &mut [libc::c_char; 11]>(
-                    b"october\0\0\0\0",
-                ),
-                type_0: RealFieldType::Month,
-                value: 10 as libc::c_int,
-            };
-            init
-        },
-        {
-            let init = datetkn {
-                token: *::core::mem::transmute::<&[u8; 11], &mut [libc::c_char; 11]>(
-                    b"on\0\0\0\0\0\0\0\0\0",
-                ),
-                type_0: RealFieldType::IgnoreDtf,
-                value: 0 as libc::c_int,
-            };
-            init
-        },
-        {
-            let init = datetkn {
-                token: *::core::mem::transmute::<&[u8; 11], &mut [libc::c_char; 11]>(
-                    b"pm\0\0\0\0\0\0\0\0\0",
-                ),
-                type_0: RealFieldType::AmPm,
-                value: 1 as libc::c_int,
-            };
-            init
-        },
-        {
-            let init = datetkn {
-                token: *::core::mem::transmute::<&[u8; 11], &mut [libc::c_char; 11]>(
-                    b"s\0\0\0\0\0\0\0\0\0\0",
-                ),
-                type_0: RealFieldType::Units,
-                value: 18 as libc::c_int,
-            };
-            init
-        },
-        {
-            let init = datetkn {
-                token: *::core::mem::transmute::<&[u8; 11], &mut [libc::c_char; 11]>(
-                    b"sat\0\0\0\0\0\0\0\0",
-                ),
-                type_0: RealFieldType::Dow,
-                value: 6 as libc::c_int,
-            };
-            init
-        },
-        {
-            let init = datetkn {
-                token: *::core::mem::transmute::<&[u8; 11], &mut [libc::c_char; 11]>(
-                    b"saturday\0\0\0",
-                ),
-                type_0: RealFieldType::Dow,
-                value: 6 as libc::c_int,
-            };
-            init
-        },
-        {
-            let init = datetkn {
-                token: *::core::mem::transmute::<&[u8; 11], &mut [libc::c_char; 11]>(
-                    b"sep\0\0\0\0\0\0\0\0",
-                ),
-                type_0: RealFieldType::Month,
-                value: 9 as libc::c_int,
-            };
-            init
-        },
-        {
-            let init = datetkn {
-                token: *::core::mem::transmute::<&[u8; 11], &mut [libc::c_char; 11]>(
-                    b"sept\0\0\0\0\0\0\0",
-                ),
-                type_0: RealFieldType::Month,
-                value: 9 as libc::c_int,
-            };
-            init
-        },
-        {
-            let init = datetkn {
-                token: *::core::mem::transmute::<&[u8; 11], &mut [libc::c_char; 11]>(
-                    b"september\0\0",
-                ),
-                type_0: RealFieldType::Month,
-                value: 9 as libc::c_int,
-            };
-            init
-        },
-        {
-            let init = datetkn {
-                token: *::core::mem::transmute::<&[u8; 11], &mut [libc::c_char; 11]>(
-                    b"sun\0\0\0\0\0\0\0\0",
-                ),
-                type_0: RealFieldType::Dow,
-                value: 0 as libc::c_int,
-            };
-            init
-        },
-        {
-            let init = datetkn {
-                token: *::core::mem::transmute::<&[u8; 11], &mut [libc::c_char; 11]>(
-                    b"sunday\0\0\0\0\0",
-                ),
-                type_0: RealFieldType::Dow,
-                value: 0 as libc::c_int,
-            };
-            init
-        },
-        {
-            let init = datetkn {
-                token: *::core::mem::transmute::<&[u8; 11], &mut [libc::c_char; 11]>(
-                    b"t\0\0\0\0\0\0\0\0\0\0",
-                ),
-                type_0: RealFieldType::IsoTime,
-                value: 3 as libc::c_int,
-            };
-            init
-        },
-        {
-            let init = datetkn {
-                token: *::core::mem::transmute::<&[u8; 11], &mut [libc::c_char; 11]>(
-                    b"thu\0\0\0\0\0\0\0\0",
-                ),
-                type_0: RealFieldType::Dow,
-                value: 4 as libc::c_int,
-            };
-            init
-        },
-        {
-            let init = datetkn {
-                token: *::core::mem::transmute::<&[u8; 11], &mut [libc::c_char; 11]>(
-                    b"thur\0\0\0\0\0\0\0",
-                ),
-                type_0: RealFieldType::Dow,
-                value: 4 as libc::c_int,
-            };
-            init
-        },
-        {
-            let init = datetkn {
-                token: *::core::mem::transmute::<&[u8; 11], &mut [libc::c_char; 11]>(
-                    b"thurs\0\0\0\0\0\0",
-                ),
-                type_0: RealFieldType::Dow,
-                value: 4 as libc::c_int,
-            };
-            init
-        },
-        {
-            let init = datetkn {
-                token: *::core::mem::transmute::<&[u8; 11], &mut [libc::c_char; 11]>(
-                    b"thursday\0\0\0",
-                ),
-                type_0: RealFieldType::Dow,
-                value: 4 as libc::c_int,
-            };
-            init
-        },
-        {
-            let init = datetkn {
-                token: *::core::mem::transmute::<&[u8; 11], &mut [libc::c_char; 11]>(
-                    b"today\0\0\0\0\0\0",
-                ),
-                type_0: RealFieldType::Reserved,
-                value: 14 as libc::c_int,
-            };
-            init
-        },
-        {
-            let init = datetkn {
-                token: *::core::mem::transmute::<&[u8; 11], &mut [libc::c_char; 11]>(
-                    b"tomorrow\0\0\0",
-                ),
-                type_0: RealFieldType::Reserved,
-                value: 15 as libc::c_int,
-            };
-            init
-        },
-        {
-            let init = datetkn {
-                token: *::core::mem::transmute::<&[u8; 11], &mut [libc::c_char; 11]>(
-                    b"tue\0\0\0\0\0\0\0\0",
-                ),
-                type_0: RealFieldType::Dow,
-                value: 2 as libc::c_int,
-            };
-            init
-        },
-        {
-            let init = datetkn {
-                token: *::core::mem::transmute::<&[u8; 11], &mut [libc::c_char; 11]>(
-                    b"tues\0\0\0\0\0\0\0",
-                ),
-                type_0: RealFieldType::Dow,
-                value: 2 as libc::c_int,
-            };
-            init
-        },
-        {
-            let init = datetkn {
-                token: *::core::mem::transmute::<&[u8; 11], &mut [libc::c_char; 11]>(
-                    b"tuesday\0\0\0\0",
-                ),
-                type_0: RealFieldType::Dow,
-                value: 2 as libc::c_int,
-            };
-            init
-        },
-        {
-            let init = datetkn {
-                token: *::core::mem::transmute::<&[u8; 11], &mut [libc::c_char; 11]>(
-                    b"wed\0\0\0\0\0\0\0\0",
-                ),
-                type_0: RealFieldType::Dow,
-                value: 3 as libc::c_int,
-            };
-            init
-        },
-        {
-            let init = datetkn {
-                token: *::core::mem::transmute::<&[u8; 11], &mut [libc::c_char; 11]>(
-                    b"wednesday\0\0",
-                ),
-                type_0: RealFieldType::Dow,
-                value: 3 as libc::c_int,
-            };
-            init
-        },
-        {
-            let init = datetkn {
-                token: *::core::mem::transmute::<&[u8; 11], &mut [libc::c_char; 11]>(
-                    b"weds\0\0\0\0\0\0\0",
-                ),
-                type_0: RealFieldType::Dow,
-                value: 3 as libc::c_int,
-            };
-            init
-        },
-        {
-            let init = datetkn {
-                token: *::core::mem::transmute::<&[u8; 11], &mut [libc::c_char; 11]>(
-                    b"y\0\0\0\0\0\0\0\0\0\0",
-                ),
-                type_0: RealFieldType::Units,
-                value: 25 as libc::c_int,
-            };
-            init
-        },
-        {
-            let init = datetkn {
-                token: *::core::mem::transmute::<&[u8; 11], &mut [libc::c_char; 11]>(
-                    b"yesterday\0\0",
-                ),
-                type_0: RealFieldType::Reserved,
-                value: 13 as libc::c_int,
-            };
-            init
-        },
-    ]
-};
-static mut szdatetktbl: libc::c_int = 0;
-static mut szdeltatktbl: libc::c_int = 0;
 static mut zoneabbrevtbl: *mut TimeZoneAbbrevTable =
     0 as *const TimeZoneAbbrevTable as *mut TimeZoneAbbrevTable;
-static mut datecache: [*const datetkn; 25] = [
-    0 as *const datetkn,
-    0 as *const datetkn,
-    0 as *const datetkn,
-    0 as *const datetkn,
-    0 as *const datetkn,
-    0 as *const datetkn,
-    0 as *const datetkn,
-    0 as *const datetkn,
-    0 as *const datetkn,
-    0 as *const datetkn,
-    0 as *const datetkn,
-    0 as *const datetkn,
-    0 as *const datetkn,
-    0 as *const datetkn,
-    0 as *const datetkn,
-    0 as *const datetkn,
-    0 as *const datetkn,
-    0 as *const datetkn,
-    0 as *const datetkn,
-    0 as *const datetkn,
-    0 as *const datetkn,
-    0 as *const datetkn,
-    0 as *const datetkn,
-    0 as *const datetkn,
-    0 as *const datetkn,
-];
 static mut abbrevcache: [*const datetkn; 25] = [
     0 as *const datetkn,
     0 as *const datetkn,
@@ -1585,7 +1129,7 @@ pub fn parse_datetime(input: &str) -> Result<Vec<(String, TokenFieldType)>, i32>
             } else if *chars.peek().unwrap() == '+' || chars.peek().unwrap().is_ascii_digit() {
                 // we need search only the core token table, not TZ names
                 if !DATE_TOKEN_TABLE
-                    .binary_search_by(|(token, _, _)| token.cmp(&&*fdata))
+                    .binary_search_by(|tk| tk.token.cmp(&&*fdata))
                     .is_ok()
                 {
                     is_date = true;
@@ -3021,27 +2565,21 @@ unsafe fn DecodeTimezoneAbbrev(
 }
 
 unsafe fn DecodeSpecial(
-    field: libc::c_int,
+    _field_for_cache: libc::c_int,
     lowtoken: *mut libc::c_char,
     val: *mut libc::c_int,
 ) -> RealFieldType {
-    let mut tp = datecache[field as usize];
-    if tp.is_null()
-        || strncmp(
-            lowtoken,
-            ((*tp).token).as_ptr(),
-            10 as libc::c_int as libc::c_ulong,
-        ) != 0 as libc::c_int
-    {
-        tp = datebsearch(lowtoken, datetktbl.as_ptr(), szdatetktbl);
-    }
-    if tp.is_null() {
-        *val = 0 as libc::c_int;
-        RealFieldType::UnknownField
-    } else {
-        datecache[field as usize] = tp;
-        *val = (*tp).value;
-        (*tp).type_0
+    let lowtoken = std::ffi::CStr::from_ptr(lowtoken).to_str().unwrap();
+    match DATE_TOKEN_TABLE.binary_search_by(|tk| tk.token.cmp(lowtoken)) {
+        Ok(idx) => {
+            let token = &DATE_TOKEN_TABLE[idx];
+            *val = token.value;
+            token.typ
+        }
+        Err(_) => {
+            *val = 0;
+            RealFieldType::UnknownField
+        }
     }
 }
 
@@ -3126,17 +2664,3 @@ unsafe fn FetchDynamicTimeZone(tbl: *mut TimeZoneAbbrevTable, tp: *const datetkn
     }
     return (*dtza).tz;
 }
-
-unsafe fn run_static_initializers() {
-    szdatetktbl = (::core::mem::size_of::<[datetkn; 71]>() as libc::c_ulong)
-        .wrapping_div(::core::mem::size_of::<datetkn>() as libc::c_ulong)
-        as libc::c_int;
-    szdeltatktbl = (::core::mem::size_of::<[datetkn; 61]>() as libc::c_ulong)
-        .wrapping_div(::core::mem::size_of::<datetkn>() as libc::c_ulong)
-        as libc::c_int;
-}
-#[used]
-#[cfg_attr(target_os = "linux", link_section = ".init_array")]
-#[cfg_attr(target_os = "windows", link_section = ".CRT$XIB")]
-#[cfg_attr(target_os = "macos", link_section = "__DATA,__mod_init_func")]
-static INIT_ARRAY: [unsafe fn(); 1] = [run_static_initializers];
