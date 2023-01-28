@@ -209,7 +209,7 @@ pub fn decode(fields: Vec<(String, TokenFieldType)>) -> Result<(pg_tm, fsec_t, i
         tm_year: 0,
         tm_wday: 0,
         tm_yday: 0,
-        tm_isdst: 0,
+        tm_isdst: Some(false),
         tm_gmtoff: 0,
         tm_zone: 0 as *const libc::c_char,
     };

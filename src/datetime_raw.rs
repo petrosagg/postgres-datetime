@@ -101,7 +101,7 @@ fn pg_localtime(timep: *const pg_time_t, tz: *const pg_tz) -> *mut pg_tm {
         tm_year: 0,
         tm_wday: 0,
         tm_yday: 0,
-        tm_isdst: 0,
+        tm_isdst: Some(false),
         tm_gmtoff: 0,
         tm_zone: std::ptr::null(),
     }))
@@ -119,10 +119,10 @@ fn pg_interpret_timezone_abbrev(
 fn pg_next_dst_boundary(
     timep: *const pg_time_t,
     before_gmtoff: *mut libc::c_long,
-    before_isdst: *mut libc::c_int,
+    before_isdst: &mut bool,
     boundary: *mut pg_time_t,
     after_gmtoff: *mut libc::c_long,
-    after_isdst: *mut libc::c_int,
+    after_isdst: &mut bool,
     tz: *const pg_tz,
 ) -> libc::c_int {
     0
@@ -269,7 +269,7 @@ fn timestamp2tm(
 
         /* Done if no TZ conversion wanted */
         if tzp.is_null() {
-            (*tm).tm_isdst = -1;
+            (*tm).tm_isdst = None;
             (*tm).tm_gmtoff = 0;
             (*tm).tm_zone = std::ptr::null_mut();
             if tzn != std::ptr::null_mut() {
@@ -313,7 +313,7 @@ fn timestamp2tm(
              */
             *tzp = 0;
             /* Mark this as *no* time zone available */
-            (*tm).tm_isdst = -1;
+            (*tm).tm_isdst = None;
             (*tm).tm_gmtoff = 0;
             (*tm).tm_zone = std::ptr::null_mut();
             if !tzn.is_null() {
@@ -1852,7 +1852,7 @@ pub struct pg_tm {
     pub tm_year: libc::c_int,
     pub tm_wday: libc::c_int,
     pub tm_yday: libc::c_int,
-    pub tm_isdst: libc::c_int,
+    pub tm_isdst: Option<bool>,
     pub tm_gmtoff: libc::c_long,
     pub tm_zone: *const libc::c_char,
 }
@@ -3628,7 +3628,7 @@ pub unsafe extern "C" fn GetCurrentTimeUsec(
         tm_year: 0,
         tm_wday: 0,
         tm_yday: 0,
-        tm_isdst: 0,
+        tm_isdst: Some(false),
         tm_gmtoff: 0,
         tm_zone: 0 as *const libc::c_char,
     };
@@ -4022,7 +4022,7 @@ pub unsafe extern "C" fn DecodeDateTime(
         tm_year: 0,
         tm_wday: 0,
         tm_yday: 0,
-        tm_isdst: 0,
+        tm_isdst: Some(false),
         tm_gmtoff: 0,
         tm_zone: 0 as *const libc::c_char,
     };
@@ -4036,7 +4036,7 @@ pub unsafe extern "C" fn DecodeDateTime(
     *fsec = 0 as libc::c_int;
 
     // don't know daylight savings time status apriori
-    (*tm).tm_isdst = -(1 as libc::c_int);
+    (*tm).tm_isdst = None;
     if !tzp.is_null() {
         *tzp = 0 as libc::c_int;
     }
@@ -4499,7 +4499,7 @@ pub unsafe extern "C" fn DecodeDateTime(
                         }
                         RealFieldType::DtzMod => {
                             tmask.set(RealFieldType::DTz);
-                            (*tm).tm_isdst = 1 as libc::c_int;
+                            (*tm).tm_isdst = Some(true);
                             if tzp.is_null() {
                                 eprintln!("tzp is null");
                                 return -(1 as libc::c_int);
@@ -4508,7 +4508,7 @@ pub unsafe extern "C" fn DecodeDateTime(
                         }
                         RealFieldType::DTz => {
                             tmask.set(RealFieldType::Tz);
-                            (*tm).tm_isdst = 1 as libc::c_int;
+                            (*tm).tm_isdst = Some(true);
                             if tzp.is_null() {
                                 eprintln!("tzp is null");
                                 return -(1 as libc::c_int);
@@ -4516,7 +4516,7 @@ pub unsafe extern "C" fn DecodeDateTime(
                             *tzp = -val;
                         }
                         RealFieldType::Tz => {
-                            (*tm).tm_isdst = 0 as libc::c_int;
+                            (*tm).tm_isdst = Some(false);
                             if tzp.is_null() {
                                 eprintln!("tzp is null");
                                 return -(1 as libc::c_int);
@@ -4677,8 +4677,8 @@ unsafe extern "C" fn DetermineTimeZoneOffsetInternal(
     let mut aftertime: pg_time_t = 0;
     let mut before_gmtoff: libc::c_long = 0;
     let mut after_gmtoff: libc::c_long = 0;
-    let mut before_isdst: libc::c_int = 0;
-    let mut after_isdst: libc::c_int = 0;
+    let mut before_isdst = false;
+    let mut after_isdst = false;
     let mut res: libc::c_int = 0;
     if ((*tm).tm_year > -(4713 as libc::c_int)
         || (*tm).tm_year == -(4713 as libc::c_int) && (*tm).tm_mon >= 11 as libc::c_int)
@@ -4709,7 +4709,7 @@ unsafe extern "C" fn DetermineTimeZoneOffsetInternal(
                     );
                     if !(res < 0 as libc::c_int) {
                         if res == 0 as libc::c_int {
-                            (*tm).tm_isdst = before_isdst;
+                            (*tm).tm_isdst = Some(before_isdst);
                             *tp = mytime - before_gmtoff;
                             return -(before_gmtoff as libc::c_int);
                         }
@@ -4730,21 +4730,21 @@ unsafe extern "C" fn DetermineTimeZoneOffsetInternal(
                                     && aftertime < 0 as libc::c_int as libc::c_long)
                             {
                                 if beforetime < boundary && aftertime < boundary {
-                                    (*tm).tm_isdst = before_isdst;
+                                    (*tm).tm_isdst = Some(before_isdst);
                                     *tp = beforetime;
                                     return -(before_gmtoff as libc::c_int);
                                 }
                                 if beforetime > boundary && aftertime >= boundary {
-                                    (*tm).tm_isdst = after_isdst;
+                                    (*tm).tm_isdst = Some(after_isdst);
                                     *tp = aftertime;
                                     return -(after_gmtoff as libc::c_int);
                                 }
                                 if beforetime > aftertime {
-                                    (*tm).tm_isdst = before_isdst;
+                                    (*tm).tm_isdst = Some(before_isdst);
                                     *tp = beforetime;
                                     return -(before_gmtoff as libc::c_int);
                                 }
-                                (*tm).tm_isdst = after_isdst;
+                                (*tm).tm_isdst = Some(after_isdst);
                                 *tp = aftertime;
                                 return -(after_gmtoff as libc::c_int);
                             }
@@ -4754,7 +4754,7 @@ unsafe extern "C" fn DetermineTimeZoneOffsetInternal(
             }
         }
     }
-    (*tm).tm_isdst = 0 as libc::c_int;
+    (*tm).tm_isdst = Some(false);
     *tp = 0 as libc::c_int as pg_time_t;
     return 0 as libc::c_int;
 }
@@ -4770,7 +4770,7 @@ pub unsafe extern "C" fn DetermineTimeZoneAbbrevOffset(
     let mut abbr_isdst = false;
     zone_offset = DetermineTimeZoneOffsetInternal(tm, tzp, &mut t);
     if DetermineTimeZoneAbbrevOffsetInternal(t, abbr, tzp, &mut abbr_offset, &mut abbr_isdst) {
-        (*tm).tm_isdst = abbr_isdst as i32;
+        (*tm).tm_isdst = Some(abbr_isdst);
         return abbr_offset;
     }
     return zone_offset;
@@ -4795,7 +4795,7 @@ pub unsafe extern "C" fn DetermineTimeZoneAbbrevOffsetTS(
         tm_year: 0,
         tm_wday: 0,
         tm_yday: 0,
-        tm_isdst: 0,
+        tm_isdst: Some(false),
         tm_gmtoff: 0,
         tm_zone: 0 as *const libc::c_char,
     };
@@ -4842,7 +4842,7 @@ pub unsafe extern "C" fn DetermineTimeZoneAbbrevOffsetTS(
         }
     }
     zone_offset = DetermineTimeZoneOffset(&mut tm, tzp);
-    *isdst = tm.tm_isdst != 0;
+    *isdst = tm.tm_isdst.unwrap();
     return zone_offset;
 }
 unsafe extern "C" fn DetermineTimeZoneAbbrevOffsetInternal(
@@ -4912,7 +4912,7 @@ pub unsafe extern "C" fn DecodeTimeOnly(
     (*tm).tm_min = 0 as libc::c_int;
     (*tm).tm_sec = 0 as libc::c_int;
     *fsec = 0 as libc::c_int;
-    (*tm).tm_isdst = -(1 as libc::c_int);
+    (*tm).tm_isdst = None;
     if !tzp.is_null() {
         *tzp = 0 as libc::c_int;
     }
@@ -5268,14 +5268,14 @@ pub unsafe extern "C" fn DecodeTimeOnly(
                                 (*tm).tm_hour = 0 as libc::c_int;
                                 (*tm).tm_min = 0 as libc::c_int;
                                 (*tm).tm_sec = 0 as libc::c_int;
-                                (*tm).tm_isdst = 0 as libc::c_int;
+                                (*tm).tm_isdst = Some(false);
                             }
                             _ => return -(1 as libc::c_int),
                         },
                         RealFieldType::DtzMod => {
                             // daylight savings time modifier (solves "MET DST" syntax)
                             tmask.set(RealFieldType::DTz);
-                            (*tm).tm_isdst = 1 as libc::c_int;
+                            (*tm).tm_isdst = Some(true);
                             if tzp.is_null() {
                                 return -(1 as libc::c_int);
                             }
@@ -5284,7 +5284,7 @@ pub unsafe extern "C" fn DecodeTimeOnly(
                         RealFieldType::DTz => {
                             // set mask for TZ here _or_ check for DTZ later when getting default timezone
                             tmask.set(RealFieldType::Tz);
-                            (*tm).tm_isdst = 1 as libc::c_int;
+                            (*tm).tm_isdst = Some(true);
                             if tzp.is_null() {
                                 return -(1 as libc::c_int);
                             }
@@ -5292,7 +5292,7 @@ pub unsafe extern "C" fn DecodeTimeOnly(
                             *ftype.offset(i as isize) = 4 as libc::c_int;
                         }
                         RealFieldType::Tz => {
-                            (*tm).tm_isdst = 0 as libc::c_int;
+                            (*tm).tm_isdst = Some(false);
                             if tzp.is_null() {
                                 return -(1 as libc::c_int);
                             }
@@ -5418,7 +5418,7 @@ pub unsafe extern "C" fn DecodeTimeOnly(
             tm_year: 0,
             tm_wday: 0,
             tm_yday: 0,
-            tm_isdst: 0,
+            tm_isdst: Some(false),
             tm_gmtoff: 0,
             tm_zone: 0 as *const libc::c_char,
         };
@@ -5456,7 +5456,7 @@ pub unsafe extern "C" fn DecodeTimeOnly(
             tm_year: 0,
             tm_wday: 0,
             tm_yday: 0,
-            tm_isdst: 0,
+            tm_isdst: Some(false),
             tm_gmtoff: 0,
             tm_zone: 0 as *const libc::c_char,
         };
@@ -7131,7 +7131,7 @@ pub unsafe extern "C" fn EncodeDateTime(
     mut str: *mut libc::c_char,
 ) {
     let mut day: libc::c_int = 0;
-    if (*tm).tm_isdst < 0 as libc::c_int {
+    if (*tm).tm_isdst.is_none() {
         print_tz = false;
     }
     match style {
@@ -7990,7 +7990,7 @@ pub unsafe extern "C" fn pg_timezone_abbrevs(mut fcinfo: FunctionCallInfo) -> Da
         tm_year: 0,
         tm_wday: 0,
         tm_yday: 0,
-        tm_isdst: 0,
+        tm_isdst: Some(false),
         tm_gmtoff: 0,
         tm_zone: 0 as *const libc::c_char,
     };
@@ -8197,7 +8197,7 @@ pub unsafe extern "C" fn pg_timezone_names(mut fcinfo: FunctionCallInfo) -> Datu
         tm_year: 0,
         tm_wday: 0,
         tm_yday: 0,
-        tm_isdst: 0,
+        tm_isdst: Some(false),
         tm_gmtoff: 0,
         tm_zone: 0 as *const libc::c_char,
     };
@@ -8213,7 +8213,7 @@ pub unsafe extern "C" fn pg_timezone_names(mut fcinfo: FunctionCallInfo) -> Datu
         tm_year: 0,
         tm_wday: 0,
         tm_yday: 0,
-        tm_isdst: 0,
+        tm_isdst: Some(false),
         tm_gmtoff: 0,
         tm_zone: 0 as *const libc::c_char,
     };
@@ -8397,11 +8397,11 @@ pub unsafe extern "C" fn pg_timezone_names(mut fcinfo: FunctionCallInfo) -> Datu
         resInterval = palloc(::core::mem::size_of::<Interval>() as libc::c_ulong) as *mut Interval;
         tm2interval(&mut itm, 0 as libc::c_int, resInterval);
         values[2 as libc::c_int as usize] = resInterval as Datum;
-        values[3 as libc::c_int as usize] = (if tm.tm_isdst > 0 as libc::c_int {
+        values[3 as libc::c_int as usize] = if tm.tm_isdst.is_some() {
             1 as libc::c_int
         } else {
             0 as libc::c_int
-        }) as Datum;
+        } as Datum;
         tuplestore_putvalues(tupstore, tupdesc, values.as_mut_ptr(), nulls.as_mut_slice());
     }
     pg_tzenumerate_end(tzenum);
