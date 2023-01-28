@@ -1,7 +1,7 @@
 use std::ffi::CString;
 
-use once_cell::sync::Lazy;
 use bitmask::bitmask;
+use once_cell::sync::Lazy;
 
 use crate::datetime_raw::{fsec_t, pg_tm, DateADT, DecodeDateTime};
 
@@ -132,9 +132,12 @@ impl From<u32> for RealFieldType {
     }
 }
 
-pub static FIELD_MASK_ALL_SECS: Lazy<FieldMask> = Lazy::new(|| RealFieldType::Second | RealFieldType::Millisecond | RealFieldType::Microsecond);
-pub static FIELD_MASK_DATE: Lazy<FieldMask> = Lazy::new(|| RealFieldType::Year | RealFieldType::Month | RealFieldType::Day);
-pub static FIELD_MASK_TIME: Lazy<FieldMask> = Lazy::new(|| RealFieldType::Hour | RealFieldType::Minute | *FIELD_MASK_ALL_SECS);
+pub static FIELD_MASK_ALL_SECS: Lazy<FieldMask> =
+    Lazy::new(|| RealFieldType::Second | RealFieldType::Millisecond | RealFieldType::Microsecond);
+pub static FIELD_MASK_DATE: Lazy<FieldMask> =
+    Lazy::new(|| RealFieldType::Year | RealFieldType::Month | RealFieldType::Day);
+pub static FIELD_MASK_TIME: Lazy<FieldMask> =
+    Lazy::new(|| RealFieldType::Hour | RealFieldType::Minute | *FIELD_MASK_ALL_SECS);
 
 pub fn decode(fields: Vec<(String, TokenFieldType)>) -> Result<(pg_tm, fsec_t, i32, i32), i32> {
     let nf = fields.len() as i32;

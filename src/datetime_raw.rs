@@ -1,6 +1,8 @@
 use ::libc;
 
-use crate::datetime::{FieldMask, RealFieldType, TokenFieldType, FIELD_MASK_DATE, FIELD_MASK_TIME, FIELD_MASK_ALL_SECS};
+use crate::datetime::{
+    FieldMask, RealFieldType, TokenFieldType, FIELD_MASK_ALL_SECS, FIELD_MASK_DATE, FIELD_MASK_TIME,
+};
 
 const HOURS_PER_DAY: libc::c_int = 24;
 const MINS_PER_HOUR: libc::c_int = 60;
@@ -2044,7 +2046,7 @@ const UNKNOWN_FIELD: i32 = 31;
 static DATE_TOKEN_TABLE: &'static [(&'static str, i32, i32)] = &[
     /* token, type, value */
     (EARLY, RESERV, TokenFieldType::Early as i32), /* "-infinity" reserved for "early time" */
-    (DA_D, ADBC, AD),                         /* "ad" for years > 0 */
+    (DA_D, ADBC, AD),                              /* "ad" for years > 0 */
     ("allballs", RESERV, TokenFieldType::Zulu as i32), /* 00:00:00 */
     ("am", AMPM, AM),
     ("apr", MONTH, 4),
@@ -2052,7 +2054,7 @@ static DATE_TOKEN_TABLE: &'static [(&'static str, i32, i32)] = &[
     ("at", IGNORE_DTF, 0), /* "at" (throwaway) */
     ("aug", MONTH, 8),
     ("august", MONTH, 8),
-    (DB_C, ADBC, BC),                    /* "bc" for years <= 0 */
+    (DB_C, ADBC, BC),                         /* "bc" for years <= 0 */
     ("d", UNITS, TokenFieldType::Day as i32), /* "day of month" for ISO input */
     ("dec", MONTH, 12),
     ("december", MONTH, 12),
@@ -2064,9 +2066,9 @@ static DATE_TOKEN_TABLE: &'static [(&'static str, i32, i32)] = &[
     ("february", MONTH, 2),
     ("fri", DOW, 5),
     ("friday", DOW, 5),
-    ("h", UNITS, TokenFieldType::Hour as i32),          /* "hour" */
-    (LATE, RESERV, TokenFieldType::Late as i32),        /* "infinity" reserved for "late time" */
-    ("isodow", UNITS, TokenFieldType::IsoDow as i32),   /* ISO day of week, Sunday == 7 */
+    ("h", UNITS, TokenFieldType::Hour as i32), /* "hour" */
+    (LATE, RESERV, TokenFieldType::Late as i32), /* "infinity" reserved for "late time" */
+    ("isodow", UNITS, TokenFieldType::IsoDow as i32), /* ISO day of week, Sunday == 7 */
     ("isoyear", UNITS, TokenFieldType::IsoYear as i32), /* year in terms of the ISO week date */
     ("j", UNITS, TokenFieldType::Julian as i32),
     ("jan", MONTH, 1),
@@ -4041,15 +4043,15 @@ pub unsafe extern "C" fn DecodeDateTime(
         tm_zone: 0 as *const libc::c_char,
     };
 
-	// We'll insist on at least all of the date fields, but initialize the
-	// remaining fields in case they are not set later...
+    // We'll insist on at least all of the date fields, but initialize the
+    // remaining fields in case they are not set later...
     *dtype = 2 as libc::c_int;
     (*tm).tm_hour = 0 as libc::c_int;
     (*tm).tm_min = 0 as libc::c_int;
     (*tm).tm_sec = 0 as libc::c_int;
     *fsec = 0 as libc::c_int;
 
-	// don't know daylight savings time status apriori
+    // don't know daylight savings time status apriori
     (*tm).tm_isdst = -(1 as libc::c_int);
     if !tzp.is_null() {
         *tzp = 0 as libc::c_int;
@@ -4084,16 +4086,16 @@ pub unsafe extern "C" fn DecodeDateTime(
                     }
                     tmask = *FIELD_MASK_DATE | *FIELD_MASK_TIME | RealFieldType::Tz;
                     ptype = 0;
-				// Already have a date? Then this might be a time zone name
-				// with embedded punctuation (e.g. "America/New_York") or a
-				// run-together time with trailing time zone (e.g. hhmmss-zz).
-				// - thomas 2001-12-25
-				//
-				// We consider it a time zone if we already have month & day.
-				// This is to allow the form "mmm dd hhmmss tz year", which
-				// we've historically accepted.
+                // Already have a date? Then this might be a time zone name
+                // with embedded punctuation (e.g. "America/New_York") or a
+                // run-together time with trailing time zone (e.g. hhmmss-zz).
+                // - thomas 2001-12-25
+                //
+                // We consider it a time zone if we already have month & day.
+                // This is to allow the form "mmm dd hhmmss tz year", which
+                // we've historically accepted.
                 } else if ptype != 0 || fmask.contains(RealFieldType::Month | RealFieldType::Day) {
-					// No time zone accepted? Then quit...
+                    // No time zone accepted? Then quit...
                     if tzp.is_null() {
                         eprintln!("tzp is null");
                         return -1;
@@ -4113,9 +4115,9 @@ pub unsafe extern "C" fn DecodeDateTime(
                             }
                             ptype = 0;
                         }
-						// Starts with a digit but we already have a time
-						// field? Then we are in trouble with a date and time
-						// already...
+                        // Starts with a digit but we already have a time
+                        // field? Then we are in trouble with a date and time
+                        // already...
                         if fmask.contains(*FIELD_MASK_TIME) {
                             eprintln!("started with a digit but already have a time");
                             return -1;
@@ -4142,7 +4144,7 @@ pub unsafe extern "C" fn DecodeDateTime(
                         if dterr < 0 as libc::c_int {
                             return dterr;
                         }
-						// modify tmask after returning from DecodeNumberField()
+                        // modify tmask after returning from DecodeNumberField()
                         tmask.set(RealFieldType::Tz);
                     } else {
                         namedTz = pg_tzset(*field.offset(i as isize));
@@ -4186,7 +4188,7 @@ pub unsafe extern "C" fn DecodeDateTime(
                                 unreachable!();
                             }
                         }
-						// we'll apply the zone setting below
+                        // we'll apply the zone setting below
                         tmask = FieldMask::from(RealFieldType::Tz);
                     }
                 } else {
@@ -4255,7 +4257,7 @@ pub unsafe extern "C" fn DecodeDateTime(
                             31 | 3 | 18 => {}
                             _ => {
                                 eprintln!("ptype is not 31 3 or 18: {}", ptype);
-                                return -(1 as libc::c_int)
+                                return -(1 as libc::c_int);
                             }
                         }
                     } else if *cp_1 as libc::c_int != '\0' as i32 {
@@ -4268,7 +4270,7 @@ pub unsafe extern "C" fn DecodeDateTime(
                             tmask = FieldMask::from(RealFieldType::Year);
                         }
                         23 => {
-							// already have a month and hour? then assume minutes
+                            // already have a month and hour? then assume minutes
                             if fmask.contains(RealFieldType::Month | RealFieldType::Hour) {
                                 (*tm).tm_min = val_1;
                                 tmask = FieldMask::from(RealFieldType::Minute);
@@ -4397,7 +4399,10 @@ pub unsafe extern "C" fn DecodeDateTime(
                         if dterr < 0 as libc::c_int {
                             return dterr;
                         }
-                    } else if flen >= 6 && (!fmask.intersects(*FIELD_MASK_DATE) || !fmask.intersects(*FIELD_MASK_TIME)) {
+                    } else if flen >= 6
+                        && (!fmask.intersects(*FIELD_MASK_DATE)
+                            || !fmask.intersects(*FIELD_MASK_TIME))
+                    {
                         dterr = DecodeNumberField(
                             flen,
                             *field.offset(i as isize),
@@ -4611,12 +4616,12 @@ pub unsafe extern "C" fn DecodeDateTime(
         }
         i += 1;
     }
-	// do final checking/adjustment of Y/M/D fields
+    // do final checking/adjustment of Y/M/D fields
     dterr = ValidateDate(fmask, isjulian, is2digits, bc, tm);
     if dterr != 0 {
         return dterr;
     }
-	// handle AM/PM
+    // handle AM/PM
     if mer != 2 as libc::c_int && (*tm).tm_hour > 24 as libc::c_int / 2 as libc::c_int {
         return -(2 as libc::c_int);
     }
@@ -4625,7 +4630,7 @@ pub unsafe extern "C" fn DecodeDateTime(
     } else if mer == 1 as libc::c_int && (*tm).tm_hour != 24 as libc::c_int / 2 as libc::c_int {
         (*tm).tm_hour += 24 as libc::c_int / 2 as libc::c_int;
     }
-	// do additional checking for full date specs...
+    // do additional checking for full date specs...
     if *dtype == 2 as libc::c_int {
         if !fmask.contains(*FIELD_MASK_DATE) {
             if fmask.contains(*FIELD_MASK_TIME) {
@@ -4634,25 +4639,25 @@ pub unsafe extern "C" fn DecodeDateTime(
             }
             return -(1 as libc::c_int);
         }
-		// If we had a full timezone spec, compute the offset (we could not do
-		// it before, because we need the date to resolve DST status).
+        // If we had a full timezone spec, compute the offset (we could not do
+        // it before, because we need the date to resolve DST status).
         if !namedTz.is_null() {
-			// daylight savings time modifier disallowed with full TZ
+            // daylight savings time modifier disallowed with full TZ
             if fmask.contains(RealFieldType::DtzMod) {
                 return -(1 as libc::c_int);
             }
             *tzp = DetermineTimeZoneOffset(tm, namedTz);
         }
-		// Likewise, if we had a dynamic timezone abbreviation, resolve it now.
+        // Likewise, if we had a dynamic timezone abbreviation, resolve it now.
         if !abbrevTz.is_null() {
             if fmask.contains(RealFieldType::DtzMod) {
                 return -(1 as libc::c_int);
             }
             *tzp = DetermineTimeZoneAbbrevOffset(tm, abbrev, abbrevTz);
         }
-		// timezone not specified? then use session timezone
+        // timezone not specified? then use session timezone
         if !tzp.is_null() && !fmask.contains(RealFieldType::Tz) {
-			// daylight savings time modifier but no standard timezone? then error
+            // daylight savings time modifier but no standard timezone? then error
             if fmask.contains(RealFieldType::DtzMod) {
                 return -(1 as libc::c_int);
             }
@@ -5089,7 +5094,7 @@ pub unsafe extern "C" fn DecodeTimeOnly(
                             tmask = FieldMask::from(RealFieldType::Year);
                         }
                         23 => {
-							// already have a month and hour? then assume minutes
+                            // already have a month and hour? then assume minutes
                             if fmask.contains(RealFieldType::Month | RealFieldType::Hour) {
                                 (*tm).tm_min = val_0;
                                 tmask = FieldMask::from(RealFieldType::Minute);
@@ -5369,13 +5374,13 @@ pub unsafe extern "C" fn DecodeTimeOnly(
         }
         i += 1;
     }
-	// do final checking/adjustment of Y/M/D fields
+    // do final checking/adjustment of Y/M/D fields
     dterr = ValidateDate(fmask, isjulian, is2digits, bc, tm);
     if dterr != 0 {
         return dterr;
     }
 
-	// handle AM/PM
+    // handle AM/PM
     if mer != 2 as libc::c_int && (*tm).tm_hour > 24 as libc::c_int / 2 as libc::c_int {
         return -(2 as libc::c_int);
     }
@@ -5385,33 +5390,33 @@ pub unsafe extern "C" fn DecodeTimeOnly(
         (*tm).tm_hour += 24 as libc::c_int / 2 as libc::c_int;
     }
 
-	// check for time overflow
+    // check for time overflow
     if time_overflows((*tm).tm_hour, (*tm).tm_min, (*tm).tm_sec, *fsec) != 0 {
         return -(2 as libc::c_int);
     }
     if !fmask.contains(*FIELD_MASK_TIME) {
         return -(1 as libc::c_int);
     }
-	// If we had a full timezone spec, compute the offset (we could not do it
-	// before, because we may need the date to resolve DST status).
+    // If we had a full timezone spec, compute the offset (we could not do it
+    // before, because we may need the date to resolve DST status).
     if !namedTz.is_null() {
         let mut gmtoff: libc::c_long = 0;
-		// daylight savings time modifier disallowed with full TZ
+        // daylight savings time modifier disallowed with full TZ
         if fmask.contains(RealFieldType::DtzMod) {
             return -(1 as libc::c_int);
         }
-		// if non-DST zone, we do not need to know the date
+        // if non-DST zone, we do not need to know the date
         if pg_get_timezone_offset(namedTz, &mut gmtoff) != 0 {
             *tzp = -(gmtoff as libc::c_int);
         } else {
-			// a date has to be specified
+            // a date has to be specified
             if !fmask.contains(*FIELD_MASK_DATE) {
                 return -(1 as libc::c_int);
             }
             *tzp = DetermineTimeZoneOffset(tm, namedTz);
         }
     }
-	// Likewise, if we had a dynamic timezone abbreviation, resolve it now.
+    // Likewise, if we had a dynamic timezone abbreviation, resolve it now.
     if !abbrevTz.is_null() {
         let mut tt: pg_tm = pg_tm {
             tm_sec: 0,
@@ -5428,14 +5433,14 @@ pub unsafe extern "C" fn DecodeTimeOnly(
         };
         let mut tmp: *mut pg_tm = &mut tt;
 
-		// daylight savings time modifier but no standard timezone? then error
+        // daylight savings time modifier but no standard timezone? then error
         if fmask.contains(RealFieldType::DtzMod) {
             return -(1 as libc::c_int);
         }
         if !fmask.intersects(*FIELD_MASK_DATE) {
             GetCurrentDateTime(tmp);
         } else {
-			/* a date has to be specified */
+            /* a date has to be specified */
             if !fmask.contains(*FIELD_MASK_DATE) {
                 return -(1 as libc::c_int);
             }
@@ -5449,7 +5454,7 @@ pub unsafe extern "C" fn DecodeTimeOnly(
         *tzp = DetermineTimeZoneAbbrevOffset(tmp, abbrev, abbrevTz);
         (*tm).tm_isdst = (*tmp).tm_isdst;
     }
-	// timezone not specified? then use session timezone
+    // timezone not specified? then use session timezone
     if !tzp.is_null() && !fmask.contains(RealFieldType::Tz) {
         let mut tt_0: pg_tm = pg_tm {
             tm_sec: 0,
@@ -5607,7 +5612,7 @@ unsafe extern "C" fn DecodeDate(
         return -(1 as libc::c_int);
     }
 
-	// validation of the field values must wait until ValidateDate()
+    // validation of the field values must wait until ValidateDate()
     return 0 as libc::c_int;
 }
 
@@ -5641,7 +5646,7 @@ pub unsafe extern "C" fn ValidateDate(
             }
         }
     }
-	// now that we have correct year, decode DOY
+    // now that we have correct year, decode DOY
     if fmask.contains(RealFieldType::Doy) {
         j2date(
             date2j((*tm).tm_year, 1 as libc::c_int, 1 as libc::c_int) + (*tm).tm_yday
@@ -5651,13 +5656,13 @@ pub unsafe extern "C" fn ValidateDate(
             &mut (*tm).tm_mday,
         );
     }
-	// check for valid month
+    // check for valid month
     if fmask.contains(RealFieldType::Month) {
         if (*tm).tm_mon < 1 as libc::c_int || (*tm).tm_mon > 12 as libc::c_int {
             return -(3 as libc::c_int);
         }
     }
-	// minimal check for valid day
+    // minimal check for valid day
     if fmask.contains(RealFieldType::Day) {
         if (*tm).tm_mday < 1 as libc::c_int || (*tm).tm_mday > 31 as libc::c_int {
             return -(3 as libc::c_int);
@@ -5807,7 +5812,7 @@ unsafe extern "C" fn DecodeNumber(
     } else if *cp as libc::c_int != '\0' as i32 {
         return -(1 as libc::c_int);
     }
-	/* Special case for day of year */
+    /* Special case for day of year */
     if flen == 3 as libc::c_int
         && fmask & *FIELD_MASK_DATE == FieldMask::from(RealFieldType::Year)
         && val >= 1 as libc::c_int
@@ -5815,10 +5820,10 @@ unsafe extern "C" fn DecodeNumber(
     {
         *tmask = RealFieldType::Doy | RealFieldType::Month | RealFieldType::Day;
         (*tm).tm_yday = val;
-		// tm_mon and tm_mday can't actually be set yet ...
+        // tm_mon and tm_mday can't actually be set yet ...
         return 0 as libc::c_int;
     }
-	// Switch based on what we have so far
+    // Switch based on what we have so far
     match *(fmask & *FIELD_MASK_DATE) {
         0 => {
             if flen >= 3 as libc::c_int || DateOrder == 0 as libc::c_int {
@@ -5833,7 +5838,7 @@ unsafe extern "C" fn DecodeNumber(
             }
         }
         4 => {
-			// Must be at second field of YY-MM-DD
+            // Must be at second field of YY-MM-DD
             *tmask = FieldMask::from(RealFieldType::Month);
             (*tm).tm_mon = val;
         }
@@ -5853,9 +5858,9 @@ unsafe extern "C" fn DecodeNumber(
         }
         6 => {
             if haveTextMonth != 0 {
-				// Need to accept DD-MON-YYYY even in YMD mode
+                // Need to accept DD-MON-YYYY even in YMD mode
                 if flen >= 3 as libc::c_int && *is2digits as libc::c_int != 0 {
-					// Guess that first numeric field is day was wrong
+                    // Guess that first numeric field is day was wrong
                     // YEAR is already set
                     *tmask = FieldMask::from(RealFieldType::Day);
                     (*tm).tm_mday = (*tm).tm_year;
@@ -5866,13 +5871,13 @@ unsafe extern "C" fn DecodeNumber(
                     (*tm).tm_mday = val;
                 }
             } else {
-				// Must be at third field of YY-MM-DD
+                // Must be at third field of YY-MM-DD
                 *tmask = FieldMask::from(RealFieldType::Day);
                 (*tm).tm_mday = val;
             }
         }
         8 => {
-			// Must be at second field of DD-MM-YY
+            // Must be at second field of DD-MM-YY
             *tmask = FieldMask::from(RealFieldType::Month);
             (*tm).tm_mon = val;
         }
@@ -5889,7 +5894,7 @@ unsafe extern "C" fn DecodeNumber(
         }
         _ => return -(1 as libc::c_int),
     }
-	// When processing a year field, mark it for adjustment if it's only one or two digits.
+    // When processing a year field, mark it for adjustment if it's only one or two digits.
     if *tmask == FieldMask::from(RealFieldType::Year) {
         *is2digits = (flen <= 2 as libc::c_int) as libc::c_int as bool_0;
     }
@@ -5916,7 +5921,7 @@ unsafe extern "C" fn DecodeNumberField(
         *fsec = rint(frac * 1000000 as libc::c_int as libc::c_double) as fsec_t;
         *cp = '\0' as i32 as libc::c_char;
         len = strlen(str) as libc::c_int;
-	// No decimal point and no complete date yet?
+    // No decimal point and no complete date yet?
     } else if !fmask.contains(*FIELD_MASK_DATE) {
         if len >= 6 as libc::c_int {
             *tmask = *FIELD_MASK_DATE;
@@ -5932,7 +5937,7 @@ unsafe extern "C" fn DecodeNumberField(
         }
     }
     if !fmask.contains(*FIELD_MASK_TIME) {
-		// hhmmss
+        // hhmmss
         if len == 6 as libc::c_int {
             *tmask = *FIELD_MASK_TIME;
             (*tm).tm_sec = atoi(str.offset(4 as libc::c_int as isize));
