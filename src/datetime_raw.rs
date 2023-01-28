@@ -324,22 +324,22 @@ fn timestamp2tm(
 
 extern "C" {
     #![allow(improper_ctypes)]
-    pub type AttrMissing;
-    pub type PartitionDirectoryData;
-    pub type RelationData;
-    pub type ParseState;
-    pub type JitInstrumentation;
-    pub type JitContext;
-    pub type dsa_area;
-    pub type QueryEnvironment;
-    pub type CopyMultiInsertBuffer;
-    pub type FdwRoutine;
-    pub type GlobalVisState;
-    pub type SharedJitInstrumentation;
-    pub type ExprEvalStep;
-    pub type Tuplestorestate;
-    pub type pg_tz;
-    pub type pg_tzenum;
+    type AttrMissing;
+    type PartitionDirectoryData;
+    type RelationData;
+    type ParseState;
+    type JitInstrumentation;
+    type JitContext;
+    type dsa_area;
+    type QueryEnvironment;
+    type CopyMultiInsertBuffer;
+    type FdwRoutine;
+    type GlobalVisState;
+    type SharedJitInstrumentation;
+    type ExprEvalStep;
+    type Tuplestorestate;
+    type pg_tz;
+    type pg_tzenum;
     fn errmsg_internal(fmt: *const libc::c_char, _: ...) -> libc::c_int;
     fn errhint(fmt: *const libc::c_char, _: ...) -> libc::c_int;
     fn atoi(__nptr: *const libc::c_char) -> libc::c_int;
@@ -417,91 +417,91 @@ extern "C" {
     fn tm2interval(tm: *mut pg_tm, fsec: fsec_t, span: *mut Interval) -> libc::c_int;
 }
 
-pub type Oid = libc::c_uint;
-pub type size_t = libc::c_ulong;
-pub type __time_t = libc::c_long;
-pub type __syscall_slong_t = libc::c_long;
+type Oid = libc::c_uint;
+type size_t = libc::c_ulong;
+type __time_t = libc::c_long;
+type __syscall_slong_t = libc::c_long;
 #[derive(Copy, Clone)]
 #[repr(C)]
-pub struct timespec {
-    pub tv_sec: __time_t,
-    pub tv_nsec: __syscall_slong_t,
+struct timespec {
+    tv_sec: __time_t,
+    tv_nsec: __syscall_slong_t,
 }
-pub type uintptr_t = libc::c_ulong;
-pub type int16 = libc::c_short;
-pub type int32 = libc::c_int;
-pub type uint8 = libc::c_uchar;
-pub type uint16 = libc::c_ushort;
-pub type uint32 = libc::c_uint;
-pub type bits8 = uint8;
-pub type int64 = libc::c_long;
-pub type uint64 = libc::c_ulong;
-pub type Size = size_t;
-pub type Index = libc::c_uint;
-pub type TransactionId = uint32;
-pub type CommandId = uint32;
+type uintptr_t = libc::c_ulong;
+type int16 = libc::c_short;
+type int32 = libc::c_int;
+type uint8 = libc::c_uchar;
+type uint16 = libc::c_ushort;
+type uint32 = libc::c_uint;
+type bits8 = uint8;
+type int64 = libc::c_long;
+type uint64 = libc::c_ulong;
+type Size = size_t;
+type Index = libc::c_uint;
+type TransactionId = uint32;
+type CommandId = uint32;
 #[derive(Copy, Clone)]
 #[repr(C)]
-pub struct varlena {
-    pub vl_len_: [libc::c_char; 4],
-    pub vl_dat: [libc::c_char; 0],
+struct varlena {
+    vl_len_: [libc::c_char; 4],
+    vl_dat: [libc::c_char; 0],
 }
-pub type text = varlena;
+type text = varlena;
 #[derive(Copy, Clone)]
 #[repr(C)]
-pub struct nameData {
-    pub data: [libc::c_char; 64],
+struct nameData {
+    data: [libc::c_char; 64],
 }
-pub type NameData = nameData;
-pub type C2RustUnnamed = libc::c_uint;
-pub const _ISalnum: C2RustUnnamed = 8;
-pub const _ISpunct: C2RustUnnamed = 4;
-pub const _IScntrl: C2RustUnnamed = 2;
-pub const _ISblank: C2RustUnnamed = 1;
-pub const _ISgraph: C2RustUnnamed = 32768;
-pub const _ISprint: C2RustUnnamed = 16384;
-pub const _ISspace: C2RustUnnamed = 8192;
-pub const _ISxdigit: C2RustUnnamed = 4096;
-pub const _ISdigit: C2RustUnnamed = 2048;
-pub const _ISalpha: C2RustUnnamed = 1024;
-pub const _ISlower: C2RustUnnamed = 512;
-pub const _ISupper: C2RustUnnamed = 256;
+type NameData = nameData;
+type C2RustUnnamed = libc::c_uint;
+const _ISalnum: C2RustUnnamed = 8;
+const _ISpunct: C2RustUnnamed = 4;
+const _IScntrl: C2RustUnnamed = 2;
+const _ISblank: C2RustUnnamed = 1;
+const _ISgraph: C2RustUnnamed = 32768;
+const _ISprint: C2RustUnnamed = 16384;
+const _ISspace: C2RustUnnamed = 8192;
+const _ISxdigit: C2RustUnnamed = 4096;
+const _ISdigit: C2RustUnnamed = 2048;
+const _ISalpha: C2RustUnnamed = 1024;
+const _ISlower: C2RustUnnamed = 512;
+const _ISupper: C2RustUnnamed = 256;
 #[derive(Copy, Clone)]
 #[repr(C)]
-pub struct MemoryContextData {
-    pub type_0: NodeTag,
-    pub isReset: bool,
-    pub allowInCritSection: bool,
-    pub mem_allocated: Size,
-    pub methods: *const MemoryContextMethods,
-    pub parent: MemoryContext,
-    pub firstchild: MemoryContext,
-    pub prevchild: MemoryContext,
-    pub nextchild: MemoryContext,
-    pub name: *const libc::c_char,
-    pub ident: *const libc::c_char,
-    pub reset_cbs: *mut MemoryContextCallback,
+struct MemoryContextData {
+    type_0: NodeTag,
+    isReset: bool,
+    allowInCritSection: bool,
+    mem_allocated: Size,
+    methods: *const MemoryContextMethods,
+    parent: MemoryContext,
+    firstchild: MemoryContext,
+    prevchild: MemoryContext,
+    nextchild: MemoryContext,
+    name: *const libc::c_char,
+    ident: *const libc::c_char,
+    reset_cbs: *mut MemoryContextCallback,
 }
 #[derive(Copy, Clone)]
 #[repr(C)]
-pub struct MemoryContextCallback {
-    pub func: MemoryContextCallbackFunction,
-    pub arg: *mut libc::c_void,
-    pub next: *mut MemoryContextCallback,
+struct MemoryContextCallback {
+    func: MemoryContextCallbackFunction,
+    arg: *mut libc::c_void,
+    next: *mut MemoryContextCallback,
 }
-pub type MemoryContextCallbackFunction = Option<unsafe fn(*mut libc::c_void) -> ()>;
-pub type MemoryContext = *mut MemoryContextData;
+type MemoryContextCallbackFunction = Option<unsafe fn(*mut libc::c_void) -> ()>;
+type MemoryContext = *mut MemoryContextData;
 #[derive(Copy, Clone)]
 #[repr(C)]
-pub struct MemoryContextMethods {
-    pub alloc: Option<unsafe fn(MemoryContext, Size) -> *mut libc::c_void>,
-    pub free_p: Option<unsafe fn(MemoryContext, *mut libc::c_void) -> ()>,
-    pub realloc: Option<unsafe fn(MemoryContext, *mut libc::c_void, Size) -> *mut libc::c_void>,
-    pub reset: Option<unsafe fn(MemoryContext) -> ()>,
-    pub delete_context: Option<unsafe fn(MemoryContext) -> ()>,
-    pub get_chunk_space: Option<unsafe fn(MemoryContext, *mut libc::c_void) -> Size>,
-    pub is_empty: Option<unsafe fn(MemoryContext) -> bool>,
-    pub stats: Option<
+struct MemoryContextMethods {
+    alloc: Option<unsafe fn(MemoryContext, Size) -> *mut libc::c_void>,
+    free_p: Option<unsafe fn(MemoryContext, *mut libc::c_void) -> ()>,
+    realloc: Option<unsafe fn(MemoryContext, *mut libc::c_void, Size) -> *mut libc::c_void>,
+    reset: Option<unsafe fn(MemoryContext) -> ()>,
+    delete_context: Option<unsafe fn(MemoryContext) -> ()>,
+    get_chunk_space: Option<unsafe fn(MemoryContext, *mut libc::c_void) -> Size>,
+    is_empty: Option<unsafe fn(MemoryContext) -> bool>,
+    stats: Option<
         unsafe fn(
             MemoryContext,
             MemoryStatsPrintFunc,
@@ -513,1321 +513,1320 @@ pub struct MemoryContextMethods {
 }
 #[derive(Copy, Clone)]
 #[repr(C)]
-pub struct MemoryContextCounters {
-    pub nblocks: Size,
-    pub freechunks: Size,
-    pub totalspace: Size,
-    pub freespace: Size,
+struct MemoryContextCounters {
+    nblocks: Size,
+    freechunks: Size,
+    totalspace: Size,
+    freespace: Size,
 }
-pub type MemoryStatsPrintFunc =
+type MemoryStatsPrintFunc =
     Option<unsafe fn(MemoryContext, *mut libc::c_void, *const libc::c_char, bool) -> ()>;
-pub type NodeTag = libc::c_uint;
-pub const T_SupportRequestIndexCondition: NodeTag = 430;
-pub const T_SupportRequestRows: NodeTag = 429;
-pub const T_SupportRequestCost: NodeTag = 428;
-pub const T_SupportRequestSelectivity: NodeTag = 427;
-pub const T_SupportRequestSimplify: NodeTag = 426;
-pub const T_CallContext: NodeTag = 425;
-pub const T_ForeignKeyCacheInfo: NodeTag = 424;
-pub const T_TsmRoutine: NodeTag = 423;
-pub const T_TableAmRoutine: NodeTag = 422;
-pub const T_IndexAmRoutine: NodeTag = 421;
-pub const T_FdwRoutine: NodeTag = 420;
-pub const T_InlineCodeBlock: NodeTag = 419;
-pub const T_TIDBitmap: NodeTag = 418;
-pub const T_WindowObjectData: NodeTag = 417;
-pub const T_ReturnSetInfo: NodeTag = 416;
-pub const T_EventTriggerData: NodeTag = 415;
-pub const T_TriggerData: NodeTag = 414;
-pub const T_TimeLineHistoryCmd: NodeTag = 413;
-pub const T_StartReplicationCmd: NodeTag = 412;
-pub const T_ReadReplicationSlotCmd: NodeTag = 411;
-pub const T_DropReplicationSlotCmd: NodeTag = 410;
-pub const T_CreateReplicationSlotCmd: NodeTag = 409;
-pub const T_BaseBackupCmd: NodeTag = 408;
-pub const T_IdentifySystemCmd: NodeTag = 407;
-pub const T_PublicationTable: NodeTag = 406;
-pub const T_PublicationObjSpec: NodeTag = 405;
-pub const T_VacuumRelation: NodeTag = 404;
-pub const T_PartitionCmd: NodeTag = 403;
-pub const T_PartitionRangeDatum: NodeTag = 402;
-pub const T_PartitionBoundSpec: NodeTag = 401;
-pub const T_PartitionSpec: NodeTag = 400;
-pub const T_PartitionElem: NodeTag = 399;
-pub const T_TriggerTransition: NodeTag = 398;
-pub const T_RoleSpec: NodeTag = 397;
-pub const T_CommonTableExpr: NodeTag = 396;
-pub const T_CTECycleClause: NodeTag = 395;
-pub const T_CTESearchClause: NodeTag = 394;
-pub const T_OnConflictClause: NodeTag = 393;
-pub const T_InferClause: NodeTag = 392;
-pub const T_WithClause: NodeTag = 391;
-pub const T_XmlSerialize: NodeTag = 390;
-pub const T_RowMarkClause: NodeTag = 389;
-pub const T_LockingClause: NodeTag = 388;
-pub const T_FunctionParameter: NodeTag = 387;
-pub const T_TableLikeClause: NodeTag = 386;
-pub const T_CreateOpClassItem: NodeTag = 385;
-pub const T_AccessPriv: NodeTag = 384;
-pub const T_ObjectWithArgs: NodeTag = 383;
-pub const T_WindowClause: NodeTag = 382;
-pub const T_GroupingSet: NodeTag = 381;
-pub const T_SortGroupClause: NodeTag = 380;
-pub const T_WithCheckOption: NodeTag = 379;
-pub const T_TableSampleClause: NodeTag = 378;
-pub const T_RangeTblFunction: NodeTag = 377;
-pub const T_RangeTblEntry: NodeTag = 376;
-pub const T_DefElem: NodeTag = 375;
-pub const T_Constraint: NodeTag = 374;
-pub const T_StatsElem: NodeTag = 373;
-pub const T_IndexElem: NodeTag = 372;
-pub const T_ColumnDef: NodeTag = 371;
-pub const T_TypeName: NodeTag = 370;
-pub const T_RangeTableFuncCol: NodeTag = 369;
-pub const T_RangeTableFunc: NodeTag = 368;
-pub const T_RangeTableSample: NodeTag = 367;
-pub const T_RangeFunction: NodeTag = 366;
-pub const T_RangeSubselect: NodeTag = 365;
-pub const T_WindowDef: NodeTag = 364;
-pub const T_SortBy: NodeTag = 363;
-pub const T_CollateClause: NodeTag = 362;
-pub const T_TypeCast: NodeTag = 361;
-pub const T_MultiAssignRef: NodeTag = 360;
-pub const T_ResTarget: NodeTag = 359;
-pub const T_A_ArrayExpr: NodeTag = 358;
-pub const T_A_Indirection: NodeTag = 357;
-pub const T_A_Indices: NodeTag = 356;
-pub const T_A_Star: NodeTag = 355;
-pub const T_FuncCall: NodeTag = 354;
-pub const T_A_Const: NodeTag = 353;
-pub const T_ParamRef: NodeTag = 352;
-pub const T_ColumnRef: NodeTag = 351;
-pub const T_A_Expr: NodeTag = 350;
-pub const T_AlterStatsStmt: NodeTag = 349;
-pub const T_CallStmt: NodeTag = 348;
-pub const T_AlterCollationStmt: NodeTag = 347;
-pub const T_CreateStatsStmt: NodeTag = 346;
-pub const T_DropSubscriptionStmt: NodeTag = 345;
-pub const T_AlterSubscriptionStmt: NodeTag = 344;
-pub const T_CreateSubscriptionStmt: NodeTag = 343;
-pub const T_AlterPublicationStmt: NodeTag = 342;
-pub const T_CreatePublicationStmt: NodeTag = 341;
-pub const T_CreateAmStmt: NodeTag = 340;
-pub const T_CreateTransformStmt: NodeTag = 339;
-pub const T_AlterPolicyStmt: NodeTag = 338;
-pub const T_CreatePolicyStmt: NodeTag = 337;
-pub const T_AlterSystemStmt: NodeTag = 336;
-pub const T_ReplicaIdentityStmt: NodeTag = 335;
-pub const T_RefreshMatViewStmt: NodeTag = 334;
-pub const T_AlterEventTrigStmt: NodeTag = 333;
-pub const T_CreateEventTrigStmt: NodeTag = 332;
-pub const T_AlterExtensionContentsStmt: NodeTag = 331;
-pub const T_AlterExtensionStmt: NodeTag = 330;
-pub const T_CreateExtensionStmt: NodeTag = 329;
-pub const T_ImportForeignSchemaStmt: NodeTag = 328;
-pub const T_CreateForeignTableStmt: NodeTag = 327;
-pub const T_SecLabelStmt: NodeTag = 326;
-pub const T_AlterTableMoveAllStmt: NodeTag = 325;
-pub const T_AlterTableSpaceOptionsStmt: NodeTag = 324;
-pub const T_DropUserMappingStmt: NodeTag = 323;
-pub const T_AlterUserMappingStmt: NodeTag = 322;
-pub const T_CreateUserMappingStmt: NodeTag = 321;
-pub const T_AlterForeignServerStmt: NodeTag = 320;
-pub const T_CreateForeignServerStmt: NodeTag = 319;
-pub const T_AlterFdwStmt: NodeTag = 318;
-pub const T_CreateFdwStmt: NodeTag = 317;
-pub const T_AlterTSConfigurationStmt: NodeTag = 316;
-pub const T_AlterTSDictionaryStmt: NodeTag = 315;
-pub const T_AlterEnumStmt: NodeTag = 314;
-pub const T_CreateRangeStmt: NodeTag = 313;
-pub const T_CreateEnumStmt: NodeTag = 312;
-pub const T_CompositeTypeStmt: NodeTag = 311;
-pub const T_ReassignOwnedStmt: NodeTag = 310;
-pub const T_DropOwnedStmt: NodeTag = 309;
-pub const T_AlterTypeStmt: NodeTag = 308;
-pub const T_AlterOperatorStmt: NodeTag = 307;
-pub const T_AlterOwnerStmt: NodeTag = 306;
-pub const T_AlterObjectSchemaStmt: NodeTag = 305;
-pub const T_AlterObjectDependsStmt: NodeTag = 304;
-pub const T_DropTableSpaceStmt: NodeTag = 303;
-pub const T_CreateTableSpaceStmt: NodeTag = 302;
-pub const T_DeclareCursorStmt: NodeTag = 301;
-pub const T_DeallocateStmt: NodeTag = 300;
-pub const T_ExecuteStmt: NodeTag = 299;
-pub const T_PrepareStmt: NodeTag = 298;
-pub const T_AlterOpFamilyStmt: NodeTag = 297;
-pub const T_CreateOpFamilyStmt: NodeTag = 296;
-pub const T_CreateOpClassStmt: NodeTag = 295;
-pub const T_CreateCastStmt: NodeTag = 294;
-pub const T_CreateConversionStmt: NodeTag = 293;
-pub const T_AlterRoleSetStmt: NodeTag = 292;
-pub const T_AlterDatabaseSetStmt: NodeTag = 291;
-pub const T_AlterDatabaseStmt: NodeTag = 290;
-pub const T_CreateSchemaStmt: NodeTag = 289;
-pub const T_CheckPointStmt: NodeTag = 288;
-pub const T_ReindexStmt: NodeTag = 287;
-pub const T_ConstraintsSetStmt: NodeTag = 286;
-pub const T_LockStmt: NodeTag = 285;
-pub const T_DropRoleStmt: NodeTag = 284;
-pub const T_AlterRoleStmt: NodeTag = 283;
-pub const T_CreateRoleStmt: NodeTag = 282;
-pub const T_CreatePLangStmt: NodeTag = 281;
-pub const T_CreateTrigStmt: NodeTag = 280;
-pub const T_DiscardStmt: NodeTag = 279;
-pub const T_VariableShowStmt: NodeTag = 278;
-pub const T_VariableSetStmt: NodeTag = 277;
-pub const T_AlterSeqStmt: NodeTag = 276;
-pub const T_CreateSeqStmt: NodeTag = 275;
-pub const T_CreateTableAsStmt: NodeTag = 274;
-pub const T_ExplainStmt: NodeTag = 273;
-pub const T_VacuumStmt: NodeTag = 272;
-pub const T_DropdbStmt: NodeTag = 271;
-pub const T_CreatedbStmt: NodeTag = 270;
-pub const T_CreateDomainStmt: NodeTag = 269;
-pub const T_LoadStmt: NodeTag = 268;
-pub const T_ViewStmt: NodeTag = 267;
-pub const T_TransactionStmt: NodeTag = 266;
-pub const T_UnlistenStmt: NodeTag = 265;
-pub const T_ListenStmt: NodeTag = 264;
-pub const T_NotifyStmt: NodeTag = 263;
-pub const T_RuleStmt: NodeTag = 262;
-pub const T_RenameStmt: NodeTag = 261;
-pub const T_DoStmt: NodeTag = 260;
-pub const T_AlterFunctionStmt: NodeTag = 259;
-pub const T_CreateFunctionStmt: NodeTag = 258;
-pub const T_IndexStmt: NodeTag = 257;
-pub const T_FetchStmt: NodeTag = 256;
-pub const T_CommentStmt: NodeTag = 255;
-pub const T_TruncateStmt: NodeTag = 254;
-pub const T_DropStmt: NodeTag = 253;
-pub const T_DefineStmt: NodeTag = 252;
-pub const T_CreateStmt: NodeTag = 251;
-pub const T_CopyStmt: NodeTag = 250;
-pub const T_ClusterStmt: NodeTag = 249;
-pub const T_ClosePortalStmt: NodeTag = 248;
-pub const T_AlterDefaultPrivilegesStmt: NodeTag = 247;
-pub const T_GrantRoleStmt: NodeTag = 246;
-pub const T_GrantStmt: NodeTag = 245;
-pub const T_SetOperationStmt: NodeTag = 244;
-pub const T_AlterDomainStmt: NodeTag = 243;
-pub const T_AlterTableCmd: NodeTag = 242;
-pub const T_AlterTableStmt: NodeTag = 241;
-pub const T_PLAssignStmt: NodeTag = 240;
-pub const T_ReturnStmt: NodeTag = 239;
-pub const T_SelectStmt: NodeTag = 238;
-pub const T_UpdateStmt: NodeTag = 237;
-pub const T_DeleteStmt: NodeTag = 236;
-pub const T_InsertStmt: NodeTag = 235;
-pub const T_PlannedStmt: NodeTag = 234;
-pub const T_Query: NodeTag = 233;
-pub const T_RawStmt: NodeTag = 232;
-pub const T_ExtensibleNode: NodeTag = 231;
-pub const T_OidList: NodeTag = 230;
-pub const T_IntList: NodeTag = 229;
-pub const T_List: NodeTag = 228;
-pub const T_BitString: NodeTag = 227;
-pub const T_String: NodeTag = 226;
-pub const T_Boolean: NodeTag = 225;
-pub const T_Float: NodeTag = 224;
-pub const T_Integer: NodeTag = 223;
-pub const T_GenerationContext: NodeTag = 222;
-pub const T_SlabContext: NodeTag = 221;
-pub const T_AllocSetContext: NodeTag = 220;
-pub const T_StatisticExtInfo: NodeTag = 219;
-pub const T_GroupingSetData: NodeTag = 218;
-pub const T_RollupData: NodeTag = 217;
-pub const T_PlannerParamItem: NodeTag = 216;
-pub const T_MinMaxAggInfo: NodeTag = 215;
-pub const T_PlaceHolderInfo: NodeTag = 214;
-pub const T_RowIdentityVarInfo: NodeTag = 213;
-pub const T_AppendRelInfo: NodeTag = 212;
-pub const T_SpecialJoinInfo: NodeTag = 211;
-pub const T_PlaceHolderVar: NodeTag = 210;
-pub const T_IndexClause: NodeTag = 209;
-pub const T_RestrictInfo: NodeTag = 208;
-pub const T_PathTarget: NodeTag = 207;
-pub const T_PathKey: NodeTag = 206;
-pub const T_EquivalenceMember: NodeTag = 205;
-pub const T_EquivalenceClass: NodeTag = 204;
-pub const T_LimitPath: NodeTag = 203;
-pub const T_ModifyTablePath: NodeTag = 202;
-pub const T_LockRowsPath: NodeTag = 201;
-pub const T_RecursiveUnionPath: NodeTag = 200;
-pub const T_SetOpPath: NodeTag = 199;
-pub const T_WindowAggPath: NodeTag = 198;
-pub const T_MinMaxAggPath: NodeTag = 197;
-pub const T_GroupingSetsPath: NodeTag = 196;
-pub const T_AggPath: NodeTag = 195;
-pub const T_UpperUniquePath: NodeTag = 194;
-pub const T_GroupPath: NodeTag = 193;
-pub const T_IncrementalSortPath: NodeTag = 192;
-pub const T_SortPath: NodeTag = 191;
-pub const T_ProjectSetPath: NodeTag = 190;
-pub const T_ProjectionPath: NodeTag = 189;
-pub const T_GatherMergePath: NodeTag = 188;
-pub const T_GatherPath: NodeTag = 187;
-pub const T_UniquePath: NodeTag = 186;
-pub const T_MemoizePath: NodeTag = 185;
-pub const T_MaterialPath: NodeTag = 184;
-pub const T_GroupResultPath: NodeTag = 183;
-pub const T_MergeAppendPath: NodeTag = 182;
-pub const T_AppendPath: NodeTag = 181;
-pub const T_HashPath: NodeTag = 180;
-pub const T_MergePath: NodeTag = 179;
-pub const T_NestPath: NodeTag = 178;
-pub const T_CustomPath: NodeTag = 177;
-pub const T_ForeignPath: NodeTag = 176;
-pub const T_SubqueryScanPath: NodeTag = 175;
-pub const T_TidRangePath: NodeTag = 174;
-pub const T_TidPath: NodeTag = 173;
-pub const T_BitmapOrPath: NodeTag = 172;
-pub const T_BitmapAndPath: NodeTag = 171;
-pub const T_BitmapHeapPath: NodeTag = 170;
-pub const T_IndexPath: NodeTag = 169;
-pub const T_Path: NodeTag = 168;
-pub const T_ParamPathInfo: NodeTag = 167;
-pub const T_ForeignKeyOptInfo: NodeTag = 166;
-pub const T_IndexOptInfo: NodeTag = 165;
-pub const T_RelOptInfo: NodeTag = 164;
-pub const T_PlannerGlobal: NodeTag = 163;
-pub const T_PlannerInfo: NodeTag = 162;
-pub const T_DomainConstraintState: NodeTag = 161;
-pub const T_SubPlanState: NodeTag = 160;
-pub const T_SetExprState: NodeTag = 159;
-pub const T_WindowFuncExprState: NodeTag = 158;
-pub const T_ExprState: NodeTag = 157;
-pub const T_IntoClause: NodeTag = 156;
-pub const T_OnConflictExpr: NodeTag = 155;
-pub const T_FromExpr: NodeTag = 154;
-pub const T_JoinExpr: NodeTag = 153;
-pub const T_RangeTblRef: NodeTag = 152;
-pub const T_TargetEntry: NodeTag = 151;
-pub const T_InferenceElem: NodeTag = 150;
-pub const T_NextValueExpr: NodeTag = 149;
-pub const T_CurrentOfExpr: NodeTag = 148;
-pub const T_SetToDefault: NodeTag = 147;
-pub const T_CoerceToDomainValue: NodeTag = 146;
-pub const T_CoerceToDomain: NodeTag = 145;
-pub const T_BooleanTest: NodeTag = 144;
-pub const T_NullTest: NodeTag = 143;
-pub const T_XmlExpr: NodeTag = 142;
-pub const T_SQLValueFunction: NodeTag = 141;
-pub const T_MinMaxExpr: NodeTag = 140;
-pub const T_CoalesceExpr: NodeTag = 139;
-pub const T_RowCompareExpr: NodeTag = 138;
-pub const T_RowExpr: NodeTag = 137;
-pub const T_ArrayExpr: NodeTag = 136;
-pub const T_CaseTestExpr: NodeTag = 135;
-pub const T_CaseWhen: NodeTag = 134;
-pub const T_CaseExpr: NodeTag = 133;
-pub const T_CollateExpr: NodeTag = 132;
-pub const T_ConvertRowtypeExpr: NodeTag = 131;
-pub const T_ArrayCoerceExpr: NodeTag = 130;
-pub const T_CoerceViaIO: NodeTag = 129;
-pub const T_RelabelType: NodeTag = 128;
-pub const T_FieldStore: NodeTag = 127;
-pub const T_FieldSelect: NodeTag = 126;
-pub const T_AlternativeSubPlan: NodeTag = 125;
-pub const T_SubPlan: NodeTag = 124;
-pub const T_SubLink: NodeTag = 123;
-pub const T_BoolExpr: NodeTag = 122;
-pub const T_ScalarArrayOpExpr: NodeTag = 121;
-pub const T_NullIfExpr: NodeTag = 120;
-pub const T_DistinctExpr: NodeTag = 119;
-pub const T_OpExpr: NodeTag = 118;
-pub const T_NamedArgExpr: NodeTag = 117;
-pub const T_FuncExpr: NodeTag = 116;
-pub const T_SubscriptingRef: NodeTag = 115;
-pub const T_WindowFunc: NodeTag = 114;
-pub const T_GroupingFunc: NodeTag = 113;
-pub const T_Aggref: NodeTag = 112;
-pub const T_Param: NodeTag = 111;
-pub const T_Const: NodeTag = 110;
-pub const T_Var: NodeTag = 109;
-pub const T_TableFunc: NodeTag = 108;
-pub const T_RangeVar: NodeTag = 107;
-pub const T_Alias: NodeTag = 106;
-pub const T_LimitState: NodeTag = 105;
-pub const T_LockRowsState: NodeTag = 104;
-pub const T_SetOpState: NodeTag = 103;
-pub const T_HashState: NodeTag = 102;
-pub const T_GatherMergeState: NodeTag = 101;
-pub const T_GatherState: NodeTag = 100;
-pub const T_UniqueState: NodeTag = 99;
-pub const T_WindowAggState: NodeTag = 98;
-pub const T_AggState: NodeTag = 97;
-pub const T_GroupState: NodeTag = 96;
-pub const T_IncrementalSortState: NodeTag = 95;
-pub const T_SortState: NodeTag = 94;
-pub const T_MemoizeState: NodeTag = 93;
-pub const T_MaterialState: NodeTag = 92;
-pub const T_HashJoinState: NodeTag = 91;
-pub const T_MergeJoinState: NodeTag = 90;
-pub const T_NestLoopState: NodeTag = 89;
-pub const T_JoinState: NodeTag = 88;
-pub const T_CustomScanState: NodeTag = 87;
-pub const T_ForeignScanState: NodeTag = 86;
-pub const T_WorkTableScanState: NodeTag = 85;
-pub const T_NamedTuplestoreScanState: NodeTag = 84;
-pub const T_CteScanState: NodeTag = 83;
-pub const T_ValuesScanState: NodeTag = 82;
-pub const T_TableFuncScanState: NodeTag = 81;
-pub const T_FunctionScanState: NodeTag = 80;
-pub const T_SubqueryScanState: NodeTag = 79;
-pub const T_TidRangeScanState: NodeTag = 78;
-pub const T_TidScanState: NodeTag = 77;
-pub const T_BitmapHeapScanState: NodeTag = 76;
-pub const T_BitmapIndexScanState: NodeTag = 75;
-pub const T_IndexOnlyScanState: NodeTag = 74;
-pub const T_IndexScanState: NodeTag = 73;
-pub const T_SampleScanState: NodeTag = 72;
-pub const T_SeqScanState: NodeTag = 71;
-pub const T_ScanState: NodeTag = 70;
-pub const T_BitmapOrState: NodeTag = 69;
-pub const T_BitmapAndState: NodeTag = 68;
-pub const T_RecursiveUnionState: NodeTag = 67;
-pub const T_MergeAppendState: NodeTag = 66;
-pub const T_AppendState: NodeTag = 65;
-pub const T_ModifyTableState: NodeTag = 64;
-pub const T_ProjectSetState: NodeTag = 63;
-pub const T_ResultState: NodeTag = 62;
-pub const T_PlanState: NodeTag = 61;
-pub const T_PlanInvalItem: NodeTag = 60;
-pub const T_PartitionPruneStepCombine: NodeTag = 59;
-pub const T_PartitionPruneStepOp: NodeTag = 58;
-pub const T_PartitionedRelPruneInfo: NodeTag = 57;
-pub const T_PartitionPruneInfo: NodeTag = 56;
-pub const T_PlanRowMark: NodeTag = 55;
-pub const T_NestLoopParam: NodeTag = 54;
-pub const T_Limit: NodeTag = 53;
-pub const T_LockRows: NodeTag = 52;
-pub const T_SetOp: NodeTag = 51;
-pub const T_Hash: NodeTag = 50;
-pub const T_GatherMerge: NodeTag = 49;
-pub const T_Gather: NodeTag = 48;
-pub const T_Unique: NodeTag = 47;
-pub const T_WindowAgg: NodeTag = 46;
-pub const T_Agg: NodeTag = 45;
-pub const T_Group: NodeTag = 44;
-pub const T_IncrementalSort: NodeTag = 43;
-pub const T_Sort: NodeTag = 42;
-pub const T_Memoize: NodeTag = 41;
-pub const T_Material: NodeTag = 40;
-pub const T_HashJoin: NodeTag = 39;
-pub const T_MergeJoin: NodeTag = 38;
-pub const T_NestLoop: NodeTag = 37;
-pub const T_Join: NodeTag = 36;
-pub const T_CustomScan: NodeTag = 35;
-pub const T_ForeignScan: NodeTag = 34;
-pub const T_WorkTableScan: NodeTag = 33;
-pub const T_NamedTuplestoreScan: NodeTag = 32;
-pub const T_CteScan: NodeTag = 31;
-pub const T_TableFuncScan: NodeTag = 30;
-pub const T_ValuesScan: NodeTag = 29;
-pub const T_FunctionScan: NodeTag = 28;
-pub const T_SubqueryScan: NodeTag = 27;
-pub const T_TidRangeScan: NodeTag = 26;
-pub const T_TidScan: NodeTag = 25;
-pub const T_BitmapHeapScan: NodeTag = 24;
-pub const T_BitmapIndexScan: NodeTag = 23;
-pub const T_IndexOnlyScan: NodeTag = 22;
-pub const T_IndexScan: NodeTag = 21;
-pub const T_SampleScan: NodeTag = 20;
-pub const T_SeqScan: NodeTag = 19;
-pub const T_Scan: NodeTag = 18;
-pub const T_BitmapOr: NodeTag = 17;
-pub const T_BitmapAnd: NodeTag = 16;
-pub const T_RecursiveUnion: NodeTag = 15;
-pub const T_MergeAppend: NodeTag = 14;
-pub const T_Append: NodeTag = 13;
-pub const T_ModifyTable: NodeTag = 12;
-pub const T_ProjectSet: NodeTag = 11;
-pub const T_Result: NodeTag = 10;
-pub const T_Plan: NodeTag = 9;
-pub const T_TupleTableSlot: NodeTag = 8;
-pub const T_EState: NodeTag = 7;
-pub const T_ResultRelInfo: NodeTag = 6;
-pub const T_OnConflictSetState: NodeTag = 5;
-pub const T_JunkFilter: NodeTag = 4;
-pub const T_ProjectionInfo: NodeTag = 3;
-pub const T_ExprContext: NodeTag = 2;
-pub const T_IndexInfo: NodeTag = 1;
-pub const T_Invalid: NodeTag = 0;
-pub type Datum = uintptr_t;
+type NodeTag = libc::c_uint;
+const T_SupportRequestIndexCondition: NodeTag = 430;
+const T_SupportRequestRows: NodeTag = 429;
+const T_SupportRequestCost: NodeTag = 428;
+const T_SupportRequestSelectivity: NodeTag = 427;
+const T_SupportRequestSimplify: NodeTag = 426;
+const T_CallContext: NodeTag = 425;
+const T_ForeignKeyCacheInfo: NodeTag = 424;
+const T_TsmRoutine: NodeTag = 423;
+const T_TableAmRoutine: NodeTag = 422;
+const T_IndexAmRoutine: NodeTag = 421;
+const T_FdwRoutine: NodeTag = 420;
+const T_InlineCodeBlock: NodeTag = 419;
+const T_TIDBitmap: NodeTag = 418;
+const T_WindowObjectData: NodeTag = 417;
+const T_ReturnSetInfo: NodeTag = 416;
+const T_EventTriggerData: NodeTag = 415;
+const T_TriggerData: NodeTag = 414;
+const T_TimeLineHistoryCmd: NodeTag = 413;
+const T_StartReplicationCmd: NodeTag = 412;
+const T_ReadReplicationSlotCmd: NodeTag = 411;
+const T_DropReplicationSlotCmd: NodeTag = 410;
+const T_CreateReplicationSlotCmd: NodeTag = 409;
+const T_BaseBackupCmd: NodeTag = 408;
+const T_IdentifySystemCmd: NodeTag = 407;
+const T_PublicationTable: NodeTag = 406;
+const T_PublicationObjSpec: NodeTag = 405;
+const T_VacuumRelation: NodeTag = 404;
+const T_PartitionCmd: NodeTag = 403;
+const T_PartitionRangeDatum: NodeTag = 402;
+const T_PartitionBoundSpec: NodeTag = 401;
+const T_PartitionSpec: NodeTag = 400;
+const T_PartitionElem: NodeTag = 399;
+const T_TriggerTransition: NodeTag = 398;
+const T_RoleSpec: NodeTag = 397;
+const T_CommonTableExpr: NodeTag = 396;
+const T_CTECycleClause: NodeTag = 395;
+const T_CTESearchClause: NodeTag = 394;
+const T_OnConflictClause: NodeTag = 393;
+const T_InferClause: NodeTag = 392;
+const T_WithClause: NodeTag = 391;
+const T_XmlSerialize: NodeTag = 390;
+const T_RowMarkClause: NodeTag = 389;
+const T_LockingClause: NodeTag = 388;
+const T_FunctionParameter: NodeTag = 387;
+const T_TableLikeClause: NodeTag = 386;
+const T_CreateOpClassItem: NodeTag = 385;
+const T_AccessPriv: NodeTag = 384;
+const T_ObjectWithArgs: NodeTag = 383;
+const T_WindowClause: NodeTag = 382;
+const T_GroupingSet: NodeTag = 381;
+const T_SortGroupClause: NodeTag = 380;
+const T_WithCheckOption: NodeTag = 379;
+const T_TableSampleClause: NodeTag = 378;
+const T_RangeTblFunction: NodeTag = 377;
+const T_RangeTblEntry: NodeTag = 376;
+const T_DefElem: NodeTag = 375;
+const T_Constraint: NodeTag = 374;
+const T_StatsElem: NodeTag = 373;
+const T_IndexElem: NodeTag = 372;
+const T_ColumnDef: NodeTag = 371;
+const T_TypeName: NodeTag = 370;
+const T_RangeTableFuncCol: NodeTag = 369;
+const T_RangeTableFunc: NodeTag = 368;
+const T_RangeTableSample: NodeTag = 367;
+const T_RangeFunction: NodeTag = 366;
+const T_RangeSubselect: NodeTag = 365;
+const T_WindowDef: NodeTag = 364;
+const T_SortBy: NodeTag = 363;
+const T_CollateClause: NodeTag = 362;
+const T_TypeCast: NodeTag = 361;
+const T_MultiAssignRef: NodeTag = 360;
+const T_ResTarget: NodeTag = 359;
+const T_A_ArrayExpr: NodeTag = 358;
+const T_A_Indirection: NodeTag = 357;
+const T_A_Indices: NodeTag = 356;
+const T_A_Star: NodeTag = 355;
+const T_FuncCall: NodeTag = 354;
+const T_A_Const: NodeTag = 353;
+const T_ParamRef: NodeTag = 352;
+const T_ColumnRef: NodeTag = 351;
+const T_A_Expr: NodeTag = 350;
+const T_AlterStatsStmt: NodeTag = 349;
+const T_CallStmt: NodeTag = 348;
+const T_AlterCollationStmt: NodeTag = 347;
+const T_CreateStatsStmt: NodeTag = 346;
+const T_DropSubscriptionStmt: NodeTag = 345;
+const T_AlterSubscriptionStmt: NodeTag = 344;
+const T_CreateSubscriptionStmt: NodeTag = 343;
+const T_AlterPublicationStmt: NodeTag = 342;
+const T_CreatePublicationStmt: NodeTag = 341;
+const T_CreateAmStmt: NodeTag = 340;
+const T_CreateTransformStmt: NodeTag = 339;
+const T_AlterPolicyStmt: NodeTag = 338;
+const T_CreatePolicyStmt: NodeTag = 337;
+const T_AlterSystemStmt: NodeTag = 336;
+const T_ReplicaIdentityStmt: NodeTag = 335;
+const T_RefreshMatViewStmt: NodeTag = 334;
+const T_AlterEventTrigStmt: NodeTag = 333;
+const T_CreateEventTrigStmt: NodeTag = 332;
+const T_AlterExtensionContentsStmt: NodeTag = 331;
+const T_AlterExtensionStmt: NodeTag = 330;
+const T_CreateExtensionStmt: NodeTag = 329;
+const T_ImportForeignSchemaStmt: NodeTag = 328;
+const T_CreateForeignTableStmt: NodeTag = 327;
+const T_SecLabelStmt: NodeTag = 326;
+const T_AlterTableMoveAllStmt: NodeTag = 325;
+const T_AlterTableSpaceOptionsStmt: NodeTag = 324;
+const T_DropUserMappingStmt: NodeTag = 323;
+const T_AlterUserMappingStmt: NodeTag = 322;
+const T_CreateUserMappingStmt: NodeTag = 321;
+const T_AlterForeignServerStmt: NodeTag = 320;
+const T_CreateForeignServerStmt: NodeTag = 319;
+const T_AlterFdwStmt: NodeTag = 318;
+const T_CreateFdwStmt: NodeTag = 317;
+const T_AlterTSConfigurationStmt: NodeTag = 316;
+const T_AlterTSDictionaryStmt: NodeTag = 315;
+const T_AlterEnumStmt: NodeTag = 314;
+const T_CreateRangeStmt: NodeTag = 313;
+const T_CreateEnumStmt: NodeTag = 312;
+const T_CompositeTypeStmt: NodeTag = 311;
+const T_ReassignOwnedStmt: NodeTag = 310;
+const T_DropOwnedStmt: NodeTag = 309;
+const T_AlterTypeStmt: NodeTag = 308;
+const T_AlterOperatorStmt: NodeTag = 307;
+const T_AlterOwnerStmt: NodeTag = 306;
+const T_AlterObjectSchemaStmt: NodeTag = 305;
+const T_AlterObjectDependsStmt: NodeTag = 304;
+const T_DropTableSpaceStmt: NodeTag = 303;
+const T_CreateTableSpaceStmt: NodeTag = 302;
+const T_DeclareCursorStmt: NodeTag = 301;
+const T_DeallocateStmt: NodeTag = 300;
+const T_ExecuteStmt: NodeTag = 299;
+const T_PrepareStmt: NodeTag = 298;
+const T_AlterOpFamilyStmt: NodeTag = 297;
+const T_CreateOpFamilyStmt: NodeTag = 296;
+const T_CreateOpClassStmt: NodeTag = 295;
+const T_CreateCastStmt: NodeTag = 294;
+const T_CreateConversionStmt: NodeTag = 293;
+const T_AlterRoleSetStmt: NodeTag = 292;
+const T_AlterDatabaseSetStmt: NodeTag = 291;
+const T_AlterDatabaseStmt: NodeTag = 290;
+const T_CreateSchemaStmt: NodeTag = 289;
+const T_CheckPointStmt: NodeTag = 288;
+const T_ReindexStmt: NodeTag = 287;
+const T_ConstraintsSetStmt: NodeTag = 286;
+const T_LockStmt: NodeTag = 285;
+const T_DropRoleStmt: NodeTag = 284;
+const T_AlterRoleStmt: NodeTag = 283;
+const T_CreateRoleStmt: NodeTag = 282;
+const T_CreatePLangStmt: NodeTag = 281;
+const T_CreateTrigStmt: NodeTag = 280;
+const T_DiscardStmt: NodeTag = 279;
+const T_VariableShowStmt: NodeTag = 278;
+const T_VariableSetStmt: NodeTag = 277;
+const T_AlterSeqStmt: NodeTag = 276;
+const T_CreateSeqStmt: NodeTag = 275;
+const T_CreateTableAsStmt: NodeTag = 274;
+const T_ExplainStmt: NodeTag = 273;
+const T_VacuumStmt: NodeTag = 272;
+const T_DropdbStmt: NodeTag = 271;
+const T_CreatedbStmt: NodeTag = 270;
+const T_CreateDomainStmt: NodeTag = 269;
+const T_LoadStmt: NodeTag = 268;
+const T_ViewStmt: NodeTag = 267;
+const T_TransactionStmt: NodeTag = 266;
+const T_UnlistenStmt: NodeTag = 265;
+const T_ListenStmt: NodeTag = 264;
+const T_NotifyStmt: NodeTag = 263;
+const T_RuleStmt: NodeTag = 262;
+const T_RenameStmt: NodeTag = 261;
+const T_DoStmt: NodeTag = 260;
+const T_AlterFunctionStmt: NodeTag = 259;
+const T_CreateFunctionStmt: NodeTag = 258;
+const T_IndexStmt: NodeTag = 257;
+const T_FetchStmt: NodeTag = 256;
+const T_CommentStmt: NodeTag = 255;
+const T_TruncateStmt: NodeTag = 254;
+const T_DropStmt: NodeTag = 253;
+const T_DefineStmt: NodeTag = 252;
+const T_CreateStmt: NodeTag = 251;
+const T_CopyStmt: NodeTag = 250;
+const T_ClusterStmt: NodeTag = 249;
+const T_ClosePortalStmt: NodeTag = 248;
+const T_AlterDefaultPrivilegesStmt: NodeTag = 247;
+const T_GrantRoleStmt: NodeTag = 246;
+const T_GrantStmt: NodeTag = 245;
+const T_SetOperationStmt: NodeTag = 244;
+const T_AlterDomainStmt: NodeTag = 243;
+const T_AlterTableCmd: NodeTag = 242;
+const T_AlterTableStmt: NodeTag = 241;
+const T_PLAssignStmt: NodeTag = 240;
+const T_ReturnStmt: NodeTag = 239;
+const T_SelectStmt: NodeTag = 238;
+const T_UpdateStmt: NodeTag = 237;
+const T_DeleteStmt: NodeTag = 236;
+const T_InsertStmt: NodeTag = 235;
+const T_PlannedStmt: NodeTag = 234;
+const T_Query: NodeTag = 233;
+const T_RawStmt: NodeTag = 232;
+const T_ExtensibleNode: NodeTag = 231;
+const T_OidList: NodeTag = 230;
+const T_IntList: NodeTag = 229;
+const T_List: NodeTag = 228;
+const T_BitString: NodeTag = 227;
+const T_String: NodeTag = 226;
+const T_Boolean: NodeTag = 225;
+const T_Float: NodeTag = 224;
+const T_Integer: NodeTag = 223;
+const T_GenerationContext: NodeTag = 222;
+const T_SlabContext: NodeTag = 221;
+const T_AllocSetContext: NodeTag = 220;
+const T_StatisticExtInfo: NodeTag = 219;
+const T_GroupingSetData: NodeTag = 218;
+const T_RollupData: NodeTag = 217;
+const T_PlannerParamItem: NodeTag = 216;
+const T_MinMaxAggInfo: NodeTag = 215;
+const T_PlaceHolderInfo: NodeTag = 214;
+const T_RowIdentityVarInfo: NodeTag = 213;
+const T_AppendRelInfo: NodeTag = 212;
+const T_SpecialJoinInfo: NodeTag = 211;
+const T_PlaceHolderVar: NodeTag = 210;
+const T_IndexClause: NodeTag = 209;
+const T_RestrictInfo: NodeTag = 208;
+const T_PathTarget: NodeTag = 207;
+const T_PathKey: NodeTag = 206;
+const T_EquivalenceMember: NodeTag = 205;
+const T_EquivalenceClass: NodeTag = 204;
+const T_LimitPath: NodeTag = 203;
+const T_ModifyTablePath: NodeTag = 202;
+const T_LockRowsPath: NodeTag = 201;
+const T_RecursiveUnionPath: NodeTag = 200;
+const T_SetOpPath: NodeTag = 199;
+const T_WindowAggPath: NodeTag = 198;
+const T_MinMaxAggPath: NodeTag = 197;
+const T_GroupingSetsPath: NodeTag = 196;
+const T_AggPath: NodeTag = 195;
+const T_UpperUniquePath: NodeTag = 194;
+const T_GroupPath: NodeTag = 193;
+const T_IncrementalSortPath: NodeTag = 192;
+const T_SortPath: NodeTag = 191;
+const T_ProjectSetPath: NodeTag = 190;
+const T_ProjectionPath: NodeTag = 189;
+const T_GatherMergePath: NodeTag = 188;
+const T_GatherPath: NodeTag = 187;
+const T_UniquePath: NodeTag = 186;
+const T_MemoizePath: NodeTag = 185;
+const T_MaterialPath: NodeTag = 184;
+const T_GroupResultPath: NodeTag = 183;
+const T_MergeAppendPath: NodeTag = 182;
+const T_AppendPath: NodeTag = 181;
+const T_HashPath: NodeTag = 180;
+const T_MergePath: NodeTag = 179;
+const T_NestPath: NodeTag = 178;
+const T_CustomPath: NodeTag = 177;
+const T_ForeignPath: NodeTag = 176;
+const T_SubqueryScanPath: NodeTag = 175;
+const T_TidRangePath: NodeTag = 174;
+const T_TidPath: NodeTag = 173;
+const T_BitmapOrPath: NodeTag = 172;
+const T_BitmapAndPath: NodeTag = 171;
+const T_BitmapHeapPath: NodeTag = 170;
+const T_IndexPath: NodeTag = 169;
+const T_Path: NodeTag = 168;
+const T_ParamPathInfo: NodeTag = 167;
+const T_ForeignKeyOptInfo: NodeTag = 166;
+const T_IndexOptInfo: NodeTag = 165;
+const T_RelOptInfo: NodeTag = 164;
+const T_PlannerGlobal: NodeTag = 163;
+const T_PlannerInfo: NodeTag = 162;
+const T_DomainConstraintState: NodeTag = 161;
+const T_SubPlanState: NodeTag = 160;
+const T_SetExprState: NodeTag = 159;
+const T_WindowFuncExprState: NodeTag = 158;
+const T_ExprState: NodeTag = 157;
+const T_IntoClause: NodeTag = 156;
+const T_OnConflictExpr: NodeTag = 155;
+const T_FromExpr: NodeTag = 154;
+const T_JoinExpr: NodeTag = 153;
+const T_RangeTblRef: NodeTag = 152;
+const T_TargetEntry: NodeTag = 151;
+const T_InferenceElem: NodeTag = 150;
+const T_NextValueExpr: NodeTag = 149;
+const T_CurrentOfExpr: NodeTag = 148;
+const T_SetToDefault: NodeTag = 147;
+const T_CoerceToDomainValue: NodeTag = 146;
+const T_CoerceToDomain: NodeTag = 145;
+const T_BooleanTest: NodeTag = 144;
+const T_NullTest: NodeTag = 143;
+const T_XmlExpr: NodeTag = 142;
+const T_SQLValueFunction: NodeTag = 141;
+const T_MinMaxExpr: NodeTag = 140;
+const T_CoalesceExpr: NodeTag = 139;
+const T_RowCompareExpr: NodeTag = 138;
+const T_RowExpr: NodeTag = 137;
+const T_ArrayExpr: NodeTag = 136;
+const T_CaseTestExpr: NodeTag = 135;
+const T_CaseWhen: NodeTag = 134;
+const T_CaseExpr: NodeTag = 133;
+const T_CollateExpr: NodeTag = 132;
+const T_ConvertRowtypeExpr: NodeTag = 131;
+const T_ArrayCoerceExpr: NodeTag = 130;
+const T_CoerceViaIO: NodeTag = 129;
+const T_RelabelType: NodeTag = 128;
+const T_FieldStore: NodeTag = 127;
+const T_FieldSelect: NodeTag = 126;
+const T_AlternativeSubPlan: NodeTag = 125;
+const T_SubPlan: NodeTag = 124;
+const T_SubLink: NodeTag = 123;
+const T_BoolExpr: NodeTag = 122;
+const T_ScalarArrayOpExpr: NodeTag = 121;
+const T_NullIfExpr: NodeTag = 120;
+const T_DistinctExpr: NodeTag = 119;
+const T_OpExpr: NodeTag = 118;
+const T_NamedArgExpr: NodeTag = 117;
+const T_FuncExpr: NodeTag = 116;
+const T_SubscriptingRef: NodeTag = 115;
+const T_WindowFunc: NodeTag = 114;
+const T_GroupingFunc: NodeTag = 113;
+const T_Aggref: NodeTag = 112;
+const T_Param: NodeTag = 111;
+const T_Const: NodeTag = 110;
+const T_Var: NodeTag = 109;
+const T_TableFunc: NodeTag = 108;
+const T_RangeVar: NodeTag = 107;
+const T_Alias: NodeTag = 106;
+const T_LimitState: NodeTag = 105;
+const T_LockRowsState: NodeTag = 104;
+const T_SetOpState: NodeTag = 103;
+const T_HashState: NodeTag = 102;
+const T_GatherMergeState: NodeTag = 101;
+const T_GatherState: NodeTag = 100;
+const T_UniqueState: NodeTag = 99;
+const T_WindowAggState: NodeTag = 98;
+const T_AggState: NodeTag = 97;
+const T_GroupState: NodeTag = 96;
+const T_IncrementalSortState: NodeTag = 95;
+const T_SortState: NodeTag = 94;
+const T_MemoizeState: NodeTag = 93;
+const T_MaterialState: NodeTag = 92;
+const T_HashJoinState: NodeTag = 91;
+const T_MergeJoinState: NodeTag = 90;
+const T_NestLoopState: NodeTag = 89;
+const T_JoinState: NodeTag = 88;
+const T_CustomScanState: NodeTag = 87;
+const T_ForeignScanState: NodeTag = 86;
+const T_WorkTableScanState: NodeTag = 85;
+const T_NamedTuplestoreScanState: NodeTag = 84;
+const T_CteScanState: NodeTag = 83;
+const T_ValuesScanState: NodeTag = 82;
+const T_TableFuncScanState: NodeTag = 81;
+const T_FunctionScanState: NodeTag = 80;
+const T_SubqueryScanState: NodeTag = 79;
+const T_TidRangeScanState: NodeTag = 78;
+const T_TidScanState: NodeTag = 77;
+const T_BitmapHeapScanState: NodeTag = 76;
+const T_BitmapIndexScanState: NodeTag = 75;
+const T_IndexOnlyScanState: NodeTag = 74;
+const T_IndexScanState: NodeTag = 73;
+const T_SampleScanState: NodeTag = 72;
+const T_SeqScanState: NodeTag = 71;
+const T_ScanState: NodeTag = 70;
+const T_BitmapOrState: NodeTag = 69;
+const T_BitmapAndState: NodeTag = 68;
+const T_RecursiveUnionState: NodeTag = 67;
+const T_MergeAppendState: NodeTag = 66;
+const T_AppendState: NodeTag = 65;
+const T_ModifyTableState: NodeTag = 64;
+const T_ProjectSetState: NodeTag = 63;
+const T_ResultState: NodeTag = 62;
+const T_PlanState: NodeTag = 61;
+const T_PlanInvalItem: NodeTag = 60;
+const T_PartitionPruneStepCombine: NodeTag = 59;
+const T_PartitionPruneStepOp: NodeTag = 58;
+const T_PartitionedRelPruneInfo: NodeTag = 57;
+const T_PartitionPruneInfo: NodeTag = 56;
+const T_PlanRowMark: NodeTag = 55;
+const T_NestLoopParam: NodeTag = 54;
+const T_Limit: NodeTag = 53;
+const T_LockRows: NodeTag = 52;
+const T_SetOp: NodeTag = 51;
+const T_Hash: NodeTag = 50;
+const T_GatherMerge: NodeTag = 49;
+const T_Gather: NodeTag = 48;
+const T_Unique: NodeTag = 47;
+const T_WindowAgg: NodeTag = 46;
+const T_Agg: NodeTag = 45;
+const T_Group: NodeTag = 44;
+const T_IncrementalSort: NodeTag = 43;
+const T_Sort: NodeTag = 42;
+const T_Memoize: NodeTag = 41;
+const T_Material: NodeTag = 40;
+const T_HashJoin: NodeTag = 39;
+const T_MergeJoin: NodeTag = 38;
+const T_NestLoop: NodeTag = 37;
+const T_Join: NodeTag = 36;
+const T_CustomScan: NodeTag = 35;
+const T_ForeignScan: NodeTag = 34;
+const T_WorkTableScan: NodeTag = 33;
+const T_NamedTuplestoreScan: NodeTag = 32;
+const T_CteScan: NodeTag = 31;
+const T_TableFuncScan: NodeTag = 30;
+const T_ValuesScan: NodeTag = 29;
+const T_FunctionScan: NodeTag = 28;
+const T_SubqueryScan: NodeTag = 27;
+const T_TidRangeScan: NodeTag = 26;
+const T_TidScan: NodeTag = 25;
+const T_BitmapHeapScan: NodeTag = 24;
+const T_BitmapIndexScan: NodeTag = 23;
+const T_IndexOnlyScan: NodeTag = 22;
+const T_IndexScan: NodeTag = 21;
+const T_SampleScan: NodeTag = 20;
+const T_SeqScan: NodeTag = 19;
+const T_Scan: NodeTag = 18;
+const T_BitmapOr: NodeTag = 17;
+const T_BitmapAnd: NodeTag = 16;
+const T_RecursiveUnion: NodeTag = 15;
+const T_MergeAppend: NodeTag = 14;
+const T_Append: NodeTag = 13;
+const T_ModifyTable: NodeTag = 12;
+const T_ProjectSet: NodeTag = 11;
+const T_Result: NodeTag = 10;
+const T_Plan: NodeTag = 9;
+const T_TupleTableSlot: NodeTag = 8;
+const T_EState: NodeTag = 7;
+const T_ResultRelInfo: NodeTag = 6;
+const T_OnConflictSetState: NodeTag = 5;
+const T_JunkFilter: NodeTag = 4;
+const T_ProjectionInfo: NodeTag = 3;
+const T_ExprContext: NodeTag = 2;
+const T_IndexInfo: NodeTag = 1;
+const T_Invalid: NodeTag = 0;
+type Datum = uintptr_t;
 #[derive(Copy, Clone)]
 #[repr(C)]
-pub struct NullableDatum {
-    pub value: Datum,
-    pub isnull: bool,
+struct NullableDatum {
+    value: Datum,
+    isnull: bool,
 }
 #[derive(Copy, Clone)]
 #[repr(C)]
-pub struct BlockIdData {
-    pub bi_hi: uint16,
-    pub bi_lo: uint16,
+struct BlockIdData {
+    bi_hi: uint16,
+    bi_lo: uint16,
 }
-pub type OffsetNumber = uint16;
+type OffsetNumber = uint16;
 #[derive(Copy, Clone)]
 #[repr(C, align(2))]
-pub struct ItemPointerData(pub ItemPointerData_Inner);
+struct ItemPointerData(pub ItemPointerData_Inner);
 #[derive(Copy, Clone)]
 #[repr(C, packed)]
-pub struct ItemPointerData_Inner {
-    pub ip_blkid: BlockIdData,
-    pub ip_posid: OffsetNumber,
+struct ItemPointerData_Inner {
+    ip_blkid: BlockIdData,
+    ip_posid: OffsetNumber,
 }
 #[derive(Copy, Clone)]
 #[repr(C)]
-pub struct HeapTupleHeaderData {
-    pub t_choice: C2RustUnnamed_0,
-    pub t_ctid: ItemPointerData,
-    pub t_infomask2: uint16,
-    pub t_infomask: uint16,
-    pub t_hoff: uint8,
-    pub t_bits: [bits8; 0],
+struct HeapTupleHeaderData {
+    t_choice: C2RustUnnamed_0,
+    t_ctid: ItemPointerData,
+    t_infomask2: uint16,
+    t_infomask: uint16,
+    t_hoff: uint8,
+    t_bits: [bits8; 0],
 }
 #[derive(Copy, Clone)]
 #[repr(C)]
-pub union C2RustUnnamed_0 {
-    pub t_heap: HeapTupleFields,
-    pub t_datum: DatumTupleFields,
+union C2RustUnnamed_0 {
+    t_heap: HeapTupleFields,
+    t_datum: DatumTupleFields,
 }
 #[derive(Copy, Clone)]
 #[repr(C)]
-pub struct DatumTupleFields {
-    pub datum_len_: int32,
-    pub datum_typmod: int32,
-    pub datum_typeid: Oid,
+struct DatumTupleFields {
+    datum_len_: int32,
+    datum_typmod: int32,
+    datum_typeid: Oid,
 }
 #[derive(Copy, Clone)]
 #[repr(C)]
-pub struct HeapTupleFields {
-    pub t_xmin: TransactionId,
-    pub t_xmax: TransactionId,
-    pub t_field3: C2RustUnnamed_1,
+struct HeapTupleFields {
+    t_xmin: TransactionId,
+    t_xmax: TransactionId,
+    t_field3: C2RustUnnamed_1,
 }
 #[derive(Copy, Clone)]
 #[repr(C)]
-pub union C2RustUnnamed_1 {
-    pub t_cid: CommandId,
-    pub t_xvac: TransactionId,
+union C2RustUnnamed_1 {
+    t_cid: CommandId,
+    t_xvac: TransactionId,
 }
-pub type HeapTupleHeader = *mut HeapTupleHeaderData;
+type HeapTupleHeader = *mut HeapTupleHeaderData;
 #[derive(Copy, Clone)]
 #[repr(C)]
-pub struct MinimalTupleData {
-    pub t_len: uint32,
-    pub mt_padding: [libc::c_char; 6],
-    pub t_infomask2: uint16,
-    pub t_infomask: uint16,
-    pub t_hoff: uint8,
-    pub t_bits: [bits8; 0],
+struct MinimalTupleData {
+    t_len: uint32,
+    mt_padding: [libc::c_char; 6],
+    t_infomask2: uint16,
+    t_infomask: uint16,
+    t_hoff: uint8,
+    t_bits: [bits8; 0],
 }
-pub type MinimalTuple = *mut MinimalTupleData;
+type MinimalTuple = *mut MinimalTupleData;
 #[derive(Copy, Clone)]
 #[repr(C)]
-pub struct HeapTupleData {
-    pub t_len: uint32,
-    pub t_self: ItemPointerData,
-    pub t_tableOid: Oid,
-    pub t_data: HeapTupleHeader,
+struct HeapTupleData {
+    t_len: uint32,
+    t_self: ItemPointerData,
+    t_tableOid: Oid,
+    t_data: HeapTupleHeader,
 }
-pub type HeapTuple = *mut HeapTupleData;
-pub type XLogRecPtr = uint64;
-pub type AttrNumber = int16;
+type HeapTuple = *mut HeapTupleData;
+type XLogRecPtr = uint64;
+type AttrNumber = int16;
 #[derive(Copy, Clone)]
 #[repr(C)]
-pub struct FormData_pg_attribute {
-    pub attrelid: Oid,
-    pub attname: NameData,
-    pub atttypid: Oid,
-    pub attstattarget: int32,
-    pub attlen: int16,
-    pub attnum: int16,
-    pub attndims: int32,
-    pub attcacheoff: int32,
-    pub atttypmod: int32,
-    pub attbyval: bool,
-    pub attalign: libc::c_char,
-    pub attstorage: libc::c_char,
-    pub attcompression: libc::c_char,
-    pub attnotnull: bool,
-    pub atthasdef: bool,
-    pub atthasmissing: bool,
-    pub attidentity: libc::c_char,
-    pub attgenerated: libc::c_char,
-    pub attisdropped: bool,
-    pub attislocal: bool,
-    pub attinhcount: int32,
-    pub attcollation: Oid,
-}
-#[derive(Copy, Clone)]
-#[repr(C)]
-pub struct Node {
-    pub type_0: NodeTag,
+struct FormData_pg_attribute {
+    attrelid: Oid,
+    attname: NameData,
+    atttypid: Oid,
+    attstattarget: int32,
+    attlen: int16,
+    attnum: int16,
+    attndims: int32,
+    attcacheoff: int32,
+    atttypmod: int32,
+    attbyval: bool,
+    attalign: libc::c_char,
+    attstorage: libc::c_char,
+    attcompression: libc::c_char,
+    attnotnull: bool,
+    atthasdef: bool,
+    atthasmissing: bool,
+    attidentity: libc::c_char,
+    attgenerated: libc::c_char,
+    attisdropped: bool,
+    attislocal: bool,
+    attinhcount: int32,
+    attcollation: Oid,
 }
 #[derive(Copy, Clone)]
 #[repr(C)]
-pub struct Bitmapset {
-    pub nwords: libc::c_int,
-    pub words: [bitmapword; 0],
-}
-pub type bitmapword = uint64;
-pub type Cost = libc::c_double;
-pub type Cardinality = libc::c_double;
-pub type CmdType = libc::c_uint;
-pub const CMD_NOTHING: CmdType = 6;
-pub const CMD_UTILITY: CmdType = 5;
-pub const CMD_DELETE: CmdType = 4;
-pub const CMD_INSERT: CmdType = 3;
-pub const CMD_UPDATE: CmdType = 2;
-pub const CMD_SELECT: CmdType = 1;
-pub const CMD_UNKNOWN: CmdType = 0;
-#[derive(Copy, Clone)]
-#[repr(C)]
-pub union ListCell {
-    pub ptr_value: *mut libc::c_void,
-    pub int_value: libc::c_int,
-    pub oid_value: Oid,
+struct Node {
+    type_0: NodeTag,
 }
 #[derive(Copy, Clone)]
 #[repr(C)]
-pub struct List {
-    pub type_0: NodeTag,
-    pub length: libc::c_int,
-    pub max_length: libc::c_int,
-    pub elements: *mut ListCell,
-    pub initial_elements: [ListCell; 0],
+struct Bitmapset {
+    nwords: libc::c_int,
+    words: [bitmapword; 0],
+}
+type bitmapword = uint64;
+type Cost = libc::c_double;
+type Cardinality = libc::c_double;
+type CmdType = libc::c_uint;
+const CMD_NOTHING: CmdType = 6;
+const CMD_UTILITY: CmdType = 5;
+const CMD_DELETE: CmdType = 4;
+const CMD_INSERT: CmdType = 3;
+const CMD_UPDATE: CmdType = 2;
+const CMD_SELECT: CmdType = 1;
+const CMD_UNKNOWN: CmdType = 0;
+#[derive(Copy, Clone)]
+#[repr(C)]
+union ListCell {
+    ptr_value: *mut libc::c_void,
+    int_value: libc::c_int,
+    oid_value: Oid,
 }
 #[derive(Copy, Clone)]
 #[repr(C)]
-pub struct AttrDefault {
-    pub adnum: AttrNumber,
-    pub adbin: *mut libc::c_char,
+struct List {
+    type_0: NodeTag,
+    length: libc::c_int,
+    max_length: libc::c_int,
+    elements: *mut ListCell,
+    initial_elements: [ListCell; 0],
 }
 #[derive(Copy, Clone)]
 #[repr(C)]
-pub struct ConstrCheck {
-    pub ccname: *mut libc::c_char,
-    pub ccbin: *mut libc::c_char,
-    pub ccvalid: bool,
-    pub ccnoinherit: bool,
+struct AttrDefault {
+    adnum: AttrNumber,
+    adbin: *mut libc::c_char,
 }
 #[derive(Copy, Clone)]
 #[repr(C)]
-pub struct TupleConstr {
-    pub defval: *mut AttrDefault,
-    pub check: *mut ConstrCheck,
-    pub missing: *mut AttrMissing,
-    pub num_defval: uint16,
-    pub num_check: uint16,
-    pub has_not_null: bool,
-    pub has_generated_stored: bool,
+struct ConstrCheck {
+    ccname: *mut libc::c_char,
+    ccbin: *mut libc::c_char,
+    ccvalid: bool,
+    ccnoinherit: bool,
 }
 #[derive(Copy, Clone)]
 #[repr(C)]
-pub struct TupleDescData {
-    pub natts: libc::c_int,
-    pub tdtypeid: Oid,
-    pub tdtypmod: int32,
-    pub tdrefcount: libc::c_int,
-    pub constr: *mut TupleConstr,
-    pub attrs: [FormData_pg_attribute; 0],
+struct TupleConstr {
+    defval: *mut AttrDefault,
+    check: *mut ConstrCheck,
+    missing: *mut AttrMissing,
+    num_defval: uint16,
+    num_check: uint16,
+    has_not_null: bool,
+    has_generated_stored: bool,
 }
-pub type TupleDesc = *mut TupleDescData;
-pub type Timestamp = int64;
-pub type TimestampTz = int64;
-pub type TimeOffset = int64;
+#[derive(Copy, Clone)]
+#[repr(C)]
+struct TupleDescData {
+    natts: libc::c_int,
+    tdtypeid: Oid,
+    tdtypmod: int32,
+    tdrefcount: libc::c_int,
+    constr: *mut TupleConstr,
+    attrs: [FormData_pg_attribute; 0],
+}
+type TupleDesc = *mut TupleDescData;
+type Timestamp = int64;
+type TimestampTz = int64;
+type TimeOffset = int64;
 pub type fsec_t = int32;
 pub type DateADT = int32;
 #[derive(Copy, Clone)]
 #[repr(C)]
-pub struct Interval {
-    pub time: TimeOffset,
-    pub day: int32,
-    pub month: int32,
+struct Interval {
+    time: TimeOffset,
+    day: int32,
+    month: int32,
 }
-pub type LockClauseStrength = libc::c_uint;
-pub const LCS_FORUPDATE: LockClauseStrength = 4;
-pub const LCS_FORNOKEYUPDATE: LockClauseStrength = 3;
-pub const LCS_FORSHARE: LockClauseStrength = 2;
-pub const LCS_FORKEYSHARE: LockClauseStrength = 1;
-pub const LCS_NONE: LockClauseStrength = 0;
-pub type LockWaitPolicy = libc::c_uint;
-pub const LockWaitError: LockWaitPolicy = 2;
-pub const LockWaitSkip: LockWaitPolicy = 1;
-pub const LockWaitBlock: LockWaitPolicy = 0;
+type LockClauseStrength = libc::c_uint;
+const LCS_FORUPDATE: LockClauseStrength = 4;
+const LCS_FORNOKEYUPDATE: LockClauseStrength = 3;
+const LCS_FORSHARE: LockClauseStrength = 2;
+const LCS_FORKEYSHARE: LockClauseStrength = 1;
+const LCS_NONE: LockClauseStrength = 0;
+type LockWaitPolicy = libc::c_uint;
+const LockWaitError: LockWaitPolicy = 2;
+const LockWaitSkip: LockWaitPolicy = 1;
+const LockWaitBlock: LockWaitPolicy = 0;
 #[derive(Copy, Clone)]
 #[repr(C)]
-pub struct Expr {
-    pub type_0: NodeTag,
-}
-#[derive(Copy, Clone)]
-#[repr(C)]
-pub struct Const {
-    pub xpr: Expr,
-    pub consttype: Oid,
-    pub consttypmod: int32,
-    pub constcollid: Oid,
-    pub constlen: libc::c_int,
-    pub constvalue: Datum,
-    pub constisnull: bool,
-    pub constbyval: bool,
-    pub location: libc::c_int,
-}
-pub type ParamKind = libc::c_uint;
-pub const PARAM_MULTIEXPR: ParamKind = 3;
-pub const PARAM_SUBLINK: ParamKind = 2;
-pub const PARAM_EXEC: ParamKind = 1;
-pub const PARAM_EXTERN: ParamKind = 0;
-#[derive(Copy, Clone)]
-#[repr(C)]
-pub struct Param {
-    pub xpr: Expr,
-    pub paramkind: ParamKind,
-    pub paramid: libc::c_int,
-    pub paramtype: Oid,
-    pub paramtypmod: int32,
-    pub paramcollid: Oid,
-    pub location: libc::c_int,
-}
-pub type CoercionForm = libc::c_uint;
-pub const COERCE_SQL_SYNTAX: CoercionForm = 3;
-pub const COERCE_IMPLICIT_CAST: CoercionForm = 2;
-pub const COERCE_EXPLICIT_CAST: CoercionForm = 1;
-pub const COERCE_EXPLICIT_CALL: CoercionForm = 0;
-#[derive(Copy, Clone)]
-#[repr(C)]
-pub struct FuncExpr {
-    pub xpr: Expr,
-    pub funcid: Oid,
-    pub funcresulttype: Oid,
-    pub funcretset: bool,
-    pub funcvariadic: bool,
-    pub funcformat: CoercionForm,
-    pub funccollid: Oid,
-    pub inputcollid: Oid,
-    pub args: *mut List,
-    pub location: libc::c_int,
-}
-pub type PartitionDirectory = *mut PartitionDirectoryData;
-pub type Relation = *mut RelationData;
-pub type RelationPtr = *mut Relation;
-#[derive(Copy, Clone)]
-#[repr(C)]
-pub struct AttrMap {
-    pub attnums: *mut AttrNumber,
-    pub maplen: libc::c_int,
+struct Expr {
+    type_0: NodeTag,
 }
 #[derive(Copy, Clone)]
 #[repr(C)]
-pub struct TupleTableSlotOps {
-    pub base_slot_size: size_t,
-    pub init: Option<unsafe fn(*mut TupleTableSlot) -> ()>,
-    pub release: Option<unsafe fn(*mut TupleTableSlot) -> ()>,
-    pub clear: Option<unsafe fn(*mut TupleTableSlot) -> ()>,
-    pub getsomeattrs: Option<unsafe fn(*mut TupleTableSlot, libc::c_int) -> ()>,
-    pub getsysattr: Option<unsafe fn(*mut TupleTableSlot, libc::c_int, *mut bool) -> Datum>,
-    pub materialize: Option<unsafe fn(*mut TupleTableSlot) -> ()>,
-    pub copyslot: Option<unsafe fn(*mut TupleTableSlot, *mut TupleTableSlot) -> ()>,
-    pub get_heap_tuple: Option<unsafe fn(*mut TupleTableSlot) -> HeapTuple>,
-    pub get_minimal_tuple: Option<unsafe fn(*mut TupleTableSlot) -> MinimalTuple>,
-    pub copy_heap_tuple: Option<unsafe fn(*mut TupleTableSlot) -> HeapTuple>,
-    pub copy_minimal_tuple: Option<unsafe fn(*mut TupleTableSlot) -> MinimalTuple>,
+struct Const {
+    xpr: Expr,
+    consttype: Oid,
+    consttypmod: int32,
+    constcollid: Oid,
+    constlen: libc::c_int,
+    constvalue: Datum,
+    constisnull: bool,
+    constbyval: bool,
+    location: libc::c_int,
 }
-#[repr(C)]
-pub struct TupleTableSlot<'a> {
-    pub type_0: NodeTag,
-    pub tts_flags: uint16,
-    pub tts_nvalid: AttrNumber,
-    pub tts_ops: *const TupleTableSlotOps,
-    pub tts_tupleDescriptor: TupleDesc,
-    pub tts_values: *mut Datum,
-    pub tts_isnull: &'a mut bool,
-    pub tts_mcxt: MemoryContext,
-    pub tts_tid: ItemPointerData,
-    pub tts_tableOid: Oid,
-}
-#[repr(C)]
-pub struct TupleConversionMap<'a> {
-    pub indesc: TupleDesc,
-    pub outdesc: TupleDesc,
-    pub attrMap: *mut AttrMap,
-    pub invalues: *mut Datum,
-    pub inisnull: &'a mut bool,
-    pub outvalues: *mut Datum,
-    pub outisnull: &'a mut bool,
-}
-pub type instr_time = timespec;
+type ParamKind = libc::c_uint;
+const PARAM_MULTIEXPR: ParamKind = 3;
+const PARAM_SUBLINK: ParamKind = 2;
+const PARAM_EXEC: ParamKind = 1;
+const PARAM_EXTERN: ParamKind = 0;
 #[derive(Copy, Clone)]
 #[repr(C)]
-pub struct BufferUsage {
-    pub shared_blks_hit: int64,
-    pub shared_blks_read: int64,
-    pub shared_blks_dirtied: int64,
-    pub shared_blks_written: int64,
-    pub local_blks_hit: int64,
-    pub local_blks_read: int64,
-    pub local_blks_dirtied: int64,
-    pub local_blks_written: int64,
-    pub temp_blks_read: int64,
-    pub temp_blks_written: int64,
-    pub blk_read_time: instr_time,
-    pub blk_write_time: instr_time,
+struct Param {
+    xpr: Expr,
+    paramkind: ParamKind,
+    paramid: libc::c_int,
+    paramtype: Oid,
+    paramtypmod: int32,
+    paramcollid: Oid,
+    location: libc::c_int,
 }
+type CoercionForm = libc::c_uint;
+const COERCE_SQL_SYNTAX: CoercionForm = 3;
+const COERCE_IMPLICIT_CAST: CoercionForm = 2;
+const COERCE_EXPLICIT_CAST: CoercionForm = 1;
+const COERCE_EXPLICIT_CALL: CoercionForm = 0;
 #[derive(Copy, Clone)]
 #[repr(C)]
-pub struct WalUsage {
-    pub wal_records: int64,
-    pub wal_fpi: int64,
-    pub wal_bytes: uint64,
+struct FuncExpr {
+    xpr: Expr,
+    funcid: Oid,
+    funcresulttype: Oid,
+    funcretset: bool,
+    funcvariadic: bool,
+    funcformat: CoercionForm,
+    funccollid: Oid,
+    inputcollid: Oid,
+    args: *mut List,
+    location: libc::c_int,
+}
+type PartitionDirectory = *mut PartitionDirectoryData;
+type Relation = *mut RelationData;
+type RelationPtr = *mut Relation;
+#[derive(Copy, Clone)]
+#[repr(C)]
+struct AttrMap {
+    attnums: *mut AttrNumber,
+    maplen: libc::c_int,
 }
 #[derive(Copy, Clone)]
 #[repr(C)]
-pub struct Instrumentation {
-    pub need_timer: bool,
-    pub need_bufusage: bool,
-    pub need_walusage: bool,
-    pub async_mode: bool,
-    pub running: bool,
-    pub starttime: instr_time,
-    pub counter: instr_time,
-    pub firsttuple: libc::c_double,
-    pub tuplecount: libc::c_double,
-    pub bufusage_start: BufferUsage,
-    pub walusage_start: WalUsage,
-    pub startup: libc::c_double,
-    pub total: libc::c_double,
-    pub ntuples: libc::c_double,
-    pub ntuples2: libc::c_double,
-    pub nloops: libc::c_double,
-    pub nfiltered1: libc::c_double,
-    pub nfiltered2: libc::c_double,
-    pub bufusage: BufferUsage,
-    pub walusage: WalUsage,
+struct TupleTableSlotOps {
+    base_slot_size: size_t,
+    init: Option<unsafe fn(*mut TupleTableSlot) -> ()>,
+    release: Option<unsafe fn(*mut TupleTableSlot) -> ()>,
+    clear: Option<unsafe fn(*mut TupleTableSlot) -> ()>,
+    getsomeattrs: Option<unsafe fn(*mut TupleTableSlot, libc::c_int) -> ()>,
+    getsysattr: Option<unsafe fn(*mut TupleTableSlot, libc::c_int, *mut bool) -> Datum>,
+    materialize: Option<unsafe fn(*mut TupleTableSlot) -> ()>,
+    copyslot: Option<unsafe fn(*mut TupleTableSlot, *mut TupleTableSlot) -> ()>,
+    get_heap_tuple: Option<unsafe fn(*mut TupleTableSlot) -> HeapTuple>,
+    get_minimal_tuple: Option<unsafe fn(*mut TupleTableSlot) -> MinimalTuple>,
+    copy_heap_tuple: Option<unsafe fn(*mut TupleTableSlot) -> HeapTuple>,
+    copy_minimal_tuple: Option<unsafe fn(*mut TupleTableSlot) -> MinimalTuple>,
+}
+#[repr(C)]
+struct TupleTableSlot<'a> {
+    type_0: NodeTag,
+    tts_flags: uint16,
+    tts_nvalid: AttrNumber,
+    tts_ops: *const TupleTableSlotOps,
+    tts_tupleDescriptor: TupleDesc,
+    tts_values: *mut Datum,
+    tts_isnull: &'a mut bool,
+    tts_mcxt: MemoryContext,
+    tts_tid: ItemPointerData,
+    tts_tableOid: Oid,
+}
+#[repr(C)]
+struct TupleConversionMap<'a> {
+    indesc: TupleDesc,
+    outdesc: TupleDesc,
+    attrMap: *mut AttrMap,
+    invalues: *mut Datum,
+    inisnull: &'a mut bool,
+    outvalues: *mut Datum,
+    outisnull: &'a mut bool,
+}
+type instr_time = timespec;
+#[derive(Copy, Clone)]
+#[repr(C)]
+struct BufferUsage {
+    shared_blks_hit: int64,
+    shared_blks_read: int64,
+    shared_blks_dirtied: int64,
+    shared_blks_written: int64,
+    local_blks_hit: int64,
+    local_blks_read: int64,
+    local_blks_dirtied: int64,
+    local_blks_written: int64,
+    temp_blks_read: int64,
+    temp_blks_written: int64,
+    blk_read_time: instr_time,
+    blk_write_time: instr_time,
 }
 #[derive(Copy, Clone)]
 #[repr(C)]
-pub struct WorkerInstrumentation {
-    pub num_workers: libc::c_int,
-    pub instrument: [Instrumentation; 0],
-}
-pub type fmNodePtr = *mut Node;
-#[derive(Copy, Clone)]
-#[repr(C)]
-pub struct FunctionCallInfoBaseData {
-    pub flinfo: *mut FmgrInfo,
-    pub context: fmNodePtr,
-    pub resultinfo: fmNodePtr,
-    pub fncollation: Oid,
-    pub isnull: bool,
-    pub nargs: libc::c_short,
-    pub args: [NullableDatum; 0],
+struct WalUsage {
+    wal_records: int64,
+    wal_fpi: int64,
+    wal_bytes: uint64,
 }
 #[derive(Copy, Clone)]
 #[repr(C)]
-pub struct FmgrInfo {
-    pub fn_addr: PGFunction,
-    pub fn_oid: Oid,
-    pub fn_nargs: libc::c_short,
-    pub fn_strict: bool,
-    pub fn_retset: bool,
-    pub fn_stats: libc::c_uchar,
-    pub fn_extra: *mut libc::c_void,
-    pub fn_mcxt: MemoryContext,
-    pub fn_expr: fmNodePtr,
-}
-pub type PGFunction = Option<unsafe fn(FunctionCallInfo) -> Datum>;
-pub type FunctionCallInfo = *mut FunctionCallInfoBaseData;
-#[derive(Copy, Clone)]
-#[repr(C)]
-pub struct pairingheap_node {
-    pub first_child: *mut pairingheap_node,
-    pub next_sibling: *mut pairingheap_node,
-    pub prev_or_parent: *mut pairingheap_node,
-}
-#[repr(C)]
-pub struct ExprState<'a> {
-    pub type_0: NodeTag,
-    pub flags: uint8,
-    pub resnull: bool,
-    pub resvalue: Datum,
-    pub resultslot: *mut TupleTableSlot<'a>,
-    pub steps: *mut ExprEvalStep,
-    pub evalfunc: ExprStateEvalFunc,
-    pub expr: *mut Expr,
-    pub evalfunc_private: *mut libc::c_void,
-    pub steps_len: libc::c_int,
-    pub steps_alloc: libc::c_int,
-    pub parent: *mut PlanState<'a>,
-    pub ext_params: ParamListInfo,
-    pub innermost_caseval: *mut Datum,
-    pub innermost_casenull: &'a mut bool,
-    pub innermost_domainval: *mut Datum,
-    pub innermost_domainnull: &'a mut bool,
-}
-pub type ParamListInfo = *mut ParamListInfoData;
-#[derive(Copy, Clone)]
-#[repr(C)]
-pub struct ParamListInfoData {
-    pub paramFetch: ParamFetchHook,
-    pub paramFetchArg: *mut libc::c_void,
-    pub paramCompile: ParamCompileHook,
-    pub paramCompileArg: *mut libc::c_void,
-    pub parserSetup: ParserSetupHook,
-    pub parserSetupArg: *mut libc::c_void,
-    pub paramValuesStr: *mut libc::c_char,
-    pub numParams: libc::c_int,
-    pub params: [ParamExternData; 0],
+struct Instrumentation {
+    need_timer: bool,
+    need_bufusage: bool,
+    need_walusage: bool,
+    async_mode: bool,
+    running: bool,
+    starttime: instr_time,
+    counter: instr_time,
+    firsttuple: libc::c_double,
+    tuplecount: libc::c_double,
+    bufusage_start: BufferUsage,
+    walusage_start: WalUsage,
+    startup: libc::c_double,
+    total: libc::c_double,
+    ntuples: libc::c_double,
+    ntuples2: libc::c_double,
+    nloops: libc::c_double,
+    nfiltered1: libc::c_double,
+    nfiltered2: libc::c_double,
+    bufusage: BufferUsage,
+    walusage: WalUsage,
 }
 #[derive(Copy, Clone)]
 #[repr(C)]
-pub struct ParamExternData {
-    pub value: Datum,
-    pub isnull: bool,
-    pub pflags: uint16,
-    pub ptype: Oid,
+struct WorkerInstrumentation {
+    num_workers: libc::c_int,
+    instrument: [Instrumentation; 0],
 }
-pub type ParserSetupHook = Option<unsafe fn(*mut ParseState, *mut libc::c_void) -> ()>;
-pub type ParamCompileHook =
+type fmNodePtr = *mut Node;
+#[derive(Copy, Clone)]
+#[repr(C)]
+struct FunctionCallInfoBaseData {
+    flinfo: *mut FmgrInfo,
+    context: fmNodePtr,
+    resultinfo: fmNodePtr,
+    fncollation: Oid,
+    isnull: bool,
+    nargs: libc::c_short,
+    args: [NullableDatum; 0],
+}
+#[derive(Copy, Clone)]
+#[repr(C)]
+struct FmgrInfo {
+    fn_addr: PGFunction,
+    fn_oid: Oid,
+    fn_nargs: libc::c_short,
+    fn_strict: bool,
+    fn_retset: bool,
+    fn_stats: libc::c_uchar,
+    fn_extra: *mut libc::c_void,
+    fn_mcxt: MemoryContext,
+    fn_expr: fmNodePtr,
+}
+type PGFunction = Option<unsafe fn(FunctionCallInfo) -> Datum>;
+type FunctionCallInfo = *mut FunctionCallInfoBaseData;
+#[derive(Copy, Clone)]
+#[repr(C)]
+struct pairingheap_node {
+    first_child: *mut pairingheap_node,
+    next_sibling: *mut pairingheap_node,
+    prev_or_parent: *mut pairingheap_node,
+}
+#[repr(C)]
+struct ExprState<'a> {
+    type_0: NodeTag,
+    flags: uint8,
+    resnull: bool,
+    resvalue: Datum,
+    resultslot: *mut TupleTableSlot<'a>,
+    steps: *mut ExprEvalStep,
+    evalfunc: ExprStateEvalFunc,
+    expr: *mut Expr,
+    evalfunc_private: *mut libc::c_void,
+    steps_len: libc::c_int,
+    steps_alloc: libc::c_int,
+    parent: *mut PlanState<'a>,
+    ext_params: ParamListInfo,
+    innermost_caseval: *mut Datum,
+    innermost_casenull: &'a mut bool,
+    innermost_domainval: *mut Datum,
+    innermost_domainnull: &'a mut bool,
+}
+type ParamListInfo = *mut ParamListInfoData;
+#[derive(Copy, Clone)]
+#[repr(C)]
+struct ParamListInfoData {
+    paramFetch: ParamFetchHook,
+    paramFetchArg: *mut libc::c_void,
+    paramCompile: ParamCompileHook,
+    paramCompileArg: *mut libc::c_void,
+    parserSetup: ParserSetupHook,
+    parserSetupArg: *mut libc::c_void,
+    paramValuesStr: *mut libc::c_char,
+    numParams: libc::c_int,
+    params: [ParamExternData; 0],
+}
+#[derive(Copy, Clone)]
+#[repr(C)]
+struct ParamExternData {
+    value: Datum,
+    isnull: bool,
+    pflags: uint16,
+    ptype: Oid,
+}
+type ParserSetupHook = Option<unsafe fn(*mut ParseState, *mut libc::c_void) -> ()>;
+type ParamCompileHook =
     Option<unsafe fn(ParamListInfo, *mut Param, *mut ExprState, *mut Datum, &mut bool) -> ()>;
-pub type ParamFetchHook = Option<
+type ParamFetchHook = Option<
     unsafe fn(ParamListInfo, libc::c_int, bool, *mut ParamExternData) -> *mut ParamExternData,
 >;
 #[repr(C)]
-pub struct PlanState<'a> {
-    pub type_0: NodeTag,
-    pub plan: *mut Plan,
-    pub state: *mut EState<'a>,
-    pub ExecProcNode: ExecProcNodeMtd,
-    pub ExecProcNodeReal: ExecProcNodeMtd,
-    pub instrument: *mut Instrumentation,
-    pub worker_instrument: *mut WorkerInstrumentation,
-    pub worker_jit_instrument: *mut SharedJitInstrumentation,
-    pub qual: *mut ExprState<'a>,
-    pub lefttree: *mut PlanState<'a>,
-    pub righttree: *mut PlanState<'a>,
-    pub initPlan: *mut List,
-    pub subPlan: *mut List,
-    pub chgParam: *mut Bitmapset,
-    pub ps_ResultTupleDesc: TupleDesc,
-    pub ps_ResultTupleSlot: *mut TupleTableSlot<'a>,
-    pub ps_ExprContext: *mut ExprContext<'a>,
-    pub ps_ProjInfo: *mut ProjectionInfo<'a>,
-    pub async_capable: bool,
-    pub scandesc: TupleDesc,
-    pub scanops: *const TupleTableSlotOps,
-    pub outerops: *const TupleTableSlotOps,
-    pub innerops: *const TupleTableSlotOps,
-    pub resultops: *const TupleTableSlotOps,
-    pub scanopsfixed: bool,
-    pub outeropsfixed: bool,
-    pub inneropsfixed: bool,
-    pub resultopsfixed: bool,
-    pub scanopsset: bool,
-    pub outeropsset: bool,
-    pub inneropsset: bool,
-    pub resultopsset: bool,
+struct PlanState<'a> {
+    type_0: NodeTag,
+    plan: *mut Plan,
+    state: *mut EState<'a>,
+    ExecProcNode: ExecProcNodeMtd,
+    ExecProcNodeReal: ExecProcNodeMtd,
+    instrument: *mut Instrumentation,
+    worker_instrument: *mut WorkerInstrumentation,
+    worker_jit_instrument: *mut SharedJitInstrumentation,
+    qual: *mut ExprState<'a>,
+    lefttree: *mut PlanState<'a>,
+    righttree: *mut PlanState<'a>,
+    initPlan: *mut List,
+    subPlan: *mut List,
+    chgParam: *mut Bitmapset,
+    ps_ResultTupleDesc: TupleDesc,
+    ps_ResultTupleSlot: *mut TupleTableSlot<'a>,
+    ps_ExprContext: *mut ExprContext<'a>,
+    ps_ProjInfo: *mut ProjectionInfo<'a>,
+    async_capable: bool,
+    scandesc: TupleDesc,
+    scanops: *const TupleTableSlotOps,
+    outerops: *const TupleTableSlotOps,
+    innerops: *const TupleTableSlotOps,
+    resultops: *const TupleTableSlotOps,
+    scanopsfixed: bool,
+    outeropsfixed: bool,
+    inneropsfixed: bool,
+    resultopsfixed: bool,
+    scanopsset: bool,
+    outeropsset: bool,
+    inneropsset: bool,
+    resultopsset: bool,
 }
 #[repr(C)]
-pub struct ProjectionInfo<'a> {
-    pub type_0: NodeTag,
-    pub pi_state: ExprState<'a>,
-    pub pi_exprContext: *mut ExprContext<'a>,
+struct ProjectionInfo<'a> {
+    type_0: NodeTag,
+    pi_state: ExprState<'a>,
+    pi_exprContext: *mut ExprContext<'a>,
 }
 #[repr(C)]
-pub struct ExprContext<'a> {
-    pub type_0: NodeTag,
-    pub ecxt_scantuple: *mut TupleTableSlot<'a>,
-    pub ecxt_innertuple: *mut TupleTableSlot<'a>,
-    pub ecxt_outertuple: *mut TupleTableSlot<'a>,
-    pub ecxt_per_query_memory: MemoryContext,
-    pub ecxt_per_tuple_memory: MemoryContext,
-    pub ecxt_param_exec_vals: *mut ParamExecData,
-    pub ecxt_param_list_info: ParamListInfo,
-    pub ecxt_aggvalues: *mut Datum,
-    pub ecxt_aggnulls: &'a mut bool,
-    pub caseValue_datum: Datum,
-    pub caseValue_isNull: bool,
-    pub domainValue_datum: Datum,
-    pub domainValue_isNull: bool,
-    pub ecxt_estate: *mut EState<'a>,
-    pub ecxt_callbacks: *mut ExprContext_CB,
+struct ExprContext<'a> {
+    type_0: NodeTag,
+    ecxt_scantuple: *mut TupleTableSlot<'a>,
+    ecxt_innertuple: *mut TupleTableSlot<'a>,
+    ecxt_outertuple: *mut TupleTableSlot<'a>,
+    ecxt_per_query_memory: MemoryContext,
+    ecxt_per_tuple_memory: MemoryContext,
+    ecxt_param_exec_vals: *mut ParamExecData,
+    ecxt_param_list_info: ParamListInfo,
+    ecxt_aggvalues: *mut Datum,
+    ecxt_aggnulls: &'a mut bool,
+    caseValue_datum: Datum,
+    caseValue_isNull: bool,
+    domainValue_datum: Datum,
+    domainValue_isNull: bool,
+    ecxt_estate: *mut EState<'a>,
+    ecxt_callbacks: *mut ExprContext_CB,
 }
 #[derive(Copy, Clone)]
 #[repr(C)]
-pub struct ExprContext_CB {
-    pub next: *mut ExprContext_CB,
-    pub function: ExprContextCallbackFunction,
-    pub arg: Datum,
+struct ExprContext_CB {
+    next: *mut ExprContext_CB,
+    function: ExprContextCallbackFunction,
+    arg: Datum,
 }
-pub type ExprContextCallbackFunction = Option<unsafe fn(Datum) -> ()>;
+type ExprContextCallbackFunction = Option<unsafe fn(Datum) -> ()>;
 #[derive(Copy, Clone)]
 #[repr(C)]
-pub struct EState<'a> {
-    pub type_0: NodeTag,
-    pub es_direction: ScanDirection,
-    pub es_snapshot: Snapshot,
-    pub es_crosscheck_snapshot: Snapshot,
-    pub es_range_table: *mut List,
-    pub es_range_table_size: Index,
-    pub es_relations: *mut Relation,
-    pub es_rowmarks: *mut *mut ExecRowMark,
-    pub es_plannedstmt: *mut PlannedStmt,
-    pub es_sourceText: *const libc::c_char,
-    pub es_junkFilter: *mut JunkFilter<'a>,
-    pub es_output_cid: CommandId,
-    pub es_result_relations: *mut *mut ResultRelInfo<'a>,
-    pub es_opened_result_relations: *mut List,
-    pub es_partition_directory: PartitionDirectory,
-    pub es_tuple_routing_result_relations: *mut List,
-    pub es_trig_target_relations: *mut List,
-    pub es_param_list_info: ParamListInfo,
-    pub es_param_exec_vals: *mut ParamExecData,
-    pub es_queryEnv: *mut QueryEnvironment,
-    pub es_query_cxt: MemoryContext,
-    pub es_tupleTable: *mut List,
-    pub es_processed: uint64,
-    pub es_top_eflags: libc::c_int,
-    pub es_instrument: libc::c_int,
-    pub es_finished: bool,
-    pub es_exprcontexts: *mut List,
-    pub es_subplanstates: *mut List,
-    pub es_auxmodifytables: *mut List,
-    pub es_per_tuple_exprcontext: *mut ExprContext<'a>,
-    pub es_epq_active: *mut EPQState<'a>,
-    pub es_use_parallel_mode: bool,
-    pub es_query_dsa: *mut dsa_area,
-    pub es_jit_flags: libc::c_int,
-    pub es_jit: *mut JitContext,
-    pub es_jit_worker_instr: *mut JitInstrumentation,
+struct EState<'a> {
+    type_0: NodeTag,
+    es_direction: ScanDirection,
+    es_snapshot: Snapshot,
+    es_crosscheck_snapshot: Snapshot,
+    es_range_table: *mut List,
+    es_range_table_size: Index,
+    es_relations: *mut Relation,
+    es_rowmarks: *mut *mut ExecRowMark,
+    es_plannedstmt: *mut PlannedStmt,
+    es_sourceText: *const libc::c_char,
+    es_junkFilter: *mut JunkFilter<'a>,
+    es_output_cid: CommandId,
+    es_result_relations: *mut *mut ResultRelInfo<'a>,
+    es_opened_result_relations: *mut List,
+    es_partition_directory: PartitionDirectory,
+    es_tuple_routing_result_relations: *mut List,
+    es_trig_target_relations: *mut List,
+    es_param_list_info: ParamListInfo,
+    es_param_exec_vals: *mut ParamExecData,
+    es_queryEnv: *mut QueryEnvironment,
+    es_query_cxt: MemoryContext,
+    es_tupleTable: *mut List,
+    es_processed: uint64,
+    es_top_eflags: libc::c_int,
+    es_instrument: libc::c_int,
+    es_finished: bool,
+    es_exprcontexts: *mut List,
+    es_subplanstates: *mut List,
+    es_auxmodifytables: *mut List,
+    es_per_tuple_exprcontext: *mut ExprContext<'a>,
+    es_epq_active: *mut EPQState<'a>,
+    es_use_parallel_mode: bool,
+    es_query_dsa: *mut dsa_area,
+    es_jit_flags: libc::c_int,
+    es_jit: *mut JitContext,
+    es_jit_worker_instr: *mut JitInstrumentation,
 }
 #[repr(C)]
-pub struct EPQState<'a> {
-    pub parentestate: *mut EState<'a>,
-    pub epqParam: libc::c_int,
-    pub tuple_table: *mut List,
-    pub relsubs_slot: *mut *mut TupleTableSlot<'a>,
-    pub plan: *mut Plan,
-    pub arowMarks: *mut List,
-    pub origslot: *mut TupleTableSlot<'a>,
-    pub recheckestate: *mut EState<'a>,
-    pub relsubs_rowmark: *mut *mut ExecAuxRowMark,
-    pub relsubs_done: &'a mut bool,
-    pub recheckplanstate: *mut PlanState<'a>,
-}
-#[derive(Copy, Clone)]
-#[repr(C)]
-pub struct ExecAuxRowMark {
-    pub rowmark: *mut ExecRowMark,
-    pub ctidAttNo: AttrNumber,
-    pub toidAttNo: AttrNumber,
-    pub wholeAttNo: AttrNumber,
+struct EPQState<'a> {
+    parentestate: *mut EState<'a>,
+    epqParam: libc::c_int,
+    tuple_table: *mut List,
+    relsubs_slot: *mut *mut TupleTableSlot<'a>,
+    plan: *mut Plan,
+    arowMarks: *mut List,
+    origslot: *mut TupleTableSlot<'a>,
+    recheckestate: *mut EState<'a>,
+    relsubs_rowmark: *mut *mut ExecAuxRowMark,
+    relsubs_done: &'a mut bool,
+    recheckplanstate: *mut PlanState<'a>,
 }
 #[derive(Copy, Clone)]
 #[repr(C)]
-pub struct ExecRowMark {
-    pub relation: Relation,
-    pub relid: Oid,
-    pub rti: Index,
-    pub prti: Index,
-    pub rowmarkId: Index,
-    pub markType: RowMarkType,
-    pub strength: LockClauseStrength,
-    pub waitPolicy: LockWaitPolicy,
-    pub ermActive: bool,
-    pub curCtid: ItemPointerData,
-    pub ermExtra: *mut libc::c_void,
-}
-pub type RowMarkType = libc::c_uint;
-pub const ROW_MARK_COPY: RowMarkType = 5;
-pub const ROW_MARK_REFERENCE: RowMarkType = 4;
-pub const ROW_MARK_KEYSHARE: RowMarkType = 3;
-pub const ROW_MARK_SHARE: RowMarkType = 2;
-pub const ROW_MARK_NOKEYEXCLUSIVE: RowMarkType = 1;
-pub const ROW_MARK_EXCLUSIVE: RowMarkType = 0;
-#[derive(Copy, Clone)]
-#[repr(C)]
-pub struct Plan {
-    pub type_0: NodeTag,
-    pub startup_cost: Cost,
-    pub total_cost: Cost,
-    pub plan_rows: Cardinality,
-    pub plan_width: libc::c_int,
-    pub parallel_aware: bool,
-    pub parallel_safe: bool,
-    pub async_capable: bool,
-    pub plan_node_id: libc::c_int,
-    pub targetlist: *mut List,
-    pub qual: *mut List,
-    pub lefttree: *mut Plan,
-    pub righttree: *mut Plan,
-    pub initPlan: *mut List,
-    pub extParam: *mut Bitmapset,
-    pub allParam: *mut Bitmapset,
+struct ExecAuxRowMark {
+    rowmark: *mut ExecRowMark,
+    ctidAttNo: AttrNumber,
+    toidAttNo: AttrNumber,
+    wholeAttNo: AttrNumber,
 }
 #[derive(Copy, Clone)]
 #[repr(C)]
-pub struct ParamExecData {
-    pub execPlan: *mut libc::c_void,
-    pub value: Datum,
-    pub isnull: bool,
+struct ExecRowMark {
+    relation: Relation,
+    relid: Oid,
+    rti: Index,
+    prti: Index,
+    rowmarkId: Index,
+    markType: RowMarkType,
+    strength: LockClauseStrength,
+    waitPolicy: LockWaitPolicy,
+    ermActive: bool,
+    curCtid: ItemPointerData,
+    ermExtra: *mut libc::c_void,
 }
+type RowMarkType = libc::c_uint;
+const ROW_MARK_COPY: RowMarkType = 5;
+const ROW_MARK_REFERENCE: RowMarkType = 4;
+const ROW_MARK_KEYSHARE: RowMarkType = 3;
+const ROW_MARK_SHARE: RowMarkType = 2;
+const ROW_MARK_NOKEYEXCLUSIVE: RowMarkType = 1;
+const ROW_MARK_EXCLUSIVE: RowMarkType = 0;
+#[derive(Copy, Clone)]
 #[repr(C)]
-pub struct ResultRelInfo<'a> {
-    pub type_0: NodeTag,
-    pub ri_RangeTableIndex: Index,
-    pub ri_RelationDesc: Relation,
-    pub ri_NumIndices: libc::c_int,
-    pub ri_IndexRelationDescs: RelationPtr,
-    pub ri_IndexRelationInfo: *mut *mut IndexInfo<'a>,
-    pub ri_RowIdAttNo: AttrNumber,
-    pub ri_projectNew: *mut ProjectionInfo<'a>,
-    pub ri_newTupleSlot: *mut TupleTableSlot<'a>,
-    pub ri_oldTupleSlot: *mut TupleTableSlot<'a>,
-    pub ri_projectNewInfoValid: bool,
-    pub ri_TrigDesc: *mut TriggerDesc,
-    pub ri_TrigFunctions: *mut FmgrInfo,
-    pub ri_TrigWhenExprs: *mut *mut ExprState<'a>,
-    pub ri_TrigInstrument: *mut Instrumentation,
-    pub ri_ReturningSlot: *mut TupleTableSlot<'a>,
-    pub ri_TrigOldSlot: *mut TupleTableSlot<'a>,
-    pub ri_TrigNewSlot: *mut TupleTableSlot<'a>,
-    pub ri_FdwRoutine: *mut FdwRoutine,
-    pub ri_FdwState: *mut libc::c_void,
-    pub ri_usesFdwDirectModify: bool,
-    pub ri_NumSlots: libc::c_int,
-    pub ri_NumSlotsInitialized: libc::c_int,
-    pub ri_BatchSize: libc::c_int,
-    pub ri_Slots: *mut *mut TupleTableSlot<'a>,
-    pub ri_PlanSlots: *mut *mut TupleTableSlot<'a>,
-    pub ri_WithCheckOptions: *mut List,
-    pub ri_WithCheckOptionExprs: *mut List,
-    pub ri_ConstraintExprs: *mut *mut ExprState<'a>,
-    pub ri_GeneratedExprs: *mut *mut ExprState<'a>,
-    pub ri_NumGeneratedNeeded: libc::c_int,
-    pub ri_returningList: *mut List,
-    pub ri_projectReturning: *mut ProjectionInfo<'a>,
-    pub ri_onConflictArbiterIndexes: *mut List,
-    pub ri_onConflict: *mut OnConflictSetState<'a>,
-    pub ri_PartitionCheckExpr: *mut ExprState<'a>,
-    pub ri_RootResultRelInfo: *mut ResultRelInfo<'a>,
-    pub ri_RootToPartitionMap: *mut TupleConversionMap<'a>,
-    pub ri_PartitionTupleSlot: *mut TupleTableSlot<'a>,
-    pub ri_ChildToRootMap: *mut TupleConversionMap<'a>,
-    pub ri_ChildToRootMapValid: bool,
-    pub ri_CopyMultiInsertBuffer: *mut CopyMultiInsertBuffer,
+struct Plan {
+    type_0: NodeTag,
+    startup_cost: Cost,
+    total_cost: Cost,
+    plan_rows: Cardinality,
+    plan_width: libc::c_int,
+    parallel_aware: bool,
+    parallel_safe: bool,
+    async_capable: bool,
+    plan_node_id: libc::c_int,
+    targetlist: *mut List,
+    qual: *mut List,
+    lefttree: *mut Plan,
+    righttree: *mut Plan,
+    initPlan: *mut List,
+    extParam: *mut Bitmapset,
+    allParam: *mut Bitmapset,
 }
 #[derive(Copy, Clone)]
 #[repr(C)]
-pub struct OnConflictSetState<'a> {
-    pub type_0: NodeTag,
-    pub oc_Existing: *mut TupleTableSlot<'a>,
-    pub oc_ProjSlot: *mut TupleTableSlot<'a>,
-    pub oc_ProjInfo: *mut ProjectionInfo<'a>,
-    pub oc_WhereClause: *mut ExprState<'a>,
+struct ParamExecData {
+    execPlan: *mut libc::c_void,
+    value: Datum,
+    isnull: bool,
+}
+#[repr(C)]
+struct ResultRelInfo<'a> {
+    type_0: NodeTag,
+    ri_RangeTableIndex: Index,
+    ri_RelationDesc: Relation,
+    ri_NumIndices: libc::c_int,
+    ri_IndexRelationDescs: RelationPtr,
+    ri_IndexRelationInfo: *mut *mut IndexInfo<'a>,
+    ri_RowIdAttNo: AttrNumber,
+    ri_projectNew: *mut ProjectionInfo<'a>,
+    ri_newTupleSlot: *mut TupleTableSlot<'a>,
+    ri_oldTupleSlot: *mut TupleTableSlot<'a>,
+    ri_projectNewInfoValid: bool,
+    ri_TrigDesc: *mut TriggerDesc,
+    ri_TrigFunctions: *mut FmgrInfo,
+    ri_TrigWhenExprs: *mut *mut ExprState<'a>,
+    ri_TrigInstrument: *mut Instrumentation,
+    ri_ReturningSlot: *mut TupleTableSlot<'a>,
+    ri_TrigOldSlot: *mut TupleTableSlot<'a>,
+    ri_TrigNewSlot: *mut TupleTableSlot<'a>,
+    ri_FdwRoutine: *mut FdwRoutine,
+    ri_FdwState: *mut libc::c_void,
+    ri_usesFdwDirectModify: bool,
+    ri_NumSlots: libc::c_int,
+    ri_NumSlotsInitialized: libc::c_int,
+    ri_BatchSize: libc::c_int,
+    ri_Slots: *mut *mut TupleTableSlot<'a>,
+    ri_PlanSlots: *mut *mut TupleTableSlot<'a>,
+    ri_WithCheckOptions: *mut List,
+    ri_WithCheckOptionExprs: *mut List,
+    ri_ConstraintExprs: *mut *mut ExprState<'a>,
+    ri_GeneratedExprs: *mut *mut ExprState<'a>,
+    ri_NumGeneratedNeeded: libc::c_int,
+    ri_returningList: *mut List,
+    ri_projectReturning: *mut ProjectionInfo<'a>,
+    ri_onConflictArbiterIndexes: *mut List,
+    ri_onConflict: *mut OnConflictSetState<'a>,
+    ri_PartitionCheckExpr: *mut ExprState<'a>,
+    ri_RootResultRelInfo: *mut ResultRelInfo<'a>,
+    ri_RootToPartitionMap: *mut TupleConversionMap<'a>,
+    ri_PartitionTupleSlot: *mut TupleTableSlot<'a>,
+    ri_ChildToRootMap: *mut TupleConversionMap<'a>,
+    ri_ChildToRootMapValid: bool,
+    ri_CopyMultiInsertBuffer: *mut CopyMultiInsertBuffer,
 }
 #[derive(Copy, Clone)]
 #[repr(C)]
-pub struct TriggerDesc {
-    pub triggers: *mut Trigger,
-    pub numtriggers: libc::c_int,
-    pub trig_insert_before_row: bool,
-    pub trig_insert_after_row: bool,
-    pub trig_insert_instead_row: bool,
-    pub trig_insert_before_statement: bool,
-    pub trig_insert_after_statement: bool,
-    pub trig_update_before_row: bool,
-    pub trig_update_after_row: bool,
-    pub trig_update_instead_row: bool,
-    pub trig_update_before_statement: bool,
-    pub trig_update_after_statement: bool,
-    pub trig_delete_before_row: bool,
-    pub trig_delete_after_row: bool,
-    pub trig_delete_instead_row: bool,
-    pub trig_delete_before_statement: bool,
-    pub trig_delete_after_statement: bool,
-    pub trig_truncate_before_statement: bool,
-    pub trig_truncate_after_statement: bool,
-    pub trig_insert_new_table: bool,
-    pub trig_update_old_table: bool,
-    pub trig_update_new_table: bool,
-    pub trig_delete_old_table: bool,
+struct OnConflictSetState<'a> {
+    type_0: NodeTag,
+    oc_Existing: *mut TupleTableSlot<'a>,
+    oc_ProjSlot: *mut TupleTableSlot<'a>,
+    oc_ProjInfo: *mut ProjectionInfo<'a>,
+    oc_WhereClause: *mut ExprState<'a>,
 }
 #[derive(Copy, Clone)]
 #[repr(C)]
-pub struct Trigger {
-    pub tgoid: Oid,
-    pub tgname: *mut libc::c_char,
-    pub tgfoid: Oid,
-    pub tgtype: int16,
-    pub tgenabled: libc::c_char,
-    pub tgisinternal: bool,
-    pub tgisclone: bool,
-    pub tgconstrrelid: Oid,
-    pub tgconstrindid: Oid,
-    pub tgconstraint: Oid,
-    pub tgdeferrable: bool,
-    pub tginitdeferred: bool,
-    pub tgnargs: int16,
-    pub tgnattr: int16,
-    pub tgattr: *mut int16,
-    pub tgargs: *mut *mut libc::c_char,
-    pub tgqual: *mut libc::c_char,
-    pub tgoldtable: *mut libc::c_char,
-    pub tgnewtable: *mut libc::c_char,
+struct TriggerDesc {
+    triggers: *mut Trigger,
+    numtriggers: libc::c_int,
+    trig_insert_before_row: bool,
+    trig_insert_after_row: bool,
+    trig_insert_instead_row: bool,
+    trig_insert_before_statement: bool,
+    trig_insert_after_statement: bool,
+    trig_update_before_row: bool,
+    trig_update_after_row: bool,
+    trig_update_instead_row: bool,
+    trig_update_before_statement: bool,
+    trig_update_after_statement: bool,
+    trig_delete_before_row: bool,
+    trig_delete_after_row: bool,
+    trig_delete_instead_row: bool,
+    trig_delete_before_statement: bool,
+    trig_delete_after_statement: bool,
+    trig_truncate_before_statement: bool,
+    trig_truncate_after_statement: bool,
+    trig_insert_new_table: bool,
+    trig_update_old_table: bool,
+    trig_update_new_table: bool,
+    trig_delete_old_table: bool,
 }
 #[derive(Copy, Clone)]
 #[repr(C)]
-pub struct IndexInfo<'a> {
-    pub type_0: NodeTag,
-    pub ii_NumIndexAttrs: libc::c_int,
-    pub ii_NumIndexKeyAttrs: libc::c_int,
-    pub ii_IndexAttrNumbers: [AttrNumber; 32],
-    pub ii_Expressions: *mut List,
-    pub ii_ExpressionsState: *mut List,
-    pub ii_Predicate: *mut List,
-    pub ii_PredicateState: *mut ExprState<'a>,
-    pub ii_ExclusionOps: *mut Oid,
-    pub ii_ExclusionProcs: *mut Oid,
-    pub ii_ExclusionStrats: *mut uint16,
-    pub ii_UniqueOps: *mut Oid,
-    pub ii_UniqueProcs: *mut Oid,
-    pub ii_UniqueStrats: *mut uint16,
-    pub ii_OpclassOptions: *mut Datum,
-    pub ii_Unique: bool,
-    pub ii_NullsNotDistinct: bool,
-    pub ii_ReadyForInserts: bool,
-    pub ii_CheckedUnchanged: bool,
-    pub ii_IndexUnchanged: bool,
-    pub ii_Concurrent: bool,
-    pub ii_BrokenHotChain: bool,
-    pub ii_ParallelWorkers: libc::c_int,
-    pub ii_Am: Oid,
-    pub ii_AmCache: *mut libc::c_void,
-    pub ii_Context: MemoryContext,
+struct Trigger {
+    tgoid: Oid,
+    tgname: *mut libc::c_char,
+    tgfoid: Oid,
+    tgtype: int16,
+    tgenabled: libc::c_char,
+    tgisinternal: bool,
+    tgisclone: bool,
+    tgconstrrelid: Oid,
+    tgconstrindid: Oid,
+    tgconstraint: Oid,
+    tgdeferrable: bool,
+    tginitdeferred: bool,
+    tgnargs: int16,
+    tgnattr: int16,
+    tgattr: *mut int16,
+    tgargs: *mut *mut libc::c_char,
+    tgqual: *mut libc::c_char,
+    tgoldtable: *mut libc::c_char,
+    tgnewtable: *mut libc::c_char,
 }
 #[derive(Copy, Clone)]
 #[repr(C)]
-pub struct JunkFilter<'a> {
-    pub type_0: NodeTag,
-    pub jf_targetList: *mut List,
-    pub jf_cleanTupType: TupleDesc,
-    pub jf_cleanMap: *mut AttrNumber,
-    pub jf_resultSlot: *mut TupleTableSlot<'a>,
+struct IndexInfo<'a> {
+    type_0: NodeTag,
+    ii_NumIndexAttrs: libc::c_int,
+    ii_NumIndexKeyAttrs: libc::c_int,
+    ii_IndexAttrNumbers: [AttrNumber; 32],
+    ii_Expressions: *mut List,
+    ii_ExpressionsState: *mut List,
+    ii_Predicate: *mut List,
+    ii_PredicateState: *mut ExprState<'a>,
+    ii_ExclusionOps: *mut Oid,
+    ii_ExclusionProcs: *mut Oid,
+    ii_ExclusionStrats: *mut uint16,
+    ii_UniqueOps: *mut Oid,
+    ii_UniqueProcs: *mut Oid,
+    ii_UniqueStrats: *mut uint16,
+    ii_OpclassOptions: *mut Datum,
+    ii_Unique: bool,
+    ii_NullsNotDistinct: bool,
+    ii_ReadyForInserts: bool,
+    ii_CheckedUnchanged: bool,
+    ii_IndexUnchanged: bool,
+    ii_Concurrent: bool,
+    ii_BrokenHotChain: bool,
+    ii_ParallelWorkers: libc::c_int,
+    ii_Am: Oid,
+    ii_AmCache: *mut libc::c_void,
+    ii_Context: MemoryContext,
 }
 #[derive(Copy, Clone)]
 #[repr(C)]
-pub struct PlannedStmt {
-    pub type_0: NodeTag,
-    pub commandType: CmdType,
-    pub queryId: uint64,
-    pub hasReturning: bool,
-    pub hasModifyingCTE: bool,
-    pub canSetTag: bool,
-    pub transientPlan: bool,
-    pub dependsOnRole: bool,
-    pub parallelModeNeeded: bool,
-    pub jitFlags: libc::c_int,
-    pub planTree: *mut Plan,
-    pub rtable: *mut List,
-    pub resultRelations: *mut List,
-    pub appendRelations: *mut List,
-    pub subplans: *mut List,
-    pub rewindPlanIDs: *mut Bitmapset,
-    pub rowMarks: *mut List,
-    pub relationOids: *mut List,
-    pub invalItems: *mut List,
-    pub paramExecTypes: *mut List,
-    pub utilityStmt: *mut Node,
-    pub stmt_location: libc::c_int,
-    pub stmt_len: libc::c_int,
-}
-pub type Snapshot = *mut SnapshotData;
-#[derive(Copy, Clone)]
-#[repr(C)]
-pub struct SnapshotData {
-    pub snapshot_type: SnapshotType,
-    pub xmin: TransactionId,
-    pub xmax: TransactionId,
-    pub xip: *mut TransactionId,
-    pub xcnt: uint32,
-    pub subxip: *mut TransactionId,
-    pub subxcnt: int32,
-    pub suboverflowed: bool,
-    pub takenDuringRecovery: bool,
-    pub copied: bool,
-    pub curcid: CommandId,
-    pub speculativeToken: uint32,
-    pub vistest: *mut GlobalVisState,
-    pub active_count: uint32,
-    pub regd_count: uint32,
-    pub ph_node: pairingheap_node,
-    pub whenTaken: TimestampTz,
-    pub lsn: XLogRecPtr,
-    pub snapXactCompletionCount: uint64,
-}
-pub type SnapshotType = libc::c_uint;
-pub const SNAPSHOT_NON_VACUUMABLE: SnapshotType = 6;
-pub const SNAPSHOT_HISTORIC_MVCC: SnapshotType = 5;
-pub const SNAPSHOT_DIRTY: SnapshotType = 4;
-pub const SNAPSHOT_TOAST: SnapshotType = 3;
-pub const SNAPSHOT_ANY: SnapshotType = 2;
-pub const SNAPSHOT_SELF: SnapshotType = 1;
-pub const SNAPSHOT_MVCC: SnapshotType = 0;
-pub type ScanDirection = libc::c_int;
-pub const ForwardScanDirection: ScanDirection = 1;
-pub const NoMovementScanDirection: ScanDirection = 0;
-pub const BackwardScanDirection: ScanDirection = -1;
-pub type ExecProcNodeMtd = Option<unsafe fn(*mut PlanState) -> *mut TupleTableSlot>;
-pub type ExprStateEvalFunc =
-    Option<unsafe fn(*mut ExprState, *mut ExprContext, &mut bool) -> Datum>;
-pub type ExprDoneCond = libc::c_uint;
-pub const ExprEndResult: ExprDoneCond = 2;
-pub const ExprMultipleResult: ExprDoneCond = 1;
-pub const ExprSingleResult: ExprDoneCond = 0;
-pub type SetFunctionReturnMode = libc::c_uint;
-pub const SFRM_Materialize_Preferred: SetFunctionReturnMode = 8;
-pub const SFRM_Materialize_Random: SetFunctionReturnMode = 4;
-pub const SFRM_Materialize: SetFunctionReturnMode = 2;
-pub const SFRM_ValuePerCall: SetFunctionReturnMode = 1;
-#[derive(Copy, Clone)]
-#[repr(C)]
-pub struct ReturnSetInfo<'a> {
-    pub type_0: NodeTag,
-    pub econtext: *mut ExprContext<'a>,
-    pub expectedDesc: TupleDesc,
-    pub allowedModes: libc::c_int,
-    pub returnMode: SetFunctionReturnMode,
-    pub isDone: ExprDoneCond,
-    pub setResult: *mut Tuplestorestate,
-    pub setDesc: TupleDesc,
+struct JunkFilter<'a> {
+    type_0: NodeTag,
+    jf_targetList: *mut List,
+    jf_cleanTupType: TupleDesc,
+    jf_cleanMap: *mut AttrNumber,
+    jf_resultSlot: *mut TupleTableSlot<'a>,
 }
 #[derive(Copy, Clone)]
 #[repr(C)]
-pub struct AttInMetadata {
-    pub tupdesc: TupleDesc,
-    pub attinfuncs: *mut FmgrInfo,
-    pub attioparams: *mut Oid,
-    pub atttypmods: *mut int32,
+struct PlannedStmt {
+    type_0: NodeTag,
+    commandType: CmdType,
+    queryId: uint64,
+    hasReturning: bool,
+    hasModifyingCTE: bool,
+    canSetTag: bool,
+    transientPlan: bool,
+    dependsOnRole: bool,
+    parallelModeNeeded: bool,
+    jitFlags: libc::c_int,
+    planTree: *mut Plan,
+    rtable: *mut List,
+    resultRelations: *mut List,
+    appendRelations: *mut List,
+    subplans: *mut List,
+    rewindPlanIDs: *mut Bitmapset,
+    rowMarks: *mut List,
+    relationOids: *mut List,
+    invalItems: *mut List,
+    paramExecTypes: *mut List,
+    utilityStmt: *mut Node,
+    stmt_location: libc::c_int,
+    stmt_len: libc::c_int,
+}
+type Snapshot = *mut SnapshotData;
+#[derive(Copy, Clone)]
+#[repr(C)]
+struct SnapshotData {
+    snapshot_type: SnapshotType,
+    xmin: TransactionId,
+    xmax: TransactionId,
+    xip: *mut TransactionId,
+    xcnt: uint32,
+    subxip: *mut TransactionId,
+    subxcnt: int32,
+    suboverflowed: bool,
+    takenDuringRecovery: bool,
+    copied: bool,
+    curcid: CommandId,
+    speculativeToken: uint32,
+    vistest: *mut GlobalVisState,
+    active_count: uint32,
+    regd_count: uint32,
+    ph_node: pairingheap_node,
+    whenTaken: TimestampTz,
+    lsn: XLogRecPtr,
+    snapXactCompletionCount: uint64,
+}
+type SnapshotType = libc::c_uint;
+const SNAPSHOT_NON_VACUUMABLE: SnapshotType = 6;
+const SNAPSHOT_HISTORIC_MVCC: SnapshotType = 5;
+const SNAPSHOT_DIRTY: SnapshotType = 4;
+const SNAPSHOT_TOAST: SnapshotType = 3;
+const SNAPSHOT_ANY: SnapshotType = 2;
+const SNAPSHOT_SELF: SnapshotType = 1;
+const SNAPSHOT_MVCC: SnapshotType = 0;
+type ScanDirection = libc::c_int;
+const ForwardScanDirection: ScanDirection = 1;
+const NoMovementScanDirection: ScanDirection = 0;
+const BackwardScanDirection: ScanDirection = -1;
+type ExecProcNodeMtd = Option<unsafe fn(*mut PlanState) -> *mut TupleTableSlot>;
+type ExprStateEvalFunc = Option<unsafe fn(*mut ExprState, *mut ExprContext, &mut bool) -> Datum>;
+type ExprDoneCond = libc::c_uint;
+const ExprEndResult: ExprDoneCond = 2;
+const ExprMultipleResult: ExprDoneCond = 1;
+const ExprSingleResult: ExprDoneCond = 0;
+type SetFunctionReturnMode = libc::c_uint;
+const SFRM_Materialize_Preferred: SetFunctionReturnMode = 8;
+const SFRM_Materialize_Random: SetFunctionReturnMode = 4;
+const SFRM_Materialize: SetFunctionReturnMode = 2;
+const SFRM_ValuePerCall: SetFunctionReturnMode = 1;
+#[derive(Copy, Clone)]
+#[repr(C)]
+struct ReturnSetInfo<'a> {
+    type_0: NodeTag,
+    econtext: *mut ExprContext<'a>,
+    expectedDesc: TupleDesc,
+    allowedModes: libc::c_int,
+    returnMode: SetFunctionReturnMode,
+    isDone: ExprDoneCond,
+    setResult: *mut Tuplestorestate,
+    setDesc: TupleDesc,
 }
 #[derive(Copy, Clone)]
 #[repr(C)]
-pub struct FuncCallContext {
-    pub call_cntr: uint64,
-    pub max_calls: uint64,
-    pub user_fctx: *mut libc::c_void,
-    pub attinmeta: *mut AttInMetadata,
-    pub multi_call_memory_ctx: MemoryContext,
-    pub tuple_desc: TupleDesc,
+struct AttInMetadata {
+    tupdesc: TupleDesc,
+    attinfuncs: *mut FmgrInfo,
+    attioparams: *mut Oid,
+    atttypmods: *mut int32,
 }
-pub type TypeFuncClass = libc::c_uint;
-pub const TYPEFUNC_OTHER: TypeFuncClass = 4;
-pub const TYPEFUNC_RECORD: TypeFuncClass = 3;
-pub const TYPEFUNC_COMPOSITE_DOMAIN: TypeFuncClass = 2;
-pub const TYPEFUNC_COMPOSITE: TypeFuncClass = 1;
-pub const TYPEFUNC_SCALAR: TypeFuncClass = 0;
-pub type pg_time_t = int64;
+#[derive(Copy, Clone)]
+#[repr(C)]
+struct FuncCallContext {
+    call_cntr: uint64,
+    max_calls: uint64,
+    user_fctx: *mut libc::c_void,
+    attinmeta: *mut AttInMetadata,
+    multi_call_memory_ctx: MemoryContext,
+    tuple_desc: TupleDesc,
+}
+type TypeFuncClass = libc::c_uint;
+const TYPEFUNC_OTHER: TypeFuncClass = 4;
+const TYPEFUNC_RECORD: TypeFuncClass = 3;
+const TYPEFUNC_COMPOSITE_DOMAIN: TypeFuncClass = 2;
+const TYPEFUNC_COMPOSITE: TypeFuncClass = 1;
+const TYPEFUNC_SCALAR: TypeFuncClass = 0;
+type pg_time_t = int64;
 #[derive(Debug, Copy, Clone)]
 #[repr(C)]
 pub struct pg_tm {
@@ -1846,33 +1845,33 @@ pub struct pg_tm {
 
 #[derive(Copy, Clone)]
 #[repr(C)]
-pub struct datetkn {
-    pub token: [libc::c_char; 11],
-    pub type_0: RealFieldType,
-    pub value: int32,
+struct datetkn {
+    token: [libc::c_char; 11],
+    type_0: RealFieldType,
+    value: int32,
 }
 #[derive(Copy, Clone)]
 #[repr(C)]
-pub struct TimeZoneAbbrevTable {
-    pub tblsize: Size,
-    pub numabbrevs: libc::c_int,
-    pub abbrevs: [datetkn; 0],
+struct TimeZoneAbbrevTable {
+    tblsize: Size,
+    numabbrevs: libc::c_int,
+    abbrevs: [datetkn; 0],
 }
 #[derive(Copy, Clone)]
 #[repr(C)]
-pub struct DynamicZoneAbbrev {
-    pub tz: *mut pg_tz,
-    pub zone: [libc::c_char; 0],
+struct DynamicZoneAbbrev {
+    tz: *mut pg_tz,
+    zone: [libc::c_char; 0],
 }
 #[derive(Copy, Clone)]
 #[repr(C)]
-pub struct tzEntry {
-    pub abbrev: *mut libc::c_char,
-    pub zone: *mut libc::c_char,
-    pub offset: libc::c_int,
-    pub is_dst: bool,
-    pub lineno: libc::c_int,
-    pub filename: *const libc::c_char,
+struct tzEntry {
+    abbrev: *mut libc::c_char,
+    zone: *mut libc::c_char,
+    offset: libc::c_int,
+    is_dst: bool,
+    lineno: libc::c_int,
+    filename: *const libc::c_char,
 }
 #[inline]
 unsafe fn MemoryContextSwitchTo(context: MemoryContext) -> MemoryContext {
@@ -1885,7 +1884,7 @@ unsafe fn list_nth_cell(list: *const List, n: libc::c_int) -> *mut ListCell {
     return &mut *((*list).elements).offset(n as isize) as *mut ListCell;
 }
 
-pub static mut day_tab: [[libc::c_int; 13]; 2] = [
+static mut day_tab: [[libc::c_int; 13]; 2] = [
     [
         31 as libc::c_int,
         28 as libc::c_int,
@@ -1918,7 +1917,7 @@ pub static mut day_tab: [[libc::c_int; 13]; 2] = [
     ],
 ];
 
-pub static mut months: [*const libc::c_char; 13] = [
+static mut months: [*const libc::c_char; 13] = [
     b"Jan\0" as *const u8 as *const libc::c_char,
     b"Feb\0" as *const u8 as *const libc::c_char,
     b"Mar\0" as *const u8 as *const libc::c_char,
@@ -1934,7 +1933,7 @@ pub static mut months: [*const libc::c_char; 13] = [
     0 as *const libc::c_char,
 ];
 
-pub static mut days: [*const libc::c_char; 8] = [
+static mut days: [*const libc::c_char; 8] = [
     b"Sunday\0" as *const u8 as *const libc::c_char,
     b"Monday\0" as *const u8 as *const libc::c_char,
     b"Tuesday\0" as *const u8 as *const libc::c_char,
@@ -3486,7 +3485,7 @@ static mut abbrevcache: [*const datetkn; 25] = [
     0 as *const datetkn,
 ];
 
-pub unsafe fn date2j(mut y: libc::c_int, mut m: libc::c_int, d: libc::c_int) -> libc::c_int {
+unsafe fn date2j(mut y: libc::c_int, mut m: libc::c_int, d: libc::c_int) -> libc::c_int {
     if m > 2 as libc::c_int {
         m += 1 as libc::c_int;
         y += 4800 as libc::c_int;
@@ -3501,7 +3500,7 @@ pub unsafe fn date2j(mut y: libc::c_int, mut m: libc::c_int, d: libc::c_int) -> 
     return julian;
 }
 
-pub unsafe fn j2date(
+unsafe fn j2date(
     jd: libc::c_int,
     year: *mut libc::c_int,
     month: *mut libc::c_int,
@@ -3551,7 +3550,7 @@ pub unsafe fn j2date(
         .wrapping_add(1 as libc::c_int as libc::c_uint) as libc::c_int;
 }
 
-pub unsafe fn j2day(mut date: libc::c_int) -> libc::c_int {
+unsafe fn j2day(mut date: libc::c_int) -> libc::c_int {
     date += 1 as libc::c_int;
     date %= 7 as libc::c_int;
     if date < 0 as libc::c_int {
@@ -3560,12 +3559,12 @@ pub unsafe fn j2day(mut date: libc::c_int) -> libc::c_int {
     return date;
 }
 
-pub unsafe fn GetCurrentDateTime(tm: *mut pg_tm) {
+unsafe fn GetCurrentDateTime(tm: *mut pg_tm) {
     let mut fsec: fsec_t = 0;
     GetCurrentTimeUsec(tm, &mut fsec, 0 as *mut libc::c_int);
 }
 
-pub unsafe fn GetCurrentTimeUsec(tm: *mut pg_tm, fsec: *mut fsec_t, tzp: *mut libc::c_int) {
+unsafe fn GetCurrentTimeUsec(tm: *mut pg_tm, fsec: *mut fsec_t, tzp: *mut libc::c_int) {
     let cur_ts: TimestampTz = GetCurrentTransactionStartTimestamp();
     static mut cache_ts: TimestampTz = 0 as libc::c_int as TimestampTz;
     static mut cache_timezone: *mut pg_tz = 0 as *const pg_tz as *mut pg_tz;
@@ -4588,7 +4587,7 @@ pub unsafe fn DecodeDateTime(
     return 0 as libc::c_int;
 }
 
-pub unsafe fn DetermineTimeZoneOffset(tm: *mut pg_tm, tzp: *mut pg_tz) -> libc::c_int {
+unsafe fn DetermineTimeZoneOffset(tm: *mut pg_tm, tzp: *mut pg_tz) -> libc::c_int {
     let mut t: pg_time_t = 0;
     return DetermineTimeZoneOffsetInternal(tm, tzp, &mut t);
 }
@@ -4681,7 +4680,7 @@ unsafe fn DetermineTimeZoneOffsetInternal(
     return 0 as libc::c_int;
 }
 
-pub unsafe fn DetermineTimeZoneAbbrevOffset(
+unsafe fn DetermineTimeZoneAbbrevOffset(
     mut tm: *mut pg_tm,
     abbr: *const libc::c_char,
     tzp: *mut pg_tz,
@@ -4697,7 +4696,7 @@ pub unsafe fn DetermineTimeZoneAbbrevOffset(
     return zone_offset;
 }
 
-pub unsafe fn DetermineTimeZoneAbbrevOffsetTS(
+unsafe fn DetermineTimeZoneAbbrevOffsetTS(
     ts: TimestampTz,
     abbr: *const libc::c_char,
     tzp: *mut pg_tz,
@@ -4802,7 +4801,7 @@ unsafe fn DetermineTimeZoneAbbrevOffsetInternal(
 // Allow specifying date to get a better time zone,
 // if time zones are allowed. - thomas 2001-12-26
 
-pub unsafe fn DecodeTimeOnly(
+unsafe fn DecodeTimeOnly(
     field: *mut *mut libc::c_char,
     ftype: *mut libc::c_int,
     nf: libc::c_int,
@@ -5514,7 +5513,7 @@ unsafe fn DecodeDate(
 
 /// Check valid year/month/day values, handle BC and DOY cases Return 0 if okay, a DTERR code if not.
 
-pub unsafe fn ValidateDate(
+unsafe fn ValidateDate(
     fmask: FieldMask,
     isjulian: bool,
     is2digits: bool,
@@ -5851,7 +5850,7 @@ unsafe fn DecodeNumberField(
     return -(1 as libc::c_int);
 }
 
-pub unsafe fn DecodeTimezone(str: *mut libc::c_char, tzp: *mut libc::c_int) -> libc::c_int {
+unsafe fn DecodeTimezone(str: *mut libc::c_char, tzp: *mut libc::c_int) -> libc::c_int {
     let mut tz: libc::c_int;
     let min: libc::c_int;
     let mut sec: libc::c_int = 0 as libc::c_int;
@@ -5915,7 +5914,7 @@ pub unsafe fn DecodeTimezone(str: *mut libc::c_char, tzp: *mut libc::c_int) -> l
     return 0 as libc::c_int;
 }
 
-pub unsafe fn DecodeTimezoneAbbrev(
+unsafe fn DecodeTimezoneAbbrev(
     field: libc::c_int,
     lowtoken: *mut libc::c_char,
     offset: *mut libc::c_int,
@@ -5959,7 +5958,7 @@ pub unsafe fn DecodeTimezoneAbbrev(
     }
 }
 
-pub unsafe fn DecodeSpecial(
+unsafe fn DecodeSpecial(
     field: libc::c_int,
     lowtoken: *mut libc::c_char,
     val: *mut libc::c_int,
@@ -5994,7 +5993,7 @@ unsafe fn ClearPgTm(mut tm: *mut pg_tm, fsec: *mut fsec_t) {
     *fsec = 0 as libc::c_int;
 }
 
-pub unsafe fn DecodeInterval(
+unsafe fn DecodeInterval(
     field: *mut *mut libc::c_char,
     ftype: *mut libc::c_int,
     nf: libc::c_int,
@@ -6370,7 +6369,7 @@ unsafe fn ISO8601IntegerWidth(mut fieldstart: *mut libc::c_char) -> libc::c_int 
     ) as libc::c_int;
 }
 
-pub unsafe fn DecodeISO8601Interval(
+unsafe fn DecodeISO8601Interval(
     mut str: *mut libc::c_char,
     dtype: *mut libc::c_int,
     mut tm: *mut pg_tm,
@@ -6580,7 +6579,7 @@ pub unsafe fn DecodeISO8601Interval(
     return 0 as libc::c_int;
 }
 
-pub unsafe fn DecodeUnits(
+unsafe fn DecodeUnits(
     field: libc::c_int,
     lowtoken: *mut libc::c_char,
     val: *mut libc::c_int,
@@ -6605,7 +6604,7 @@ pub unsafe fn DecodeUnits(
     }
 }
 
-pub unsafe fn DateTimeParseError(
+unsafe fn DateTimeParseError(
     dterr: libc::c_int,
     str: *const libc::c_char,
     datatype: *const libc::c_char,
@@ -6863,7 +6862,7 @@ unsafe fn EncodeTimezone(
     return str;
 }
 
-pub unsafe fn EncodeDateOnly(tm: *mut pg_tm, style: libc::c_int, mut str: *mut libc::c_char) {
+unsafe fn EncodeDateOnly(tm: *mut pg_tm, style: libc::c_int, mut str: *mut libc::c_char) {
     match style {
         1 | 4 => {
             str = pg_ultostr_zeropad(
@@ -6969,7 +6968,7 @@ pub unsafe fn EncodeDateOnly(tm: *mut pg_tm, style: libc::c_int, mut str: *mut l
     *str = '\0' as i32 as libc::c_char;
 }
 
-pub unsafe fn EncodeTimeOnly(
+unsafe fn EncodeTimeOnly(
     tm: *mut pg_tm,
     fsec: fsec_t,
     print_tz: bool,
@@ -6992,7 +6991,7 @@ pub unsafe fn EncodeTimeOnly(
     *str = '\0' as i32 as libc::c_char;
 }
 
-pub unsafe fn EncodeDateTime(
+unsafe fn EncodeDateTime(
     mut tm: *mut pg_tm,
     fsec: fsec_t,
     mut print_tz: bool,
@@ -7308,7 +7307,7 @@ unsafe fn AddVerboseIntPart(
     return cp.offset(strlen(cp) as isize);
 }
 
-pub unsafe fn EncodeInterval(
+unsafe fn EncodeInterval(
     tm: *mut pg_tm,
     mut fsec: fsec_t,
     style: libc::c_int,
@@ -7669,7 +7668,7 @@ unsafe fn CheckDateTokenTable(
     return ok;
 }
 
-pub unsafe fn CheckDateTokenTables() -> bool {
+unsafe fn CheckDateTokenTables() -> bool {
     let mut ok = true;
     ok = ok
         && CheckDateTokenTable(
@@ -7686,7 +7685,7 @@ pub unsafe fn CheckDateTokenTables() -> bool {
     return ok;
 }
 
-pub unsafe fn TemporalSimplify(max_precis: int32, node: *mut Node) -> *mut Node {
+unsafe fn TemporalSimplify(max_precis: int32, node: *mut Node) -> *mut Node {
     let expr: *mut FuncExpr = node as *mut FuncExpr;
     let mut ret: *mut Node = 0 as *mut Node;
     let typmod = (*list_nth_cell((*expr).args, 1 as libc::c_int)).ptr_value as *mut Node;
@@ -7707,7 +7706,7 @@ pub unsafe fn TemporalSimplify(max_precis: int32, node: *mut Node) -> *mut Node 
     return ret;
 }
 
-pub unsafe fn ConvertTimeZoneAbbrevs(
+unsafe fn ConvertTimeZoneAbbrevs(
     abbrevs: *mut tzEntry,
     n: libc::c_int,
 ) -> *mut TimeZoneAbbrevTable {
@@ -7773,7 +7772,7 @@ pub unsafe fn ConvertTimeZoneAbbrevs(
     return tbl;
 }
 
-pub unsafe fn InstallTimeZoneAbbrevs(tbl: *mut TimeZoneAbbrevTable) {
+unsafe fn InstallTimeZoneAbbrevs(tbl: *mut TimeZoneAbbrevTable) {
     zoneabbrevtbl = tbl;
     memset(
         abbrevcache.as_mut_ptr() as *mut libc::c_void,
@@ -7827,7 +7826,7 @@ unsafe fn FetchDynamicTimeZone(tbl: *mut TimeZoneAbbrevTable, tp: *const datetkn
     return (*dtza).tz;
 }
 
-pub unsafe fn pg_timezone_abbrevs(mut fcinfo: FunctionCallInfo) -> Datum {
+unsafe fn pg_timezone_abbrevs(mut fcinfo: FunctionCallInfo) -> Datum {
     let mut funcctx: *mut FuncCallContext;
     let mut pindex: *mut libc::c_int;
     let result: Datum;
@@ -8029,7 +8028,7 @@ pub unsafe fn pg_timezone_abbrevs(mut fcinfo: FunctionCallInfo) -> Datum {
     return result;
 }
 
-pub unsafe fn pg_timezone_names(fcinfo: FunctionCallInfo) -> Datum {
+unsafe fn pg_timezone_names(fcinfo: FunctionCallInfo) -> Datum {
     let mut rsinfo: *mut ReturnSetInfo = (*fcinfo).resultinfo as *mut ReturnSetInfo;
     let mut tupdesc: TupleDesc = 0 as *mut TupleDescData;
     let mut tz: *mut pg_tz;
