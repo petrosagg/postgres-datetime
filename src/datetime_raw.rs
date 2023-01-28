@@ -1871,7 +1871,7 @@ pub struct pg_tm {
 #[repr(C)]
 pub struct datetkn {
     pub token: [libc::c_char; 11],
-    pub type_0: libc::c_char,
+    pub type_0: RealFieldType,
     pub value: int32,
 }
 #[derive(Copy, Clone)]
@@ -2125,7 +2125,7 @@ static mut datetktbl: [datetkn; 71] = unsafe {
                 token: *::core::mem::transmute::<&[u8; 11], &mut [libc::c_char; 11]>(
                     b"-infinity\0\0",
                 ),
-                type_0: 0 as libc::c_int as libc::c_char,
+                type_0: RealFieldType::Reserved,
                 value: 9 as libc::c_int,
             };
             init
@@ -2135,7 +2135,7 @@ static mut datetktbl: [datetkn; 71] = unsafe {
                 token: *::core::mem::transmute::<&[u8; 11], &mut [libc::c_char; 11]>(
                     b"ad\0\0\0\0\0\0\0\0\0",
                 ),
-                type_0: 18 as libc::c_int as libc::c_char,
+                type_0: RealFieldType::Adbc,
                 value: 0 as libc::c_int,
             };
             init
@@ -2145,7 +2145,7 @@ static mut datetktbl: [datetkn; 71] = unsafe {
                 token: *::core::mem::transmute::<&[u8; 11], &mut [libc::c_char; 11]>(
                     b"allballs\0\0\0",
                 ),
-                type_0: 0 as libc::c_int as libc::c_char,
+                type_0: RealFieldType::Reserved,
                 value: 16 as libc::c_int,
             };
             init
@@ -2155,7 +2155,7 @@ static mut datetktbl: [datetkn; 71] = unsafe {
                 token: *::core::mem::transmute::<&[u8; 11], &mut [libc::c_char; 11]>(
                     b"am\0\0\0\0\0\0\0\0\0",
                 ),
-                type_0: 9 as libc::c_int as libc::c_char,
+                type_0: RealFieldType::AmPm,
                 value: 0 as libc::c_int,
             };
             init
@@ -2165,7 +2165,7 @@ static mut datetktbl: [datetkn; 71] = unsafe {
                 token: *::core::mem::transmute::<&[u8; 11], &mut [libc::c_char; 11]>(
                     b"apr\0\0\0\0\0\0\0\0",
                 ),
-                type_0: 1 as libc::c_int as libc::c_char,
+                type_0: RealFieldType::Month,
                 value: 4 as libc::c_int,
             };
             init
@@ -2175,7 +2175,7 @@ static mut datetktbl: [datetkn; 71] = unsafe {
                 token: *::core::mem::transmute::<&[u8; 11], &mut [libc::c_char; 11]>(
                     b"april\0\0\0\0\0\0",
                 ),
-                type_0: 1 as libc::c_int as libc::c_char,
+                type_0: RealFieldType::Month,
                 value: 4 as libc::c_int,
             };
             init
@@ -2185,7 +2185,7 @@ static mut datetktbl: [datetkn; 71] = unsafe {
                 token: *::core::mem::transmute::<&[u8; 11], &mut [libc::c_char; 11]>(
                     b"at\0\0\0\0\0\0\0\0\0",
                 ),
-                type_0: 8 as libc::c_int as libc::c_char,
+                type_0: RealFieldType::IgnoreDtf,
                 value: 0 as libc::c_int,
             };
             init
@@ -2195,7 +2195,7 @@ static mut datetktbl: [datetkn; 71] = unsafe {
                 token: *::core::mem::transmute::<&[u8; 11], &mut [libc::c_char; 11]>(
                     b"aug\0\0\0\0\0\0\0\0",
                 ),
-                type_0: 1 as libc::c_int as libc::c_char,
+                type_0: RealFieldType::Month,
                 value: 8 as libc::c_int,
             };
             init
@@ -2205,7 +2205,7 @@ static mut datetktbl: [datetkn; 71] = unsafe {
                 token: *::core::mem::transmute::<&[u8; 11], &mut [libc::c_char; 11]>(
                     b"august\0\0\0\0\0",
                 ),
-                type_0: 1 as libc::c_int as libc::c_char,
+                type_0: RealFieldType::Month,
                 value: 8 as libc::c_int,
             };
             init
@@ -2215,7 +2215,7 @@ static mut datetktbl: [datetkn; 71] = unsafe {
                 token: *::core::mem::transmute::<&[u8; 11], &mut [libc::c_char; 11]>(
                     b"bc\0\0\0\0\0\0\0\0\0",
                 ),
-                type_0: 18 as libc::c_int as libc::c_char,
+                type_0: RealFieldType::Adbc,
                 value: 1 as libc::c_int,
             };
             init
@@ -2225,7 +2225,7 @@ static mut datetktbl: [datetkn; 71] = unsafe {
                 token: *::core::mem::transmute::<&[u8; 11], &mut [libc::c_char; 11]>(
                     b"d\0\0\0\0\0\0\0\0\0\0",
                 ),
-                type_0: 17 as libc::c_int as libc::c_char,
+                type_0: RealFieldType::Units,
                 value: 21 as libc::c_int,
             };
             init
@@ -2235,7 +2235,7 @@ static mut datetktbl: [datetkn; 71] = unsafe {
                 token: *::core::mem::transmute::<&[u8; 11], &mut [libc::c_char; 11]>(
                     b"dec\0\0\0\0\0\0\0\0",
                 ),
-                type_0: 1 as libc::c_int as libc::c_char,
+                type_0: RealFieldType::Month,
                 value: 12 as libc::c_int,
             };
             init
@@ -2245,7 +2245,7 @@ static mut datetktbl: [datetkn; 71] = unsafe {
                 token: *::core::mem::transmute::<&[u8; 11], &mut [libc::c_char; 11]>(
                     b"december\0\0\0",
                 ),
-                type_0: 1 as libc::c_int as libc::c_char,
+                type_0: RealFieldType::Month,
                 value: 12 as libc::c_int,
             };
             init
@@ -2255,7 +2255,7 @@ static mut datetktbl: [datetkn; 71] = unsafe {
                 token: *::core::mem::transmute::<&[u8; 11], &mut [libc::c_char; 11]>(
                     b"dow\0\0\0\0\0\0\0\0",
                 ),
-                type_0: 17 as libc::c_int as libc::c_char,
+                type_0: RealFieldType::Units,
                 value: 32 as libc::c_int,
             };
             init
@@ -2265,7 +2265,7 @@ static mut datetktbl: [datetkn; 71] = unsafe {
                 token: *::core::mem::transmute::<&[u8; 11], &mut [libc::c_char; 11]>(
                     b"doy\0\0\0\0\0\0\0\0",
                 ),
-                type_0: 17 as libc::c_int as libc::c_char,
+                type_0: RealFieldType::Units,
                 value: 33 as libc::c_int,
             };
             init
@@ -2275,7 +2275,7 @@ static mut datetktbl: [datetkn; 71] = unsafe {
                 token: *::core::mem::transmute::<&[u8; 11], &mut [libc::c_char; 11]>(
                     b"dst\0\0\0\0\0\0\0\0",
                 ),
-                type_0: 28 as libc::c_int as libc::c_char,
+                type_0: RealFieldType::DtzMod,
                 value: 3600 as libc::c_int,
             };
             init
@@ -2285,7 +2285,7 @@ static mut datetktbl: [datetkn; 71] = unsafe {
                 token: *::core::mem::transmute::<&[u8; 11], &mut [libc::c_char; 11]>(
                     b"epoch\0\0\0\0\0\0",
                 ),
-                type_0: 0 as libc::c_int as libc::c_char,
+                type_0: RealFieldType::Reserved,
                 value: 11 as libc::c_int,
             };
             init
@@ -2295,7 +2295,7 @@ static mut datetktbl: [datetkn; 71] = unsafe {
                 token: *::core::mem::transmute::<&[u8; 11], &mut [libc::c_char; 11]>(
                     b"feb\0\0\0\0\0\0\0\0",
                 ),
-                type_0: 1 as libc::c_int as libc::c_char,
+                type_0: RealFieldType::Month,
                 value: 2 as libc::c_int,
             };
             init
@@ -2305,7 +2305,7 @@ static mut datetktbl: [datetkn; 71] = unsafe {
                 token: *::core::mem::transmute::<&[u8; 11], &mut [libc::c_char; 11]>(
                     b"february\0\0\0",
                 ),
-                type_0: 1 as libc::c_int as libc::c_char,
+                type_0: RealFieldType::Month,
                 value: 2 as libc::c_int,
             };
             init
@@ -2315,7 +2315,7 @@ static mut datetktbl: [datetkn; 71] = unsafe {
                 token: *::core::mem::transmute::<&[u8; 11], &mut [libc::c_char; 11]>(
                     b"fri\0\0\0\0\0\0\0\0",
                 ),
-                type_0: 16 as libc::c_int as libc::c_char,
+                type_0: RealFieldType::Dow,
                 value: 5 as libc::c_int,
             };
             init
@@ -2325,7 +2325,7 @@ static mut datetktbl: [datetkn; 71] = unsafe {
                 token: *::core::mem::transmute::<&[u8; 11], &mut [libc::c_char; 11]>(
                     b"friday\0\0\0\0\0",
                 ),
-                type_0: 16 as libc::c_int as libc::c_char,
+                type_0: RealFieldType::Dow,
                 value: 5 as libc::c_int,
             };
             init
@@ -2335,7 +2335,7 @@ static mut datetktbl: [datetkn; 71] = unsafe {
                 token: *::core::mem::transmute::<&[u8; 11], &mut [libc::c_char; 11]>(
                     b"h\0\0\0\0\0\0\0\0\0\0",
                 ),
-                type_0: 17 as libc::c_int as libc::c_char,
+                type_0: RealFieldType::Units,
                 value: 20 as libc::c_int,
             };
             init
@@ -2345,7 +2345,7 @@ static mut datetktbl: [datetkn; 71] = unsafe {
                 token: *::core::mem::transmute::<&[u8; 11], &mut [libc::c_char; 11]>(
                     b"infinity\0\0\0",
                 ),
-                type_0: 0 as libc::c_int as libc::c_char,
+                type_0: RealFieldType::Reserved,
                 value: 10 as libc::c_int,
             };
             init
@@ -2355,7 +2355,7 @@ static mut datetktbl: [datetkn; 71] = unsafe {
                 token: *::core::mem::transmute::<&[u8; 11], &mut [libc::c_char; 11]>(
                     b"isodow\0\0\0\0\0",
                 ),
-                type_0: 17 as libc::c_int as libc::c_char,
+                type_0: RealFieldType::Units,
                 value: 37 as libc::c_int,
             };
             init
@@ -2365,7 +2365,7 @@ static mut datetktbl: [datetkn; 71] = unsafe {
                 token: *::core::mem::transmute::<&[u8; 11], &mut [libc::c_char; 11]>(
                     b"isoyear\0\0\0\0",
                 ),
-                type_0: 17 as libc::c_int as libc::c_char,
+                type_0: RealFieldType::Units,
                 value: 36 as libc::c_int,
             };
             init
@@ -2375,7 +2375,7 @@ static mut datetktbl: [datetkn; 71] = unsafe {
                 token: *::core::mem::transmute::<&[u8; 11], &mut [libc::c_char; 11]>(
                     b"j\0\0\0\0\0\0\0\0\0\0",
                 ),
-                type_0: 17 as libc::c_int as libc::c_char,
+                type_0: RealFieldType::Units,
                 value: 31 as libc::c_int,
             };
             init
@@ -2385,7 +2385,7 @@ static mut datetktbl: [datetkn; 71] = unsafe {
                 token: *::core::mem::transmute::<&[u8; 11], &mut [libc::c_char; 11]>(
                     b"jan\0\0\0\0\0\0\0\0",
                 ),
-                type_0: 1 as libc::c_int as libc::c_char,
+                type_0: RealFieldType::Month,
                 value: 1 as libc::c_int,
             };
             init
@@ -2395,7 +2395,7 @@ static mut datetktbl: [datetkn; 71] = unsafe {
                 token: *::core::mem::transmute::<&[u8; 11], &mut [libc::c_char; 11]>(
                     b"january\0\0\0\0",
                 ),
-                type_0: 1 as libc::c_int as libc::c_char,
+                type_0: RealFieldType::Month,
                 value: 1 as libc::c_int,
             };
             init
@@ -2405,7 +2405,7 @@ static mut datetktbl: [datetkn; 71] = unsafe {
                 token: *::core::mem::transmute::<&[u8; 11], &mut [libc::c_char; 11]>(
                     b"jd\0\0\0\0\0\0\0\0\0",
                 ),
-                type_0: 17 as libc::c_int as libc::c_char,
+                type_0: RealFieldType::Units,
                 value: 31 as libc::c_int,
             };
             init
@@ -2415,7 +2415,7 @@ static mut datetktbl: [datetkn; 71] = unsafe {
                 token: *::core::mem::transmute::<&[u8; 11], &mut [libc::c_char; 11]>(
                     b"jul\0\0\0\0\0\0\0\0",
                 ),
-                type_0: 1 as libc::c_int as libc::c_char,
+                type_0: RealFieldType::Month,
                 value: 7 as libc::c_int,
             };
             init
@@ -2425,7 +2425,7 @@ static mut datetktbl: [datetkn; 71] = unsafe {
                 token: *::core::mem::transmute::<&[u8; 11], &mut [libc::c_char; 11]>(
                     b"julian\0\0\0\0\0",
                 ),
-                type_0: 17 as libc::c_int as libc::c_char,
+                type_0: RealFieldType::Units,
                 value: 31 as libc::c_int,
             };
             init
@@ -2435,7 +2435,7 @@ static mut datetktbl: [datetkn; 71] = unsafe {
                 token: *::core::mem::transmute::<&[u8; 11], &mut [libc::c_char; 11]>(
                     b"july\0\0\0\0\0\0\0",
                 ),
-                type_0: 1 as libc::c_int as libc::c_char,
+                type_0: RealFieldType::Month,
                 value: 7 as libc::c_int,
             };
             init
@@ -2445,7 +2445,7 @@ static mut datetktbl: [datetkn; 71] = unsafe {
                 token: *::core::mem::transmute::<&[u8; 11], &mut [libc::c_char; 11]>(
                     b"jun\0\0\0\0\0\0\0\0",
                 ),
-                type_0: 1 as libc::c_int as libc::c_char,
+                type_0: RealFieldType::Month,
                 value: 6 as libc::c_int,
             };
             init
@@ -2455,7 +2455,7 @@ static mut datetktbl: [datetkn; 71] = unsafe {
                 token: *::core::mem::transmute::<&[u8; 11], &mut [libc::c_char; 11]>(
                     b"june\0\0\0\0\0\0\0",
                 ),
-                type_0: 1 as libc::c_int as libc::c_char,
+                type_0: RealFieldType::Month,
                 value: 6 as libc::c_int,
             };
             init
@@ -2465,7 +2465,7 @@ static mut datetktbl: [datetkn; 71] = unsafe {
                 token: *::core::mem::transmute::<&[u8; 11], &mut [libc::c_char; 11]>(
                     b"m\0\0\0\0\0\0\0\0\0\0",
                 ),
-                type_0: 17 as libc::c_int as libc::c_char,
+                type_0: RealFieldType::Units,
                 value: 23 as libc::c_int,
             };
             init
@@ -2475,7 +2475,7 @@ static mut datetktbl: [datetkn; 71] = unsafe {
                 token: *::core::mem::transmute::<&[u8; 11], &mut [libc::c_char; 11]>(
                     b"mar\0\0\0\0\0\0\0\0",
                 ),
-                type_0: 1 as libc::c_int as libc::c_char,
+                type_0: RealFieldType::Month,
                 value: 3 as libc::c_int,
             };
             init
@@ -2485,7 +2485,7 @@ static mut datetktbl: [datetkn; 71] = unsafe {
                 token: *::core::mem::transmute::<&[u8; 11], &mut [libc::c_char; 11]>(
                     b"march\0\0\0\0\0\0",
                 ),
-                type_0: 1 as libc::c_int as libc::c_char,
+                type_0: RealFieldType::Month,
                 value: 3 as libc::c_int,
             };
             init
@@ -2495,7 +2495,7 @@ static mut datetktbl: [datetkn; 71] = unsafe {
                 token: *::core::mem::transmute::<&[u8; 11], &mut [libc::c_char; 11]>(
                     b"may\0\0\0\0\0\0\0\0",
                 ),
-                type_0: 1 as libc::c_int as libc::c_char,
+                type_0: RealFieldType::Month,
                 value: 5 as libc::c_int,
             };
             init
@@ -2505,7 +2505,7 @@ static mut datetktbl: [datetkn; 71] = unsafe {
                 token: *::core::mem::transmute::<&[u8; 11], &mut [libc::c_char; 11]>(
                     b"mm\0\0\0\0\0\0\0\0\0",
                 ),
-                type_0: 17 as libc::c_int as libc::c_char,
+                type_0: RealFieldType::Units,
                 value: 19 as libc::c_int,
             };
             init
@@ -2515,7 +2515,7 @@ static mut datetktbl: [datetkn; 71] = unsafe {
                 token: *::core::mem::transmute::<&[u8; 11], &mut [libc::c_char; 11]>(
                     b"mon\0\0\0\0\0\0\0\0",
                 ),
-                type_0: 16 as libc::c_int as libc::c_char,
+                type_0: RealFieldType::Dow,
                 value: 1 as libc::c_int,
             };
             init
@@ -2525,7 +2525,7 @@ static mut datetktbl: [datetkn; 71] = unsafe {
                 token: *::core::mem::transmute::<&[u8; 11], &mut [libc::c_char; 11]>(
                     b"monday\0\0\0\0\0",
                 ),
-                type_0: 16 as libc::c_int as libc::c_char,
+                type_0: RealFieldType::Dow,
                 value: 1 as libc::c_int,
             };
             init
@@ -2535,7 +2535,7 @@ static mut datetktbl: [datetkn; 71] = unsafe {
                 token: *::core::mem::transmute::<&[u8; 11], &mut [libc::c_char; 11]>(
                     b"nov\0\0\0\0\0\0\0\0",
                 ),
-                type_0: 1 as libc::c_int as libc::c_char,
+                type_0: RealFieldType::Month,
                 value: 11 as libc::c_int,
             };
             init
@@ -2545,7 +2545,7 @@ static mut datetktbl: [datetkn; 71] = unsafe {
                 token: *::core::mem::transmute::<&[u8; 11], &mut [libc::c_char; 11]>(
                     b"november\0\0\0",
                 ),
-                type_0: 1 as libc::c_int as libc::c_char,
+                type_0: RealFieldType::Month,
                 value: 11 as libc::c_int,
             };
             init
@@ -2555,7 +2555,7 @@ static mut datetktbl: [datetkn; 71] = unsafe {
                 token: *::core::mem::transmute::<&[u8; 11], &mut [libc::c_char; 11]>(
                     b"now\0\0\0\0\0\0\0\0",
                 ),
-                type_0: 0 as libc::c_int as libc::c_char,
+                type_0: RealFieldType::Reserved,
                 value: 12 as libc::c_int,
             };
             init
@@ -2565,7 +2565,7 @@ static mut datetktbl: [datetkn; 71] = unsafe {
                 token: *::core::mem::transmute::<&[u8; 11], &mut [libc::c_char; 11]>(
                     b"oct\0\0\0\0\0\0\0\0",
                 ),
-                type_0: 1 as libc::c_int as libc::c_char,
+                type_0: RealFieldType::Month,
                 value: 10 as libc::c_int,
             };
             init
@@ -2575,7 +2575,7 @@ static mut datetktbl: [datetkn; 71] = unsafe {
                 token: *::core::mem::transmute::<&[u8; 11], &mut [libc::c_char; 11]>(
                     b"october\0\0\0\0",
                 ),
-                type_0: 1 as libc::c_int as libc::c_char,
+                type_0: RealFieldType::Month,
                 value: 10 as libc::c_int,
             };
             init
@@ -2585,7 +2585,7 @@ static mut datetktbl: [datetkn; 71] = unsafe {
                 token: *::core::mem::transmute::<&[u8; 11], &mut [libc::c_char; 11]>(
                     b"on\0\0\0\0\0\0\0\0\0",
                 ),
-                type_0: 8 as libc::c_int as libc::c_char,
+                type_0: RealFieldType::IgnoreDtf,
                 value: 0 as libc::c_int,
             };
             init
@@ -2595,7 +2595,7 @@ static mut datetktbl: [datetkn; 71] = unsafe {
                 token: *::core::mem::transmute::<&[u8; 11], &mut [libc::c_char; 11]>(
                     b"pm\0\0\0\0\0\0\0\0\0",
                 ),
-                type_0: 9 as libc::c_int as libc::c_char,
+                type_0: RealFieldType::AmPm,
                 value: 1 as libc::c_int,
             };
             init
@@ -2605,7 +2605,7 @@ static mut datetktbl: [datetkn; 71] = unsafe {
                 token: *::core::mem::transmute::<&[u8; 11], &mut [libc::c_char; 11]>(
                     b"s\0\0\0\0\0\0\0\0\0\0",
                 ),
-                type_0: 17 as libc::c_int as libc::c_char,
+                type_0: RealFieldType::Units,
                 value: 18 as libc::c_int,
             };
             init
@@ -2615,7 +2615,7 @@ static mut datetktbl: [datetkn; 71] = unsafe {
                 token: *::core::mem::transmute::<&[u8; 11], &mut [libc::c_char; 11]>(
                     b"sat\0\0\0\0\0\0\0\0",
                 ),
-                type_0: 16 as libc::c_int as libc::c_char,
+                type_0: RealFieldType::Dow,
                 value: 6 as libc::c_int,
             };
             init
@@ -2625,7 +2625,7 @@ static mut datetktbl: [datetkn; 71] = unsafe {
                 token: *::core::mem::transmute::<&[u8; 11], &mut [libc::c_char; 11]>(
                     b"saturday\0\0\0",
                 ),
-                type_0: 16 as libc::c_int as libc::c_char,
+                type_0: RealFieldType::Dow,
                 value: 6 as libc::c_int,
             };
             init
@@ -2635,7 +2635,7 @@ static mut datetktbl: [datetkn; 71] = unsafe {
                 token: *::core::mem::transmute::<&[u8; 11], &mut [libc::c_char; 11]>(
                     b"sep\0\0\0\0\0\0\0\0",
                 ),
-                type_0: 1 as libc::c_int as libc::c_char,
+                type_0: RealFieldType::Month,
                 value: 9 as libc::c_int,
             };
             init
@@ -2645,7 +2645,7 @@ static mut datetktbl: [datetkn; 71] = unsafe {
                 token: *::core::mem::transmute::<&[u8; 11], &mut [libc::c_char; 11]>(
                     b"sept\0\0\0\0\0\0\0",
                 ),
-                type_0: 1 as libc::c_int as libc::c_char,
+                type_0: RealFieldType::Month,
                 value: 9 as libc::c_int,
             };
             init
@@ -2655,7 +2655,7 @@ static mut datetktbl: [datetkn; 71] = unsafe {
                 token: *::core::mem::transmute::<&[u8; 11], &mut [libc::c_char; 11]>(
                     b"september\0\0",
                 ),
-                type_0: 1 as libc::c_int as libc::c_char,
+                type_0: RealFieldType::Month,
                 value: 9 as libc::c_int,
             };
             init
@@ -2665,7 +2665,7 @@ static mut datetktbl: [datetkn; 71] = unsafe {
                 token: *::core::mem::transmute::<&[u8; 11], &mut [libc::c_char; 11]>(
                     b"sun\0\0\0\0\0\0\0\0",
                 ),
-                type_0: 16 as libc::c_int as libc::c_char,
+                type_0: RealFieldType::Dow,
                 value: 0 as libc::c_int,
             };
             init
@@ -2675,7 +2675,7 @@ static mut datetktbl: [datetkn; 71] = unsafe {
                 token: *::core::mem::transmute::<&[u8; 11], &mut [libc::c_char; 11]>(
                     b"sunday\0\0\0\0\0",
                 ),
-                type_0: 16 as libc::c_int as libc::c_char,
+                type_0: RealFieldType::Dow,
                 value: 0 as libc::c_int,
             };
             init
@@ -2685,7 +2685,7 @@ static mut datetktbl: [datetkn; 71] = unsafe {
                 token: *::core::mem::transmute::<&[u8; 11], &mut [libc::c_char; 11]>(
                     b"t\0\0\0\0\0\0\0\0\0\0",
                 ),
-                type_0: 23 as libc::c_int as libc::c_char,
+                type_0: RealFieldType::IsoTime,
                 value: 3 as libc::c_int,
             };
             init
@@ -2695,7 +2695,7 @@ static mut datetktbl: [datetkn; 71] = unsafe {
                 token: *::core::mem::transmute::<&[u8; 11], &mut [libc::c_char; 11]>(
                     b"thu\0\0\0\0\0\0\0\0",
                 ),
-                type_0: 16 as libc::c_int as libc::c_char,
+                type_0: RealFieldType::Dow,
                 value: 4 as libc::c_int,
             };
             init
@@ -2705,7 +2705,7 @@ static mut datetktbl: [datetkn; 71] = unsafe {
                 token: *::core::mem::transmute::<&[u8; 11], &mut [libc::c_char; 11]>(
                     b"thur\0\0\0\0\0\0\0",
                 ),
-                type_0: 16 as libc::c_int as libc::c_char,
+                type_0: RealFieldType::Dow,
                 value: 4 as libc::c_int,
             };
             init
@@ -2715,7 +2715,7 @@ static mut datetktbl: [datetkn; 71] = unsafe {
                 token: *::core::mem::transmute::<&[u8; 11], &mut [libc::c_char; 11]>(
                     b"thurs\0\0\0\0\0\0",
                 ),
-                type_0: 16 as libc::c_int as libc::c_char,
+                type_0: RealFieldType::Dow,
                 value: 4 as libc::c_int,
             };
             init
@@ -2725,7 +2725,7 @@ static mut datetktbl: [datetkn; 71] = unsafe {
                 token: *::core::mem::transmute::<&[u8; 11], &mut [libc::c_char; 11]>(
                     b"thursday\0\0\0",
                 ),
-                type_0: 16 as libc::c_int as libc::c_char,
+                type_0: RealFieldType::Dow,
                 value: 4 as libc::c_int,
             };
             init
@@ -2735,7 +2735,7 @@ static mut datetktbl: [datetkn; 71] = unsafe {
                 token: *::core::mem::transmute::<&[u8; 11], &mut [libc::c_char; 11]>(
                     b"today\0\0\0\0\0\0",
                 ),
-                type_0: 0 as libc::c_int as libc::c_char,
+                type_0: RealFieldType::Reserved,
                 value: 14 as libc::c_int,
             };
             init
@@ -2745,7 +2745,7 @@ static mut datetktbl: [datetkn; 71] = unsafe {
                 token: *::core::mem::transmute::<&[u8; 11], &mut [libc::c_char; 11]>(
                     b"tomorrow\0\0\0",
                 ),
-                type_0: 0 as libc::c_int as libc::c_char,
+                type_0: RealFieldType::Reserved,
                 value: 15 as libc::c_int,
             };
             init
@@ -2755,7 +2755,7 @@ static mut datetktbl: [datetkn; 71] = unsafe {
                 token: *::core::mem::transmute::<&[u8; 11], &mut [libc::c_char; 11]>(
                     b"tue\0\0\0\0\0\0\0\0",
                 ),
-                type_0: 16 as libc::c_int as libc::c_char,
+                type_0: RealFieldType::Dow,
                 value: 2 as libc::c_int,
             };
             init
@@ -2765,7 +2765,7 @@ static mut datetktbl: [datetkn; 71] = unsafe {
                 token: *::core::mem::transmute::<&[u8; 11], &mut [libc::c_char; 11]>(
                     b"tues\0\0\0\0\0\0\0",
                 ),
-                type_0: 16 as libc::c_int as libc::c_char,
+                type_0: RealFieldType::Dow,
                 value: 2 as libc::c_int,
             };
             init
@@ -2775,7 +2775,7 @@ static mut datetktbl: [datetkn; 71] = unsafe {
                 token: *::core::mem::transmute::<&[u8; 11], &mut [libc::c_char; 11]>(
                     b"tuesday\0\0\0\0",
                 ),
-                type_0: 16 as libc::c_int as libc::c_char,
+                type_0: RealFieldType::Dow,
                 value: 2 as libc::c_int,
             };
             init
@@ -2785,7 +2785,7 @@ static mut datetktbl: [datetkn; 71] = unsafe {
                 token: *::core::mem::transmute::<&[u8; 11], &mut [libc::c_char; 11]>(
                     b"wed\0\0\0\0\0\0\0\0",
                 ),
-                type_0: 16 as libc::c_int as libc::c_char,
+                type_0: RealFieldType::Dow,
                 value: 3 as libc::c_int,
             };
             init
@@ -2795,7 +2795,7 @@ static mut datetktbl: [datetkn; 71] = unsafe {
                 token: *::core::mem::transmute::<&[u8; 11], &mut [libc::c_char; 11]>(
                     b"wednesday\0\0",
                 ),
-                type_0: 16 as libc::c_int as libc::c_char,
+                type_0: RealFieldType::Dow,
                 value: 3 as libc::c_int,
             };
             init
@@ -2805,7 +2805,7 @@ static mut datetktbl: [datetkn; 71] = unsafe {
                 token: *::core::mem::transmute::<&[u8; 11], &mut [libc::c_char; 11]>(
                     b"weds\0\0\0\0\0\0\0",
                 ),
-                type_0: 16 as libc::c_int as libc::c_char,
+                type_0: RealFieldType::Dow,
                 value: 3 as libc::c_int,
             };
             init
@@ -2815,7 +2815,7 @@ static mut datetktbl: [datetkn; 71] = unsafe {
                 token: *::core::mem::transmute::<&[u8; 11], &mut [libc::c_char; 11]>(
                     b"y\0\0\0\0\0\0\0\0\0\0",
                 ),
-                type_0: 17 as libc::c_int as libc::c_char,
+                type_0: RealFieldType::Units,
                 value: 25 as libc::c_int,
             };
             init
@@ -2825,7 +2825,7 @@ static mut datetktbl: [datetkn; 71] = unsafe {
                 token: *::core::mem::transmute::<&[u8; 11], &mut [libc::c_char; 11]>(
                     b"yesterday\0\0",
                 ),
-                type_0: 0 as libc::c_int as libc::c_char,
+                type_0: RealFieldType::Reserved,
                 value: 13 as libc::c_int,
             };
             init
@@ -2840,7 +2840,7 @@ static mut deltatktbl: [datetkn; 61] = unsafe {
                 token: *::core::mem::transmute::<&[u8; 11], &mut [libc::c_char; 11]>(
                     b"@\0\0\0\0\0\0\0\0\0\0",
                 ),
-                type_0: 8 as libc::c_int as libc::c_char,
+                type_0: RealFieldType::IgnoreDtf,
                 value: 0 as libc::c_int,
             };
             init
@@ -2850,7 +2850,7 @@ static mut deltatktbl: [datetkn; 61] = unsafe {
                 token: *::core::mem::transmute::<&[u8; 11], &mut [libc::c_char; 11]>(
                     b"ago\0\0\0\0\0\0\0\0",
                 ),
-                type_0: 19 as libc::c_int as libc::c_char,
+                type_0: RealFieldType::Ago,
                 value: 0 as libc::c_int,
             };
             init
@@ -2860,7 +2860,7 @@ static mut deltatktbl: [datetkn; 61] = unsafe {
                 token: *::core::mem::transmute::<&[u8; 11], &mut [libc::c_char; 11]>(
                     b"c\0\0\0\0\0\0\0\0\0\0",
                 ),
-                type_0: 17 as libc::c_int as libc::c_char,
+                type_0: RealFieldType::Units,
                 value: 27 as libc::c_int,
             };
             init
@@ -2870,7 +2870,7 @@ static mut deltatktbl: [datetkn; 61] = unsafe {
                 token: *::core::mem::transmute::<&[u8; 11], &mut [libc::c_char; 11]>(
                     b"cent\0\0\0\0\0\0\0",
                 ),
-                type_0: 17 as libc::c_int as libc::c_char,
+                type_0: RealFieldType::Units,
                 value: 27 as libc::c_int,
             };
             init
@@ -2880,7 +2880,7 @@ static mut deltatktbl: [datetkn; 61] = unsafe {
                 token: *::core::mem::transmute::<&[u8; 11], &mut [libc::c_char; 11]>(
                     b"centuries\0\0",
                 ),
-                type_0: 17 as libc::c_int as libc::c_char,
+                type_0: RealFieldType::Units,
                 value: 27 as libc::c_int,
             };
             init
@@ -2890,7 +2890,7 @@ static mut deltatktbl: [datetkn; 61] = unsafe {
                 token: *::core::mem::transmute::<&[u8; 11], &mut [libc::c_char; 11]>(
                     b"century\0\0\0\0",
                 ),
-                type_0: 17 as libc::c_int as libc::c_char,
+                type_0: RealFieldType::Units,
                 value: 27 as libc::c_int,
             };
             init
@@ -2900,7 +2900,7 @@ static mut deltatktbl: [datetkn; 61] = unsafe {
                 token: *::core::mem::transmute::<&[u8; 11], &mut [libc::c_char; 11]>(
                     b"d\0\0\0\0\0\0\0\0\0\0",
                 ),
-                type_0: 17 as libc::c_int as libc::c_char,
+                type_0: RealFieldType::Units,
                 value: 21 as libc::c_int,
             };
             init
@@ -2910,7 +2910,7 @@ static mut deltatktbl: [datetkn; 61] = unsafe {
                 token: *::core::mem::transmute::<&[u8; 11], &mut [libc::c_char; 11]>(
                     b"day\0\0\0\0\0\0\0\0",
                 ),
-                type_0: 17 as libc::c_int as libc::c_char,
+                type_0: RealFieldType::Units,
                 value: 21 as libc::c_int,
             };
             init
@@ -2920,7 +2920,7 @@ static mut deltatktbl: [datetkn; 61] = unsafe {
                 token: *::core::mem::transmute::<&[u8; 11], &mut [libc::c_char; 11]>(
                     b"days\0\0\0\0\0\0\0",
                 ),
-                type_0: 17 as libc::c_int as libc::c_char,
+                type_0: RealFieldType::Units,
                 value: 21 as libc::c_int,
             };
             init
@@ -2930,7 +2930,7 @@ static mut deltatktbl: [datetkn; 61] = unsafe {
                 token: *::core::mem::transmute::<&[u8; 11], &mut [libc::c_char; 11]>(
                     b"dec\0\0\0\0\0\0\0\0",
                 ),
-                type_0: 17 as libc::c_int as libc::c_char,
+                type_0: RealFieldType::Units,
                 value: 26 as libc::c_int,
             };
             init
@@ -2940,7 +2940,7 @@ static mut deltatktbl: [datetkn; 61] = unsafe {
                 token: *::core::mem::transmute::<&[u8; 11], &mut [libc::c_char; 11]>(
                     b"decade\0\0\0\0\0",
                 ),
-                type_0: 17 as libc::c_int as libc::c_char,
+                type_0: RealFieldType::Units,
                 value: 26 as libc::c_int,
             };
             init
@@ -2950,7 +2950,7 @@ static mut deltatktbl: [datetkn; 61] = unsafe {
                 token: *::core::mem::transmute::<&[u8; 11], &mut [libc::c_char; 11]>(
                     b"decades\0\0\0\0",
                 ),
-                type_0: 17 as libc::c_int as libc::c_char,
+                type_0: RealFieldType::Units,
                 value: 26 as libc::c_int,
             };
             init
@@ -2960,7 +2960,7 @@ static mut deltatktbl: [datetkn; 61] = unsafe {
                 token: *::core::mem::transmute::<&[u8; 11], &mut [libc::c_char; 11]>(
                     b"decs\0\0\0\0\0\0\0",
                 ),
-                type_0: 17 as libc::c_int as libc::c_char,
+                type_0: RealFieldType::Units,
                 value: 26 as libc::c_int,
             };
             init
@@ -2970,7 +2970,7 @@ static mut deltatktbl: [datetkn; 61] = unsafe {
                 token: *::core::mem::transmute::<&[u8; 11], &mut [libc::c_char; 11]>(
                     b"h\0\0\0\0\0\0\0\0\0\0",
                 ),
-                type_0: 17 as libc::c_int as libc::c_char,
+                type_0: RealFieldType::Units,
                 value: 20 as libc::c_int,
             };
             init
@@ -2980,7 +2980,7 @@ static mut deltatktbl: [datetkn; 61] = unsafe {
                 token: *::core::mem::transmute::<&[u8; 11], &mut [libc::c_char; 11]>(
                     b"hour\0\0\0\0\0\0\0",
                 ),
-                type_0: 17 as libc::c_int as libc::c_char,
+                type_0: RealFieldType::Units,
                 value: 20 as libc::c_int,
             };
             init
@@ -2990,7 +2990,7 @@ static mut deltatktbl: [datetkn; 61] = unsafe {
                 token: *::core::mem::transmute::<&[u8; 11], &mut [libc::c_char; 11]>(
                     b"hours\0\0\0\0\0\0",
                 ),
-                type_0: 17 as libc::c_int as libc::c_char,
+                type_0: RealFieldType::Units,
                 value: 20 as libc::c_int,
             };
             init
@@ -3000,7 +3000,7 @@ static mut deltatktbl: [datetkn; 61] = unsafe {
                 token: *::core::mem::transmute::<&[u8; 11], &mut [libc::c_char; 11]>(
                     b"hr\0\0\0\0\0\0\0\0\0",
                 ),
-                type_0: 17 as libc::c_int as libc::c_char,
+                type_0: RealFieldType::Units,
                 value: 20 as libc::c_int,
             };
             init
@@ -3010,7 +3010,7 @@ static mut deltatktbl: [datetkn; 61] = unsafe {
                 token: *::core::mem::transmute::<&[u8; 11], &mut [libc::c_char; 11]>(
                     b"hrs\0\0\0\0\0\0\0\0",
                 ),
-                type_0: 17 as libc::c_int as libc::c_char,
+                type_0: RealFieldType::Units,
                 value: 20 as libc::c_int,
             };
             init
@@ -3020,7 +3020,7 @@ static mut deltatktbl: [datetkn; 61] = unsafe {
                 token: *::core::mem::transmute::<&[u8; 11], &mut [libc::c_char; 11]>(
                     b"m\0\0\0\0\0\0\0\0\0\0",
                 ),
-                type_0: 17 as libc::c_int as libc::c_char,
+                type_0: RealFieldType::Units,
                 value: 19 as libc::c_int,
             };
             init
@@ -3030,7 +3030,7 @@ static mut deltatktbl: [datetkn; 61] = unsafe {
                 token: *::core::mem::transmute::<&[u8; 11], &mut [libc::c_char; 11]>(
                     b"microsecon\0",
                 ),
-                type_0: 17 as libc::c_int as libc::c_char,
+                type_0: RealFieldType::Units,
                 value: 30 as libc::c_int,
             };
             init
@@ -3040,7 +3040,7 @@ static mut deltatktbl: [datetkn; 61] = unsafe {
                 token: *::core::mem::transmute::<&[u8; 11], &mut [libc::c_char; 11]>(
                     b"mil\0\0\0\0\0\0\0\0",
                 ),
-                type_0: 17 as libc::c_int as libc::c_char,
+                type_0: RealFieldType::Units,
                 value: 28 as libc::c_int,
             };
             init
@@ -3050,7 +3050,7 @@ static mut deltatktbl: [datetkn; 61] = unsafe {
                 token: *::core::mem::transmute::<&[u8; 11], &mut [libc::c_char; 11]>(
                     b"millennia\0\0",
                 ),
-                type_0: 17 as libc::c_int as libc::c_char,
+                type_0: RealFieldType::Units,
                 value: 28 as libc::c_int,
             };
             init
@@ -3060,7 +3060,7 @@ static mut deltatktbl: [datetkn; 61] = unsafe {
                 token: *::core::mem::transmute::<&[u8; 11], &mut [libc::c_char; 11]>(
                     b"millennium\0",
                 ),
-                type_0: 17 as libc::c_int as libc::c_char,
+                type_0: RealFieldType::Units,
                 value: 28 as libc::c_int,
             };
             init
@@ -3070,7 +3070,7 @@ static mut deltatktbl: [datetkn; 61] = unsafe {
                 token: *::core::mem::transmute::<&[u8; 11], &mut [libc::c_char; 11]>(
                     b"millisecon\0",
                 ),
-                type_0: 17 as libc::c_int as libc::c_char,
+                type_0: RealFieldType::Units,
                 value: 29 as libc::c_int,
             };
             init
@@ -3080,7 +3080,7 @@ static mut deltatktbl: [datetkn; 61] = unsafe {
                 token: *::core::mem::transmute::<&[u8; 11], &mut [libc::c_char; 11]>(
                     b"mils\0\0\0\0\0\0\0",
                 ),
-                type_0: 17 as libc::c_int as libc::c_char,
+                type_0: RealFieldType::Units,
                 value: 28 as libc::c_int,
             };
             init
@@ -3090,7 +3090,7 @@ static mut deltatktbl: [datetkn; 61] = unsafe {
                 token: *::core::mem::transmute::<&[u8; 11], &mut [libc::c_char; 11]>(
                     b"min\0\0\0\0\0\0\0\0",
                 ),
-                type_0: 17 as libc::c_int as libc::c_char,
+                type_0: RealFieldType::Units,
                 value: 19 as libc::c_int,
             };
             init
@@ -3100,7 +3100,7 @@ static mut deltatktbl: [datetkn; 61] = unsafe {
                 token: *::core::mem::transmute::<&[u8; 11], &mut [libc::c_char; 11]>(
                     b"mins\0\0\0\0\0\0\0",
                 ),
-                type_0: 17 as libc::c_int as libc::c_char,
+                type_0: RealFieldType::Units,
                 value: 19 as libc::c_int,
             };
             init
@@ -3110,7 +3110,7 @@ static mut deltatktbl: [datetkn; 61] = unsafe {
                 token: *::core::mem::transmute::<&[u8; 11], &mut [libc::c_char; 11]>(
                     b"minute\0\0\0\0\0",
                 ),
-                type_0: 17 as libc::c_int as libc::c_char,
+                type_0: RealFieldType::Units,
                 value: 19 as libc::c_int,
             };
             init
@@ -3120,7 +3120,7 @@ static mut deltatktbl: [datetkn; 61] = unsafe {
                 token: *::core::mem::transmute::<&[u8; 11], &mut [libc::c_char; 11]>(
                     b"minutes\0\0\0\0",
                 ),
-                type_0: 17 as libc::c_int as libc::c_char,
+                type_0: RealFieldType::Units,
                 value: 19 as libc::c_int,
             };
             init
@@ -3130,7 +3130,7 @@ static mut deltatktbl: [datetkn; 61] = unsafe {
                 token: *::core::mem::transmute::<&[u8; 11], &mut [libc::c_char; 11]>(
                     b"mon\0\0\0\0\0\0\0\0",
                 ),
-                type_0: 17 as libc::c_int as libc::c_char,
+                type_0: RealFieldType::Units,
                 value: 23 as libc::c_int,
             };
             init
@@ -3140,7 +3140,7 @@ static mut deltatktbl: [datetkn; 61] = unsafe {
                 token: *::core::mem::transmute::<&[u8; 11], &mut [libc::c_char; 11]>(
                     b"mons\0\0\0\0\0\0\0",
                 ),
-                type_0: 17 as libc::c_int as libc::c_char,
+                type_0: RealFieldType::Units,
                 value: 23 as libc::c_int,
             };
             init
@@ -3150,7 +3150,7 @@ static mut deltatktbl: [datetkn; 61] = unsafe {
                 token: *::core::mem::transmute::<&[u8; 11], &mut [libc::c_char; 11]>(
                     b"month\0\0\0\0\0\0",
                 ),
-                type_0: 17 as libc::c_int as libc::c_char,
+                type_0: RealFieldType::Units,
                 value: 23 as libc::c_int,
             };
             init
@@ -3160,7 +3160,7 @@ static mut deltatktbl: [datetkn; 61] = unsafe {
                 token: *::core::mem::transmute::<&[u8; 11], &mut [libc::c_char; 11]>(
                     b"months\0\0\0\0\0",
                 ),
-                type_0: 17 as libc::c_int as libc::c_char,
+                type_0: RealFieldType::Units,
                 value: 23 as libc::c_int,
             };
             init
@@ -3170,7 +3170,7 @@ static mut deltatktbl: [datetkn; 61] = unsafe {
                 token: *::core::mem::transmute::<&[u8; 11], &mut [libc::c_char; 11]>(
                     b"ms\0\0\0\0\0\0\0\0\0",
                 ),
-                type_0: 17 as libc::c_int as libc::c_char,
+                type_0: RealFieldType::Units,
                 value: 29 as libc::c_int,
             };
             init
@@ -3180,7 +3180,7 @@ static mut deltatktbl: [datetkn; 61] = unsafe {
                 token: *::core::mem::transmute::<&[u8; 11], &mut [libc::c_char; 11]>(
                     b"msec\0\0\0\0\0\0\0",
                 ),
-                type_0: 17 as libc::c_int as libc::c_char,
+                type_0: RealFieldType::Units,
                 value: 29 as libc::c_int,
             };
             init
@@ -3190,7 +3190,7 @@ static mut deltatktbl: [datetkn; 61] = unsafe {
                 token: *::core::mem::transmute::<&[u8; 11], &mut [libc::c_char; 11]>(
                     b"msecond\0\0\0\0",
                 ),
-                type_0: 17 as libc::c_int as libc::c_char,
+                type_0: RealFieldType::Units,
                 value: 29 as libc::c_int,
             };
             init
@@ -3200,7 +3200,7 @@ static mut deltatktbl: [datetkn; 61] = unsafe {
                 token: *::core::mem::transmute::<&[u8; 11], &mut [libc::c_char; 11]>(
                     b"mseconds\0\0\0",
                 ),
-                type_0: 17 as libc::c_int as libc::c_char,
+                type_0: RealFieldType::Units,
                 value: 29 as libc::c_int,
             };
             init
@@ -3210,7 +3210,7 @@ static mut deltatktbl: [datetkn; 61] = unsafe {
                 token: *::core::mem::transmute::<&[u8; 11], &mut [libc::c_char; 11]>(
                     b"msecs\0\0\0\0\0\0",
                 ),
-                type_0: 17 as libc::c_int as libc::c_char,
+                type_0: RealFieldType::Units,
                 value: 29 as libc::c_int,
             };
             init
@@ -3220,7 +3220,7 @@ static mut deltatktbl: [datetkn; 61] = unsafe {
                 token: *::core::mem::transmute::<&[u8; 11], &mut [libc::c_char; 11]>(
                     b"qtr\0\0\0\0\0\0\0\0",
                 ),
-                type_0: 17 as libc::c_int as libc::c_char,
+                type_0: RealFieldType::Units,
                 value: 24 as libc::c_int,
             };
             init
@@ -3230,7 +3230,7 @@ static mut deltatktbl: [datetkn; 61] = unsafe {
                 token: *::core::mem::transmute::<&[u8; 11], &mut [libc::c_char; 11]>(
                     b"quarter\0\0\0\0",
                 ),
-                type_0: 17 as libc::c_int as libc::c_char,
+                type_0: RealFieldType::Units,
                 value: 24 as libc::c_int,
             };
             init
@@ -3240,7 +3240,7 @@ static mut deltatktbl: [datetkn; 61] = unsafe {
                 token: *::core::mem::transmute::<&[u8; 11], &mut [libc::c_char; 11]>(
                     b"s\0\0\0\0\0\0\0\0\0\0",
                 ),
-                type_0: 17 as libc::c_int as libc::c_char,
+                type_0: RealFieldType::Units,
                 value: 18 as libc::c_int,
             };
             init
@@ -3250,7 +3250,7 @@ static mut deltatktbl: [datetkn; 61] = unsafe {
                 token: *::core::mem::transmute::<&[u8; 11], &mut [libc::c_char; 11]>(
                     b"sec\0\0\0\0\0\0\0\0",
                 ),
-                type_0: 17 as libc::c_int as libc::c_char,
+                type_0: RealFieldType::Units,
                 value: 18 as libc::c_int,
             };
             init
@@ -3260,7 +3260,7 @@ static mut deltatktbl: [datetkn; 61] = unsafe {
                 token: *::core::mem::transmute::<&[u8; 11], &mut [libc::c_char; 11]>(
                     b"second\0\0\0\0\0",
                 ),
-                type_0: 17 as libc::c_int as libc::c_char,
+                type_0: RealFieldType::Units,
                 value: 18 as libc::c_int,
             };
             init
@@ -3270,7 +3270,7 @@ static mut deltatktbl: [datetkn; 61] = unsafe {
                 token: *::core::mem::transmute::<&[u8; 11], &mut [libc::c_char; 11]>(
                     b"seconds\0\0\0\0",
                 ),
-                type_0: 17 as libc::c_int as libc::c_char,
+                type_0: RealFieldType::Units,
                 value: 18 as libc::c_int,
             };
             init
@@ -3280,7 +3280,7 @@ static mut deltatktbl: [datetkn; 61] = unsafe {
                 token: *::core::mem::transmute::<&[u8; 11], &mut [libc::c_char; 11]>(
                     b"secs\0\0\0\0\0\0\0",
                 ),
-                type_0: 17 as libc::c_int as libc::c_char,
+                type_0: RealFieldType::Units,
                 value: 18 as libc::c_int,
             };
             init
@@ -3290,7 +3290,7 @@ static mut deltatktbl: [datetkn; 61] = unsafe {
                 token: *::core::mem::transmute::<&[u8; 11], &mut [libc::c_char; 11]>(
                     b"timezone\0\0\0",
                 ),
-                type_0: 17 as libc::c_int as libc::c_char,
+                type_0: RealFieldType::Units,
                 value: 4 as libc::c_int,
             };
             init
@@ -3300,7 +3300,7 @@ static mut deltatktbl: [datetkn; 61] = unsafe {
                 token: *::core::mem::transmute::<&[u8; 11], &mut [libc::c_char; 11]>(
                     b"timezone_h\0",
                 ),
-                type_0: 17 as libc::c_int as libc::c_char,
+                type_0: RealFieldType::Units,
                 value: 34 as libc::c_int,
             };
             init
@@ -3310,7 +3310,7 @@ static mut deltatktbl: [datetkn; 61] = unsafe {
                 token: *::core::mem::transmute::<&[u8; 11], &mut [libc::c_char; 11]>(
                     b"timezone_m\0",
                 ),
-                type_0: 17 as libc::c_int as libc::c_char,
+                type_0: RealFieldType::Units,
                 value: 35 as libc::c_int,
             };
             init
@@ -3320,7 +3320,7 @@ static mut deltatktbl: [datetkn; 61] = unsafe {
                 token: *::core::mem::transmute::<&[u8; 11], &mut [libc::c_char; 11]>(
                     b"us\0\0\0\0\0\0\0\0\0",
                 ),
-                type_0: 17 as libc::c_int as libc::c_char,
+                type_0: RealFieldType::Units,
                 value: 30 as libc::c_int,
             };
             init
@@ -3330,7 +3330,7 @@ static mut deltatktbl: [datetkn; 61] = unsafe {
                 token: *::core::mem::transmute::<&[u8; 11], &mut [libc::c_char; 11]>(
                     b"usec\0\0\0\0\0\0\0",
                 ),
-                type_0: 17 as libc::c_int as libc::c_char,
+                type_0: RealFieldType::Units,
                 value: 30 as libc::c_int,
             };
             init
@@ -3340,7 +3340,7 @@ static mut deltatktbl: [datetkn; 61] = unsafe {
                 token: *::core::mem::transmute::<&[u8; 11], &mut [libc::c_char; 11]>(
                     b"usecond\0\0\0\0",
                 ),
-                type_0: 17 as libc::c_int as libc::c_char,
+                type_0: RealFieldType::Units,
                 value: 30 as libc::c_int,
             };
             init
@@ -3350,7 +3350,7 @@ static mut deltatktbl: [datetkn; 61] = unsafe {
                 token: *::core::mem::transmute::<&[u8; 11], &mut [libc::c_char; 11]>(
                     b"useconds\0\0\0",
                 ),
-                type_0: 17 as libc::c_int as libc::c_char,
+                type_0: RealFieldType::Units,
                 value: 30 as libc::c_int,
             };
             init
@@ -3360,7 +3360,7 @@ static mut deltatktbl: [datetkn; 61] = unsafe {
                 token: *::core::mem::transmute::<&[u8; 11], &mut [libc::c_char; 11]>(
                     b"usecs\0\0\0\0\0\0",
                 ),
-                type_0: 17 as libc::c_int as libc::c_char,
+                type_0: RealFieldType::Units,
                 value: 30 as libc::c_int,
             };
             init
@@ -3370,7 +3370,7 @@ static mut deltatktbl: [datetkn; 61] = unsafe {
                 token: *::core::mem::transmute::<&[u8; 11], &mut [libc::c_char; 11]>(
                     b"w\0\0\0\0\0\0\0\0\0\0",
                 ),
-                type_0: 17 as libc::c_int as libc::c_char,
+                type_0: RealFieldType::Units,
                 value: 22 as libc::c_int,
             };
             init
@@ -3380,7 +3380,7 @@ static mut deltatktbl: [datetkn; 61] = unsafe {
                 token: *::core::mem::transmute::<&[u8; 11], &mut [libc::c_char; 11]>(
                     b"week\0\0\0\0\0\0\0",
                 ),
-                type_0: 17 as libc::c_int as libc::c_char,
+                type_0: RealFieldType::Units,
                 value: 22 as libc::c_int,
             };
             init
@@ -3390,7 +3390,7 @@ static mut deltatktbl: [datetkn; 61] = unsafe {
                 token: *::core::mem::transmute::<&[u8; 11], &mut [libc::c_char; 11]>(
                     b"weeks\0\0\0\0\0\0",
                 ),
-                type_0: 17 as libc::c_int as libc::c_char,
+                type_0: RealFieldType::Units,
                 value: 22 as libc::c_int,
             };
             init
@@ -3400,7 +3400,7 @@ static mut deltatktbl: [datetkn; 61] = unsafe {
                 token: *::core::mem::transmute::<&[u8; 11], &mut [libc::c_char; 11]>(
                     b"y\0\0\0\0\0\0\0\0\0\0",
                 ),
-                type_0: 17 as libc::c_int as libc::c_char,
+                type_0: RealFieldType::Units,
                 value: 25 as libc::c_int,
             };
             init
@@ -3410,7 +3410,7 @@ static mut deltatktbl: [datetkn; 61] = unsafe {
                 token: *::core::mem::transmute::<&[u8; 11], &mut [libc::c_char; 11]>(
                     b"year\0\0\0\0\0\0\0",
                 ),
-                type_0: 17 as libc::c_int as libc::c_char,
+                type_0: RealFieldType::Units,
                 value: 25 as libc::c_int,
             };
             init
@@ -3420,7 +3420,7 @@ static mut deltatktbl: [datetkn; 61] = unsafe {
                 token: *::core::mem::transmute::<&[u8; 11], &mut [libc::c_char; 11]>(
                     b"years\0\0\0\0\0\0",
                 ),
-                type_0: 17 as libc::c_int as libc::c_char,
+                type_0: RealFieldType::Units,
                 value: 25 as libc::c_int,
             };
             init
@@ -3430,7 +3430,7 @@ static mut deltatktbl: [datetkn; 61] = unsafe {
                 token: *::core::mem::transmute::<&[u8; 11], &mut [libc::c_char; 11]>(
                     b"yr\0\0\0\0\0\0\0\0\0",
                 ),
-                type_0: 17 as libc::c_int as libc::c_char,
+                type_0: RealFieldType::Units,
                 value: 25 as libc::c_int,
             };
             init
@@ -3440,7 +3440,7 @@ static mut deltatktbl: [datetkn; 61] = unsafe {
                 token: *::core::mem::transmute::<&[u8; 11], &mut [libc::c_char; 11]>(
                     b"yrs\0\0\0\0\0\0\0\0",
                 ),
-                type_0: 17 as libc::c_int as libc::c_char,
+                type_0: RealFieldType::Units,
                 value: 25 as libc::c_int,
             };
             init
@@ -4015,7 +4015,7 @@ pub unsafe extern "C" fn DecodeDateTime(
 ) -> libc::c_int {
     let mut fmask = FieldMask::none();
     let mut tmask = FieldMask::none();
-    let mut type_0: libc::c_int = 0;
+    let mut type_0 = RealFieldType::Reserved;
     let mut i: libc::c_int = 0;
     let mut ptype: libc::c_int = 0 as libc::c_int; // "prefix type" for ISO y2001m02d04 format
     let mut val: libc::c_int = 0;
@@ -4435,15 +4435,15 @@ pub unsafe extern "C" fn DecodeDateTime(
             }
             1 | 6 => {
                 type_0 = DecodeTimezoneAbbrev(i, *field.offset(i as isize), &mut val, &mut valtz);
-                if type_0 == 31 as libc::c_int {
+                if type_0 == RealFieldType::UnknownField {
                     type_0 = DecodeSpecial(i, *field.offset(i as isize), &mut val);
                 }
-                if type_0 == 8 as libc::c_int {
+                if type_0 == RealFieldType::IgnoreDtf {
                     current_block_236 = 12209867499936983673;
                 } else {
-                    tmask = FieldMask::from(RealFieldType::from(1 << type_0));
+                    tmask = FieldMask::from(type_0);
                     match type_0 {
-                        0 => match val {
+                        RealFieldType::Reserved => match val {
                             12 => {
                                 tmask = *FIELD_MASK_DATE | *FIELD_MASK_TIME | RealFieldType::Tz;
                                 *dtype = 2 as libc::c_int;
@@ -4495,7 +4495,7 @@ pub unsafe extern "C" fn DecodeDateTime(
                                 *dtype = val;
                             }
                         },
-                        1 => {
+                        RealFieldType::Month => {
                             // already have a (numeric) month? then see if we can substitute...
                             if fmask.contains(RealFieldType::Month)
                                 && haveTextMonth == 0
@@ -4509,7 +4509,7 @@ pub unsafe extern "C" fn DecodeDateTime(
                             haveTextMonth = 1 as libc::c_int as bool_0;
                             (*tm).tm_mon = val;
                         }
-                        28 => {
+                        RealFieldType::DtzMod => {
                             tmask.set(RealFieldType::DTz);
                             (*tm).tm_isdst = 1 as libc::c_int;
                             if tzp.is_null() {
@@ -4518,7 +4518,7 @@ pub unsafe extern "C" fn DecodeDateTime(
                             }
                             *tzp -= val;
                         }
-                        6 => {
+                        RealFieldType::DTz => {
                             tmask.set(RealFieldType::Tz);
                             (*tm).tm_isdst = 1 as libc::c_int;
                             if tzp.is_null() {
@@ -4527,7 +4527,7 @@ pub unsafe extern "C" fn DecodeDateTime(
                             }
                             *tzp = -val;
                         }
-                        5 => {
+                        RealFieldType::Tz => {
                             (*tm).tm_isdst = 0 as libc::c_int;
                             if tzp.is_null() {
                                 eprintln!("tzp is null");
@@ -4535,7 +4535,7 @@ pub unsafe extern "C" fn DecodeDateTime(
                             }
                             *tzp = -val;
                         }
-                        7 => {
+                        RealFieldType::DynTz => {
                             tmask.set(RealFieldType::Tz);
                             if tzp.is_null() {
                                 eprintln!("tzp is null");
@@ -4544,20 +4544,20 @@ pub unsafe extern "C" fn DecodeDateTime(
                             abbrevTz = valtz;
                             abbrev = *field.offset(i as isize);
                         }
-                        9 => {
+                        RealFieldType::AmPm => {
                             mer = val;
                         }
-                        18 => {
+                        RealFieldType::Adbc => {
                             bc = (val == 1 as libc::c_int) as libc::c_int as bool_0;
                         }
-                        16 => {
+                        RealFieldType::Dow => {
                             (*tm).tm_wday = val;
                         }
-                        17 => {
+                        RealFieldType::Units => {
                             tmask = FieldMask::none();
                             ptype = val;
                         }
-                        23 => {
+                        RealFieldType::IsoTime => {
                             // This is a filler field "t" indicating that the next
                             // field is time. Try to verify that this is sensible.
                             tmask = FieldMask::none();
@@ -4585,7 +4585,7 @@ pub unsafe extern "C" fn DecodeDateTime(
                             }
                             ptype = val;
                         }
-                        31 => {
+                        RealFieldType::UnknownField => {
                             // Before giving up and declaring error, check to see
                             // if it is an all-alpha timezone name.
                             namedTz = pg_tzset(*field.offset(i as isize));
@@ -4595,8 +4595,8 @@ pub unsafe extern "C" fn DecodeDateTime(
                             }
                             tmask = FieldMask::from(RealFieldType::Tz);
                         }
-                        mask => {
-                            eprintln!("unexpected mask: {:b}", mask);
+                        typ => {
+                            eprintln!("unexpected field type: {:?}", typ);
                             return -(1 as libc::c_int);
                         }
                     }
@@ -4906,7 +4906,7 @@ pub unsafe extern "C" fn DecodeTimeOnly(
 ) -> libc::c_int {
     let mut fmask = FieldMask::none();
     let mut tmask = FieldMask::none();
-    let mut type_0: libc::c_int = 0;
+    let mut type_0 = RealFieldType::Reserved;
     let mut ptype: libc::c_int = 0 as libc::c_int;
     let mut i: libc::c_int = 0;
     let mut val: libc::c_int = 0;
@@ -5260,15 +5260,15 @@ pub unsafe extern "C" fn DecodeTimeOnly(
             }
             1 | 6 => {
                 type_0 = DecodeTimezoneAbbrev(i, *field.offset(i as isize), &mut val, &mut valtz);
-                if type_0 == 31 as libc::c_int {
+                if type_0 == RealFieldType::UnknownField {
                     type_0 = DecodeSpecial(i, *field.offset(i as isize), &mut val);
                 }
-                if type_0 == 8 as libc::c_int {
+                if type_0 == RealFieldType::IgnoreDtf {
                     current_block_201 = 13536709405535804910;
                 } else {
-                    tmask = FieldMask::from(RealFieldType::from(1 << type_0));
+                    tmask = FieldMask::from(type_0);
                     match type_0 {
-                        0 => match val {
+                        RealFieldType::Reserved => match val {
                             12 => {
                                 tmask = *FIELD_MASK_TIME;
                                 *dtype = 3 as libc::c_int;
@@ -5284,7 +5284,7 @@ pub unsafe extern "C" fn DecodeTimeOnly(
                             }
                             _ => return -(1 as libc::c_int),
                         },
-                        28 => {
+                        RealFieldType::DtzMod => {
                             // daylight savings time modifier (solves "MET DST" syntax)
                             tmask.set(RealFieldType::DTz);
                             (*tm).tm_isdst = 1 as libc::c_int;
@@ -5293,7 +5293,7 @@ pub unsafe extern "C" fn DecodeTimeOnly(
                             }
                             *tzp -= val;
                         }
-                        6 => {
+                        RealFieldType::DTz => {
                             // set mask for TZ here _or_ check for DTZ later when getting default timezone
                             tmask.set(RealFieldType::Tz);
                             (*tm).tm_isdst = 1 as libc::c_int;
@@ -5303,7 +5303,7 @@ pub unsafe extern "C" fn DecodeTimeOnly(
                             *tzp = -val;
                             *ftype.offset(i as isize) = 4 as libc::c_int;
                         }
-                        5 => {
+                        RealFieldType::Tz => {
                             (*tm).tm_isdst = 0 as libc::c_int;
                             if tzp.is_null() {
                                 return -(1 as libc::c_int);
@@ -5311,7 +5311,7 @@ pub unsafe extern "C" fn DecodeTimeOnly(
                             *tzp = -val;
                             *ftype.offset(i as isize) = 4 as libc::c_int;
                         }
-                        7 => {
+                        RealFieldType::DynTz => {
                             tmask.set(RealFieldType::Tz);
                             if tzp.is_null() {
                                 return -(1 as libc::c_int);
@@ -5321,17 +5321,17 @@ pub unsafe extern "C" fn DecodeTimeOnly(
                             abbrev = *field.offset(i as isize);
                             *ftype.offset(i as isize) = 4 as libc::c_int;
                         }
-                        9 => {
+                        RealFieldType::AmPm => {
                             mer = val;
                         }
-                        18 => {
+                        RealFieldType::Adbc => {
                             bc = (val == 1 as libc::c_int) as libc::c_int as bool_0;
                         }
-                        17 => {
+                        RealFieldType::Units => {
                             tmask = FieldMask::none();
                             ptype = val;
                         }
-                        23 => {
+                        RealFieldType::IsoTime => {
                             tmask = FieldMask::none();
                             // We will need one of the following fields:
                             //	DTK_NUMBER should be hhmmss.fff
@@ -5349,14 +5349,17 @@ pub unsafe extern "C" fn DecodeTimeOnly(
                             }
                             ptype = val;
                         }
-                        31 => {
+                        RealFieldType::UnknownField => {
                             namedTz = pg_tzset(*field.offset(i as isize));
                             if namedTz.is_null() {
                                 return -(1 as libc::c_int);
                             }
                             tmask = FieldMask::from(RealFieldType::Tz);
                         }
-                        _ => return -(1 as libc::c_int),
+                        typ => {
+                            eprintln!("unexpected field type {:?}", typ);
+                            return -(1 as libc::c_int);
+                        }
                     }
                     current_block_201 = 18009804086567542307;
                 }
@@ -5504,7 +5507,7 @@ unsafe extern "C" fn DecodeDate(
     let mut len: libc::c_int = 0;
     let mut dterr: libc::c_int = 0;
     let mut haveTextMonth: bool_0 = 0 as libc::c_int as bool_0;
-    let mut type_0: libc::c_int = 0;
+    let mut type_0 = RealFieldType::Reserved;
     let mut val: libc::c_int = 0;
     let mut dmask = FieldMask::none();
     let mut field: [*mut libc::c_char; 25] = [0 as *mut libc::c_char; 25];
@@ -5561,14 +5564,17 @@ unsafe extern "C" fn DecodeDate(
             != 0
         {
             type_0 = DecodeSpecial(i, field[i as usize], &mut val);
-            if !(type_0 == 8 as libc::c_int) {
-                dmask = FieldMask::from(RealFieldType::from(1 << type_0));
+            if type_0 != RealFieldType::IgnoreDtf {
+                dmask = FieldMask::from(type_0);
                 match type_0 {
-                    1 => {
+                    RealFieldType::Month => {
                         (*tm).tm_mon = val;
                         haveTextMonth = 1 as libc::c_int as bool_0;
                     }
-                    _ => return -(1 as libc::c_int),
+                    typ => {
+                        eprintln!("unexpected field type: {:?}", typ);
+                        return -(1 as libc::c_int);
+                    }
                 }
                 if fmask.intersects(dmask) {
                     return -(1 as libc::c_int);
@@ -6033,7 +6039,7 @@ pub unsafe extern "C" fn DecodeTimezoneAbbrev(
     mut lowtoken: *mut libc::c_char,
     mut offset: *mut libc::c_int,
     mut tz: *mut *mut pg_tz,
-) -> libc::c_int {
+) -> RealFieldType {
     let mut type_0: libc::c_int = 0;
     let mut tp: *const datetkn = 0 as *const datetkn;
     tp = abbrevcache[field as usize];
@@ -6058,26 +6064,29 @@ pub unsafe extern "C" fn DecodeTimezoneAbbrev(
         type_0 = 31 as libc::c_int;
         *offset = 0 as libc::c_int;
         *tz = 0 as *mut pg_tz;
+        RealFieldType::UnknownField
     } else {
         abbrevcache[field as usize] = tp;
-        type_0 = (*tp).type_0 as libc::c_int;
-        if type_0 == 7 as libc::c_int {
-            *offset = 0 as libc::c_int;
-            *tz = FetchDynamicTimeZone(zoneabbrevtbl, tp);
-        } else {
-            *offset = (*tp).value;
-            *tz = 0 as *mut pg_tz;
+        match (*tp).type_0 {
+            RealFieldType::DynTz => {
+                *offset = 0 as libc::c_int;
+                *tz = FetchDynamicTimeZone(zoneabbrevtbl, tp);
+                RealFieldType::DynTz
+            },
+            typ => {
+                *offset = (*tp).value;
+                *tz = 0 as *mut pg_tz;
+                typ
+            }
         }
     }
-    return type_0;
 }
 #[no_mangle]
 pub unsafe extern "C" fn DecodeSpecial(
     mut field: libc::c_int,
     mut lowtoken: *mut libc::c_char,
     mut val: *mut libc::c_int,
-) -> libc::c_int {
-    let mut type_0: libc::c_int = 0;
+) -> RealFieldType {
     let mut tp: *const datetkn = 0 as *const datetkn;
     tp = datecache[field as usize];
     if tp.is_null()
@@ -6090,14 +6099,13 @@ pub unsafe extern "C" fn DecodeSpecial(
         tp = datebsearch(lowtoken, datetktbl.as_ptr(), szdatetktbl);
     }
     if tp.is_null() {
-        type_0 = 31 as libc::c_int;
         *val = 0 as libc::c_int;
+        RealFieldType::UnknownField
     } else {
         datecache[field as usize] = tp;
-        type_0 = (*tp).type_0 as libc::c_int;
         *val = (*tp).value;
+        (*tp).type_0
     }
-    return type_0;
 }
 #[inline]
 unsafe extern "C" fn ClearPgTm(mut tm: *mut pg_tm, mut fsec: *mut fsec_t) {
@@ -7923,7 +7931,7 @@ pub unsafe extern "C" fn ConvertTimeZoneAbbrevs(
             dtza = (tbl as *mut libc::c_char).offset(tbl_size as isize) as *mut DynamicZoneAbbrev;
             (*dtza).tz = 0 as *mut pg_tz;
             strcpy(((*dtza).zone).as_mut_ptr(), (*abbr_0).zone);
-            (*dtoken).type_0 = 7 as libc::c_int as libc::c_char;
+            (*dtoken).type_0 = RealFieldType::DynTz;
             (*dtoken).value = tbl_size as int32;
             dsize_0 = (8 as libc::c_ulong)
                 .wrapping_add(strlen((*abbr_0).zone))
@@ -7933,11 +7941,11 @@ pub unsafe extern "C" fn ConvertTimeZoneAbbrevs(
                     & !((8 as libc::c_int - 1 as libc::c_int) as uintptr_t),
             ) as Size as Size;
         } else {
-            (*dtoken).type_0 = (if (*abbr_0).is_dst as libc::c_int != 0 {
-                6 as libc::c_int
+            (*dtoken).type_0 = if (*abbr_0).is_dst as libc::c_int != 0 {
+                RealFieldType::DTz
             } else {
-                5 as libc::c_int
-            }) as libc::c_char;
+                RealFieldType::Tz
+            };
             (*dtoken).value = (*abbr_0).offset;
         }
         i += 1;

@@ -55,7 +55,10 @@ pub enum TokenFieldType {
 // that the associated bitmasks can fit into the left half of an INTERVAL's typmod value.  Since
 // those bits are stored in typmods, you can't change them without initdb!
 bitmask! {
-    pub mask FieldMask: u32 where flags RealFieldType {
+    pub mask FieldMask: u32 where
+
+    #[derive(Debug)]
+    flags RealFieldType {
         Reserved = 1 << 0,
         Month = 1 << 1,
         Year = 1 << 2,
