@@ -326,6 +326,7 @@ fn timestamp2tm(
 }
 
 extern "C" {
+    #![allow(improper_ctypes)]
     pub type AttrMissing;
     pub type PartitionDirectoryData;
     pub type RelationData;
@@ -491,21 +492,21 @@ pub struct MemoryContextCallback {
     pub arg: *mut libc::c_void,
     pub next: *mut MemoryContextCallback,
 }
-pub type MemoryContextCallbackFunction = Option<unsafe extern "C" fn(*mut libc::c_void) -> ()>;
+pub type MemoryContextCallbackFunction = Option<unsafe fn(*mut libc::c_void) -> ()>;
 pub type MemoryContext = *mut MemoryContextData;
 #[derive(Copy, Clone)]
 #[repr(C)]
 pub struct MemoryContextMethods {
-    pub alloc: Option<unsafe extern "C" fn(MemoryContext, Size) -> *mut libc::c_void>,
-    pub free_p: Option<unsafe extern "C" fn(MemoryContext, *mut libc::c_void) -> ()>,
+    pub alloc: Option<unsafe fn(MemoryContext, Size) -> *mut libc::c_void>,
+    pub free_p: Option<unsafe fn(MemoryContext, *mut libc::c_void) -> ()>,
     pub realloc:
-        Option<unsafe extern "C" fn(MemoryContext, *mut libc::c_void, Size) -> *mut libc::c_void>,
-    pub reset: Option<unsafe extern "C" fn(MemoryContext) -> ()>,
-    pub delete_context: Option<unsafe extern "C" fn(MemoryContext) -> ()>,
-    pub get_chunk_space: Option<unsafe extern "C" fn(MemoryContext, *mut libc::c_void) -> Size>,
-    pub is_empty: Option<unsafe extern "C" fn(MemoryContext) -> bool>,
+        Option<unsafe fn(MemoryContext, *mut libc::c_void, Size) -> *mut libc::c_void>,
+    pub reset: Option<unsafe fn(MemoryContext) -> ()>,
+    pub delete_context: Option<unsafe fn(MemoryContext) -> ()>,
+    pub get_chunk_space: Option<unsafe fn(MemoryContext, *mut libc::c_void) -> Size>,
+    pub is_empty: Option<unsafe fn(MemoryContext) -> bool>,
     pub stats: Option<
-        unsafe extern "C" fn(
+        unsafe fn(
             MemoryContext,
             MemoryStatsPrintFunc,
             *mut libc::c_void,
@@ -523,7 +524,7 @@ pub struct MemoryContextCounters {
     pub freespace: Size,
 }
 pub type MemoryStatsPrintFunc =
-    Option<unsafe extern "C" fn(MemoryContext, *mut libc::c_void, *const libc::c_char, bool) -> ()>;
+    Option<unsafe fn(MemoryContext, *mut libc::c_void, *const libc::c_char, bool) -> ()>;
 pub type NodeTag = libc::c_uint;
 pub const T_SupportRequestIndexCondition: NodeTag = 430;
 pub const T_SupportRequestRows: NodeTag = 429;
@@ -1229,18 +1230,18 @@ pub struct AttrMap {
 #[repr(C)]
 pub struct TupleTableSlotOps {
     pub base_slot_size: size_t,
-    pub init: Option<unsafe extern "C" fn(*mut TupleTableSlot) -> ()>,
-    pub release: Option<unsafe extern "C" fn(*mut TupleTableSlot) -> ()>,
-    pub clear: Option<unsafe extern "C" fn(*mut TupleTableSlot) -> ()>,
-    pub getsomeattrs: Option<unsafe extern "C" fn(*mut TupleTableSlot, libc::c_int) -> ()>,
+    pub init: Option<unsafe fn(*mut TupleTableSlot) -> ()>,
+    pub release: Option<unsafe fn(*mut TupleTableSlot) -> ()>,
+    pub clear: Option<unsafe fn(*mut TupleTableSlot) -> ()>,
+    pub getsomeattrs: Option<unsafe fn(*mut TupleTableSlot, libc::c_int) -> ()>,
     pub getsysattr:
-        Option<unsafe extern "C" fn(*mut TupleTableSlot, libc::c_int, *mut bool) -> Datum>,
-    pub materialize: Option<unsafe extern "C" fn(*mut TupleTableSlot) -> ()>,
-    pub copyslot: Option<unsafe extern "C" fn(*mut TupleTableSlot, *mut TupleTableSlot) -> ()>,
-    pub get_heap_tuple: Option<unsafe extern "C" fn(*mut TupleTableSlot) -> HeapTuple>,
-    pub get_minimal_tuple: Option<unsafe extern "C" fn(*mut TupleTableSlot) -> MinimalTuple>,
-    pub copy_heap_tuple: Option<unsafe extern "C" fn(*mut TupleTableSlot) -> HeapTuple>,
-    pub copy_minimal_tuple: Option<unsafe extern "C" fn(*mut TupleTableSlot) -> MinimalTuple>,
+        Option<unsafe fn(*mut TupleTableSlot, libc::c_int, *mut bool) -> Datum>,
+    pub materialize: Option<unsafe fn(*mut TupleTableSlot) -> ()>,
+    pub copyslot: Option<unsafe fn(*mut TupleTableSlot, *mut TupleTableSlot) -> ()>,
+    pub get_heap_tuple: Option<unsafe fn(*mut TupleTableSlot) -> HeapTuple>,
+    pub get_minimal_tuple: Option<unsafe fn(*mut TupleTableSlot) -> MinimalTuple>,
+    pub copy_heap_tuple: Option<unsafe fn(*mut TupleTableSlot) -> HeapTuple>,
+    pub copy_minimal_tuple: Option<unsafe fn(*mut TupleTableSlot) -> MinimalTuple>,
 }
 #[repr(C)]
 pub struct TupleTableSlot<'a> {
@@ -1344,7 +1345,7 @@ pub struct FmgrInfo {
     pub fn_mcxt: MemoryContext,
     pub fn_expr: fmNodePtr,
 }
-pub type PGFunction = Option<unsafe extern "C" fn(FunctionCallInfo) -> Datum>;
+pub type PGFunction = Option<unsafe fn(FunctionCallInfo) -> Datum>;
 pub type FunctionCallInfo = *mut FunctionCallInfoBaseData;
 #[derive(Copy, Clone)]
 #[repr(C)]
@@ -1395,12 +1396,12 @@ pub struct ParamExternData {
     pub pflags: uint16,
     pub ptype: Oid,
 }
-pub type ParserSetupHook = Option<unsafe extern "C" fn(*mut ParseState, *mut libc::c_void) -> ()>;
+pub type ParserSetupHook = Option<unsafe fn(*mut ParseState, *mut libc::c_void) -> ()>;
 pub type ParamCompileHook = Option<
-    unsafe extern "C" fn(ParamListInfo, *mut Param, *mut ExprState, *mut Datum, &mut bool) -> (),
+    unsafe fn(ParamListInfo, *mut Param, *mut ExprState, *mut Datum, &mut bool) -> (),
 >;
 pub type ParamFetchHook = Option<
-    unsafe extern "C" fn(
+    unsafe fn(
         ParamListInfo,
         libc::c_int,
         bool,
@@ -1474,7 +1475,7 @@ pub struct ExprContext_CB {
     pub function: ExprContextCallbackFunction,
     pub arg: Datum,
 }
-pub type ExprContextCallbackFunction = Option<unsafe extern "C" fn(Datum) -> ()>;
+pub type ExprContextCallbackFunction = Option<unsafe fn(Datum) -> ()>;
 #[derive(Copy, Clone)]
 #[repr(C)]
 pub struct EState<'a> {
@@ -1792,9 +1793,9 @@ pub type ScanDirection = libc::c_int;
 pub const ForwardScanDirection: ScanDirection = 1;
 pub const NoMovementScanDirection: ScanDirection = 0;
 pub const BackwardScanDirection: ScanDirection = -1;
-pub type ExecProcNodeMtd = Option<unsafe extern "C" fn(*mut PlanState) -> *mut TupleTableSlot>;
+pub type ExecProcNodeMtd = Option<unsafe fn(*mut PlanState) -> *mut TupleTableSlot>;
 pub type ExprStateEvalFunc =
-    Option<unsafe extern "C" fn(*mut ExprState, *mut ExprContext, &mut bool) -> Datum>;
+    Option<unsafe fn(*mut ExprState, *mut ExprContext, &mut bool) -> Datum>;
 pub type ExprDoneCond = libc::c_uint;
 pub const ExprEndResult: ExprDoneCond = 2;
 pub const ExprMultipleResult: ExprDoneCond = 1;
@@ -1888,16 +1889,16 @@ pub struct tzEntry {
     pub filename: *const libc::c_char,
 }
 #[inline]
-unsafe extern "C" fn MemoryContextSwitchTo(mut context: MemoryContext) -> MemoryContext {
+unsafe fn MemoryContextSwitchTo(mut context: MemoryContext) -> MemoryContext {
     let mut old: MemoryContext = CurrentMemoryContext;
     CurrentMemoryContext = context;
     return old;
 }
 #[inline]
-unsafe extern "C" fn list_nth_cell(mut list: *const List, mut n: libc::c_int) -> *mut ListCell {
+unsafe fn list_nth_cell(mut list: *const List, mut n: libc::c_int) -> *mut ListCell {
     return &mut *((*list).elements).offset(n as isize) as *mut ListCell;
 }
-#[no_mangle]
+
 pub static mut day_tab: [[libc::c_int; 13]; 2] = [
     [
         31 as libc::c_int,
@@ -1930,7 +1931,7 @@ pub static mut day_tab: [[libc::c_int; 13]; 2] = [
         0 as libc::c_int,
     ],
 ];
-#[no_mangle]
+
 pub static mut months: [*const libc::c_char; 13] = [
     b"Jan\0" as *const u8 as *const libc::c_char,
     b"Feb\0" as *const u8 as *const libc::c_char,
@@ -1946,7 +1947,7 @@ pub static mut months: [*const libc::c_char; 13] = [
     b"Dec\0" as *const u8 as *const libc::c_char,
     0 as *const libc::c_char,
 ];
-#[no_mangle]
+
 pub static mut days: [*const libc::c_char; 8] = [
     b"Sunday\0" as *const u8 as *const libc::c_char,
     b"Monday\0" as *const u8 as *const libc::c_char,
@@ -3521,8 +3522,8 @@ static mut abbrevcache: [*const datetkn; 25] = [
     0 as *const datetkn,
     0 as *const datetkn,
 ];
-#[no_mangle]
-pub unsafe extern "C" fn date2j(
+
+pub unsafe fn date2j(
     mut y: libc::c_int,
     mut m: libc::c_int,
     mut d: libc::c_int,
@@ -3542,8 +3543,8 @@ pub unsafe extern "C" fn date2j(
     julian += 7834 as libc::c_int * m / 256 as libc::c_int + d;
     return julian;
 }
-#[no_mangle]
-pub unsafe extern "C" fn j2date(
+
+pub unsafe fn j2date(
     mut jd: libc::c_int,
     mut year: *mut libc::c_int,
     mut month: *mut libc::c_int,
@@ -3596,8 +3597,8 @@ pub unsafe extern "C" fn j2date(
         .wrapping_rem(12 as libc::c_int as libc::c_uint)
         .wrapping_add(1 as libc::c_int as libc::c_uint) as libc::c_int;
 }
-#[no_mangle]
-pub unsafe extern "C" fn j2day(mut date: libc::c_int) -> libc::c_int {
+
+pub unsafe fn j2day(mut date: libc::c_int) -> libc::c_int {
     date += 1 as libc::c_int;
     date %= 7 as libc::c_int;
     if date < 0 as libc::c_int {
@@ -3605,13 +3606,13 @@ pub unsafe extern "C" fn j2day(mut date: libc::c_int) -> libc::c_int {
     }
     return date;
 }
-#[no_mangle]
-pub unsafe extern "C" fn GetCurrentDateTime(mut tm: *mut pg_tm) {
+
+pub unsafe fn GetCurrentDateTime(mut tm: *mut pg_tm) {
     let mut fsec: fsec_t = 0;
     GetCurrentTimeUsec(tm, &mut fsec, 0 as *mut libc::c_int);
 }
-#[no_mangle]
-pub unsafe extern "C" fn GetCurrentTimeUsec(
+
+pub unsafe fn GetCurrentTimeUsec(
     mut tm: *mut pg_tm,
     mut fsec: *mut fsec_t,
     mut tzp: *mut libc::c_int,
@@ -3683,7 +3684,7 @@ pub unsafe extern "C" fn GetCurrentTimeUsec(
         *tzp = cache_tz;
     }
 }
-unsafe extern "C" fn AppendSeconds(
+unsafe fn AppendSeconds(
     mut cp: *mut libc::c_char,
     mut sec: libc::c_int,
     mut fsec: fsec_t,
@@ -3748,14 +3749,14 @@ unsafe extern "C" fn AppendSeconds(
         return cp;
     };
 }
-unsafe extern "C" fn AppendTimestampSeconds(
+unsafe fn AppendTimestampSeconds(
     mut cp: *mut libc::c_char,
     mut tm: *mut pg_tm,
     mut fsec: fsec_t,
 ) -> *mut libc::c_char {
     return AppendSeconds(cp, (*tm).tm_sec, fsec, 6 as libc::c_int, true);
 }
-unsafe extern "C" fn AdjustFractSeconds(
+unsafe fn AdjustFractSeconds(
     mut frac: libc::c_double,
     mut tm: *mut pg_tm,
     mut fsec: *mut fsec_t,
@@ -3772,7 +3773,7 @@ unsafe extern "C" fn AdjustFractSeconds(
     *fsec =
         (*fsec as libc::c_double + rint(frac * 1000000 as libc::c_int as libc::c_double)) as fsec_t;
 }
-unsafe extern "C" fn AdjustFractDays(
+unsafe fn AdjustFractDays(
     mut frac: libc::c_double,
     mut tm: *mut pg_tm,
     mut fsec: *mut fsec_t,
@@ -3788,7 +3789,7 @@ unsafe extern "C" fn AdjustFractDays(
     frac -= extra_days as libc::c_double;
     AdjustFractSeconds(frac, tm, fsec, 86400 as libc::c_int);
 }
-unsafe extern "C" fn ParseFractionalSecond(
+unsafe fn ParseFractionalSecond(
     mut cp: *mut libc::c_char,
     mut fsec: *mut fsec_t,
 ) -> libc::c_int {
@@ -3987,8 +3988,8 @@ pub fn parse_datetime(input: &str) -> Result<Vec<(String, TokenFieldType)>, i32>
 /// If the date is outside the range of pg_time_t (in practice that could only
 /// happen if pg_time_t is just 32 bits), then assume UTC time zone - thomas
 /// 1997-05-27
-#[no_mangle]
-pub unsafe extern "C" fn DecodeDateTime(
+
+pub unsafe fn DecodeDateTime(
     mut field: *mut *mut libc::c_char,
     mut ftype: *mut libc::c_int,
     mut nf: libc::c_int,
@@ -4654,15 +4655,15 @@ pub unsafe extern "C" fn DecodeDateTime(
     }
     return 0 as libc::c_int;
 }
-#[no_mangle]
-pub unsafe extern "C" fn DetermineTimeZoneOffset(
+
+pub unsafe fn DetermineTimeZoneOffset(
     mut tm: *mut pg_tm,
     mut tzp: *mut pg_tz,
 ) -> libc::c_int {
     let mut t: pg_time_t = 0;
     return DetermineTimeZoneOffsetInternal(tm, tzp, &mut t);
 }
-unsafe extern "C" fn DetermineTimeZoneOffsetInternal(
+unsafe fn DetermineTimeZoneOffsetInternal(
     mut tm: *mut pg_tm,
     mut tzp: *mut pg_tz,
     mut tp: *mut pg_time_t,
@@ -4758,8 +4759,8 @@ unsafe extern "C" fn DetermineTimeZoneOffsetInternal(
     *tp = 0 as libc::c_int as pg_time_t;
     return 0 as libc::c_int;
 }
-#[no_mangle]
-pub unsafe extern "C" fn DetermineTimeZoneAbbrevOffset(
+
+pub unsafe fn DetermineTimeZoneAbbrevOffset(
     mut tm: *mut pg_tm,
     mut abbr: *const libc::c_char,
     mut tzp: *mut pg_tz,
@@ -4775,8 +4776,8 @@ pub unsafe extern "C" fn DetermineTimeZoneAbbrevOffset(
     }
     return zone_offset;
 }
-#[no_mangle]
-pub unsafe extern "C" fn DetermineTimeZoneAbbrevOffsetTS(
+
+pub unsafe fn DetermineTimeZoneAbbrevOffsetTS(
     mut ts: TimestampTz,
     mut abbr: *const libc::c_char,
     mut tzp: *mut pg_tz,
@@ -4845,7 +4846,7 @@ pub unsafe extern "C" fn DetermineTimeZoneAbbrevOffsetTS(
     *isdst = tm.tm_isdst.unwrap();
     return zone_offset;
 }
-unsafe extern "C" fn DetermineTimeZoneAbbrevOffsetInternal(
+unsafe fn DetermineTimeZoneAbbrevOffsetInternal(
     mut t: pg_time_t,
     mut abbr: *const libc::c_char,
     mut tzp: *mut pg_tz,
@@ -4882,8 +4883,8 @@ unsafe extern "C" fn DetermineTimeZoneAbbrevOffsetInternal(
 // - thomas 2000-03-10
 // Allow specifying date to get a better time zone,
 // if time zones are allowed. - thomas 2001-12-26
-#[no_mangle]
-pub unsafe extern "C" fn DecodeTimeOnly(
+
+pub unsafe fn DecodeTimeOnly(
     mut field: *mut *mut libc::c_char,
     mut ftype: *mut libc::c_int,
     mut nf: libc::c_int,
@@ -5482,7 +5483,7 @@ pub unsafe extern "C" fn DecodeTimeOnly(
     }
     return 0 as libc::c_int;
 }
-unsafe extern "C" fn DecodeDate(
+unsafe fn DecodeDate(
     mut str: *mut libc::c_char,
     mut fmask: FieldMask,
     mut tmask: &mut FieldMask,
@@ -5611,8 +5612,8 @@ unsafe extern "C" fn DecodeDate(
 }
 
 /// Check valid year/month/day values, handle BC and DOY cases Return 0 if okay, a DTERR code if not.
-#[no_mangle]
-pub unsafe extern "C" fn ValidateDate(
+
+pub unsafe fn ValidateDate(
     mut fmask: FieldMask,
     mut isjulian: bool,
     mut is2digits: bool,
@@ -5680,7 +5681,7 @@ pub unsafe extern "C" fn ValidateDate(
 ///
 /// Only check the lower limit on hours, since this same code can be
 /// used to represent time spans.
-unsafe extern "C" fn DecodeTime(
+unsafe fn DecodeTime(
     mut str: *mut libc::c_char,
     mut fmask: FieldMask,
     mut range: libc::c_int,
@@ -5761,7 +5762,7 @@ unsafe extern "C" fn DecodeTime(
     }
     return 0 as libc::c_int;
 }
-unsafe extern "C" fn DecodeNumber(
+unsafe fn DecodeNumber(
     mut flen: libc::c_int,
     mut str: *mut libc::c_char,
     mut haveTextMonth: bool,
@@ -5894,7 +5895,7 @@ unsafe extern "C" fn DecodeNumber(
     }
     return 0 as libc::c_int;
 }
-unsafe extern "C" fn DecodeNumberField(
+unsafe fn DecodeNumberField(
     mut len: libc::c_int,
     mut str: *mut libc::c_char,
     mut fmask: FieldMask,
@@ -5953,8 +5954,8 @@ unsafe extern "C" fn DecodeNumberField(
     }
     return -(1 as libc::c_int);
 }
-#[no_mangle]
-pub unsafe extern "C" fn DecodeTimezone(
+
+pub unsafe fn DecodeTimezone(
     mut str: *mut libc::c_char,
     mut tzp: *mut libc::c_int,
 ) -> libc::c_int {
@@ -6021,8 +6022,8 @@ pub unsafe extern "C" fn DecodeTimezone(
     }
     return 0 as libc::c_int;
 }
-#[no_mangle]
-pub unsafe extern "C" fn DecodeTimezoneAbbrev(
+
+pub unsafe fn DecodeTimezoneAbbrev(
     mut field: libc::c_int,
     mut lowtoken: *mut libc::c_char,
     mut offset: *mut libc::c_int,
@@ -6069,8 +6070,8 @@ pub unsafe extern "C" fn DecodeTimezoneAbbrev(
         }
     }
 }
-#[no_mangle]
-pub unsafe extern "C" fn DecodeSpecial(
+
+pub unsafe fn DecodeSpecial(
     mut field: libc::c_int,
     mut lowtoken: *mut libc::c_char,
     mut val: *mut libc::c_int,
@@ -6096,7 +6097,7 @@ pub unsafe extern "C" fn DecodeSpecial(
     }
 }
 #[inline]
-unsafe extern "C" fn ClearPgTm(mut tm: *mut pg_tm, mut fsec: *mut fsec_t) {
+unsafe fn ClearPgTm(mut tm: *mut pg_tm, mut fsec: *mut fsec_t) {
     (*tm).tm_year = 0 as libc::c_int;
     (*tm).tm_mon = 0 as libc::c_int;
     (*tm).tm_mday = 0 as libc::c_int;
@@ -6105,8 +6106,8 @@ unsafe extern "C" fn ClearPgTm(mut tm: *mut pg_tm, mut fsec: *mut fsec_t) {
     (*tm).tm_sec = 0 as libc::c_int;
     *fsec = 0 as libc::c_int;
 }
-#[no_mangle]
-pub unsafe extern "C" fn DecodeInterval(
+
+pub unsafe fn DecodeInterval(
     mut field: *mut *mut libc::c_char,
     mut ftype: *mut libc::c_int,
     mut nf: libc::c_int,
@@ -6443,7 +6444,7 @@ pub unsafe extern "C" fn DecodeInterval(
     }
     return 0 as libc::c_int;
 }
-unsafe extern "C" fn ParseISO8601Number(
+unsafe fn ParseISO8601Number(
     mut str: *mut libc::c_char,
     mut endptr: *mut *mut libc::c_char,
     mut ipart: *mut libc::c_int,
@@ -6476,7 +6477,7 @@ unsafe extern "C" fn ParseISO8601Number(
     *fpart = val - *ipart as libc::c_double;
     return 0 as libc::c_int;
 }
-unsafe extern "C" fn ISO8601IntegerWidth(mut fieldstart: *mut libc::c_char) -> libc::c_int {
+unsafe fn ISO8601IntegerWidth(mut fieldstart: *mut libc::c_char) -> libc::c_int {
     if *fieldstart as libc::c_int == '-' as i32 {
         fieldstart = fieldstart.offset(1);
     }
@@ -6485,8 +6486,8 @@ unsafe extern "C" fn ISO8601IntegerWidth(mut fieldstart: *mut libc::c_char) -> l
         b"0123456789\0" as *const u8 as *const libc::c_char,
     ) as libc::c_int;
 }
-#[no_mangle]
-pub unsafe extern "C" fn DecodeISO8601Interval(
+
+pub unsafe fn DecodeISO8601Interval(
     mut str: *mut libc::c_char,
     mut dtype: *mut libc::c_int,
     mut tm: *mut pg_tm,
@@ -6698,8 +6699,8 @@ pub unsafe extern "C" fn DecodeISO8601Interval(
     }
     return 0 as libc::c_int;
 }
-#[no_mangle]
-pub unsafe extern "C" fn DecodeUnits(
+
+pub unsafe fn DecodeUnits(
     mut field: libc::c_int,
     mut lowtoken: *mut libc::c_char,
     mut val: *mut libc::c_int,
@@ -6726,8 +6727,8 @@ pub unsafe extern "C" fn DecodeUnits(
     }
     return type_0;
 }
-#[no_mangle]
-pub unsafe extern "C" fn DateTimeParseError(
+
+pub unsafe fn DateTimeParseError(
     mut dterr: libc::c_int,
     mut str: *const libc::c_char,
     mut datatype: *const libc::c_char,
@@ -6910,7 +6911,7 @@ pub unsafe extern "C" fn DateTimeParseError(
         }
     };
 }
-unsafe extern "C" fn datebsearch(
+unsafe fn datebsearch(
     mut key: *const libc::c_char,
     mut base: *const datetkn,
     mut nel: libc::c_int,
@@ -6946,7 +6947,7 @@ unsafe extern "C" fn datebsearch(
     return 0 as *const datetkn;
 }
 
-unsafe extern "C" fn EncodeTimezone(
+unsafe fn EncodeTimezone(
     mut str: *mut libc::c_char,
     mut tz: libc::c_int,
     mut style: libc::c_int,
@@ -6987,8 +6988,8 @@ unsafe extern "C" fn EncodeTimezone(
     }
     return str;
 }
-#[no_mangle]
-pub unsafe extern "C" fn EncodeDateOnly(
+
+pub unsafe fn EncodeDateOnly(
     mut tm: *mut pg_tm,
     mut style: libc::c_int,
     mut str: *mut libc::c_char,
@@ -7097,8 +7098,8 @@ pub unsafe extern "C" fn EncodeDateOnly(
     }
     *str = '\0' as i32 as libc::c_char;
 }
-#[no_mangle]
-pub unsafe extern "C" fn EncodeTimeOnly(
+
+pub unsafe fn EncodeTimeOnly(
     mut tm: *mut pg_tm,
     mut fsec: fsec_t,
     mut print_tz: bool,
@@ -7120,8 +7121,8 @@ pub unsafe extern "C" fn EncodeTimeOnly(
     }
     *str = '\0' as i32 as libc::c_char;
 }
-#[no_mangle]
-pub unsafe extern "C" fn EncodeDateTime(
+
+pub unsafe fn EncodeDateTime(
     mut tm: *mut pg_tm,
     mut fsec: fsec_t,
     mut print_tz: bool,
@@ -7356,7 +7357,7 @@ pub unsafe extern "C" fn EncodeDateTime(
     }
     *str = '\0' as i32 as libc::c_char;
 }
-unsafe extern "C" fn AddISO8601IntPart(
+unsafe fn AddISO8601IntPart(
     mut cp: *mut libc::c_char,
     mut value: libc::c_int,
     mut units: libc::c_char,
@@ -7372,7 +7373,7 @@ unsafe extern "C" fn AddISO8601IntPart(
     );
     return cp.offset(strlen(cp) as isize);
 }
-unsafe extern "C" fn AddPostgresIntPart(
+unsafe fn AddPostgresIntPart(
     mut cp: *mut libc::c_char,
     mut value: libc::c_int,
     mut units: *const libc::c_char,
@@ -7407,7 +7408,7 @@ unsafe extern "C" fn AddPostgresIntPart(
     *is_zero = false;
     return cp.offset(strlen(cp) as isize);
 }
-unsafe extern "C" fn AddVerboseIntPart(
+unsafe fn AddVerboseIntPart(
     mut cp: *mut libc::c_char,
     mut value: libc::c_int,
     mut units: *const libc::c_char,
@@ -7437,8 +7438,8 @@ unsafe extern "C" fn AddVerboseIntPart(
     *is_zero = false;
     return cp.offset(strlen(cp) as isize);
 }
-#[no_mangle]
-pub unsafe extern "C" fn EncodeInterval(
+
+pub unsafe fn EncodeInterval(
     mut tm: *mut pg_tm,
     mut fsec: fsec_t,
     mut style: libc::c_int,
@@ -7716,7 +7717,7 @@ pub unsafe extern "C" fn EncodeInterval(
         }
     };
 }
-unsafe extern "C" fn CheckDateTokenTable(
+unsafe fn CheckDateTokenTable(
     mut tablename: *const libc::c_char,
     mut base: *const datetkn,
     mut nel: libc::c_int,
@@ -7796,8 +7797,8 @@ unsafe extern "C" fn CheckDateTokenTable(
     }
     return ok;
 }
-#[no_mangle]
-pub unsafe extern "C" fn CheckDateTokenTables() -> bool {
+
+pub unsafe fn CheckDateTokenTables() -> bool {
     let mut ok = true;
     ok = ok
         && CheckDateTokenTable(
@@ -7813,8 +7814,8 @@ pub unsafe extern "C" fn CheckDateTokenTables() -> bool {
         );
     return ok;
 }
-#[no_mangle]
-pub unsafe extern "C" fn TemporalSimplify(mut max_precis: int32, mut node: *mut Node) -> *mut Node {
+
+pub unsafe fn TemporalSimplify(mut max_precis: int32, mut node: *mut Node) -> *mut Node {
     let mut expr: *mut FuncExpr = node as *mut FuncExpr;
     let mut ret: *mut Node = 0 as *mut Node;
     let mut typmod: *mut Node = 0 as *mut Node;
@@ -7835,8 +7836,8 @@ pub unsafe extern "C" fn TemporalSimplify(mut max_precis: int32, mut node: *mut 
     }
     return ret;
 }
-#[no_mangle]
-pub unsafe extern "C" fn ConvertTimeZoneAbbrevs(
+
+pub unsafe fn ConvertTimeZoneAbbrevs(
     mut abbrevs: *mut tzEntry,
     mut n: libc::c_int,
 ) -> *mut TimeZoneAbbrevTable {
@@ -7910,8 +7911,8 @@ pub unsafe extern "C" fn ConvertTimeZoneAbbrevs(
     }
     return tbl;
 }
-#[no_mangle]
-pub unsafe extern "C" fn InstallTimeZoneAbbrevs(mut tbl: *mut TimeZoneAbbrevTable) {
+
+pub unsafe fn InstallTimeZoneAbbrevs(mut tbl: *mut TimeZoneAbbrevTable) {
     zoneabbrevtbl = tbl;
     memset(
         abbrevcache.as_mut_ptr() as *mut libc::c_void,
@@ -7919,7 +7920,7 @@ pub unsafe extern "C" fn InstallTimeZoneAbbrevs(mut tbl: *mut TimeZoneAbbrevTabl
         ::core::mem::size_of::<[*const datetkn; 25]>() as libc::c_ulong,
     );
 }
-unsafe extern "C" fn FetchDynamicTimeZone(
+unsafe fn FetchDynamicTimeZone(
     mut tbl: *mut TimeZoneAbbrevTable,
     mut tp: *const datetkn,
 ) -> *mut pg_tz {
@@ -7968,8 +7969,8 @@ unsafe extern "C" fn FetchDynamicTimeZone(
     }
     return (*dtza).tz;
 }
-#[no_mangle]
-pub unsafe extern "C" fn pg_timezone_abbrevs(mut fcinfo: FunctionCallInfo) -> Datum {
+
+pub unsafe fn pg_timezone_abbrevs(mut fcinfo: FunctionCallInfo) -> Datum {
     let mut funcctx: *mut FuncCallContext = 0 as *mut FuncCallContext;
     let mut pindex: *mut libc::c_int = 0 as *mut libc::c_int;
     let mut result: Datum = 0;
@@ -8177,8 +8178,8 @@ pub unsafe extern "C" fn pg_timezone_abbrevs(mut fcinfo: FunctionCallInfo) -> Da
     (*rsi_0).isDone = ExprMultipleResult;
     return result;
 }
-#[no_mangle]
-pub unsafe extern "C" fn pg_timezone_names(mut fcinfo: FunctionCallInfo) -> Datum {
+
+pub unsafe fn pg_timezone_names(mut fcinfo: FunctionCallInfo) -> Datum {
     let mut rsinfo: *mut ReturnSetInfo = (*fcinfo).resultinfo as *mut ReturnSetInfo;
     let mut randomAccess = false;
     let mut tupdesc: TupleDesc = 0 as *mut TupleDescData;
@@ -8407,7 +8408,7 @@ pub unsafe extern "C" fn pg_timezone_names(mut fcinfo: FunctionCallInfo) -> Datu
     pg_tzenumerate_end(tzenum);
     return 0 as libc::c_int as Datum;
 }
-unsafe extern "C" fn run_static_initializers() {
+unsafe fn run_static_initializers() {
     szdatetktbl = (::core::mem::size_of::<[datetkn; 71]>() as libc::c_ulong)
         .wrapping_div(::core::mem::size_of::<datetkn>() as libc::c_ulong)
         as libc::c_int;
@@ -8419,4 +8420,4 @@ unsafe extern "C" fn run_static_initializers() {
 #[cfg_attr(target_os = "linux", link_section = ".init_array")]
 #[cfg_attr(target_os = "windows", link_section = ".CRT$XIB")]
 #[cfg_attr(target_os = "macos", link_section = "__DATA,__mod_init_func")]
-static INIT_ARRAY: [unsafe extern "C" fn(); 1] = [run_static_initializers];
+static INIT_ARRAY: [unsafe fn(); 1] = [run_static_initializers];
