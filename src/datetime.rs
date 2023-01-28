@@ -197,9 +197,8 @@ pub fn decode(fields: Vec<(String, TokenFieldType)>) -> Result<(pg_tm, fsec_t, i
         ftype.push(typ as i32);
     }
 
-    let date: DateADT = 0;
+    let _date: DateADT = 0;
     let mut fsec: fsec_t = 0;
-    let mut dterr = 0i32;
     let mut tt = pg_tm {
         tm_sec: 0,
         tm_min: 0,
@@ -215,8 +214,8 @@ pub fn decode(fields: Vec<(String, TokenFieldType)>) -> Result<(pg_tm, fsec_t, i
     };
     let mut tzp: i32 = 0;
     let mut dtype: i32 = 0;
-    unsafe {
-        dterr = DecodeDateTime(
+    let dterr = unsafe {
+        DecodeDateTime(
             field.as_mut_ptr(),
             ftype.as_mut_ptr(),
             nf,
@@ -224,8 +223,8 @@ pub fn decode(fields: Vec<(String, TokenFieldType)>) -> Result<(pg_tm, fsec_t, i
             &mut tt as *mut _,
             &mut fsec as *mut _,
             &mut tzp as *mut _,
-        );
-    }
+        )
+    };
     if dterr != 0 {
         return Err(dterr);
     }

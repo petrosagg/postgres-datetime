@@ -16,10 +16,6 @@ const USECS_PER_SEC: libc::c_long = 1000000;
 const POSTGRES_EPOCH_JDATE: libc::c_long = 2451545; /* == date2j(2000, 1, 1) */
 const UNIX_EPOCH_JDATE: libc::c_long = 2440588; /* == date2j(1970, 1, 1) */
 
-fn pg_tolower(mut ch: libc::c_uchar) -> libc::c_uchar {
-    ch.make_ascii_lowercase();
-    ch
-}
 fn pg_toupper(mut ch: libc::c_uchar) -> libc::c_uchar {
     ch.make_ascii_uppercase();
     ch
@@ -45,14 +41,15 @@ fn dt2time(
         *fsec = (time - (*sec as i64 * USECS_PER_SEC)).try_into().unwrap();
     }
 }
-fn errstart(elevel: libc::c_int, domain: *const libc::c_char) -> bool {
+fn errstart(_elevel: libc::c_int, _domain: *const libc::c_char) -> bool {
     false
 }
-fn errstart_cold(elevel: libc::c_int, domain: *const libc::c_char) -> bool {
+fn errstart_cold(_elevel: libc::c_int, _domain: *const libc::c_char) -> bool {
     false
 }
-fn errfinish(filename: *const libc::c_char, lineno: libc::c_int, funcname: *const libc::c_char) {}
-fn errcode(sqlerrcode: libc::c_int) -> libc::c_int {
+fn errfinish(_filename: *const libc::c_char, _lineno: libc::c_int, _funcname: *const libc::c_char) {
+}
+fn errcode(_sqlerrcode: libc::c_int) -> libc::c_int {
     0
 }
 fn errmsg0(fmt: *const libc::c_char) -> libc::c_int {
@@ -62,7 +59,7 @@ fn errmsg0(fmt: *const libc::c_char) -> libc::c_int {
     }
     0
 }
-fn errmsg(fmt: *const libc::c_char, arg: *mut libc::c_void) -> libc::c_int {
+fn errmsg(fmt: *const libc::c_char, _arg: *mut libc::c_void) -> libc::c_int {
     unsafe {
         let s = std::ffi::CStr::from_ptr(fmt);
         println!("{}", s.to_str().unwrap());
@@ -71,8 +68,8 @@ fn errmsg(fmt: *const libc::c_char, arg: *mut libc::c_void) -> libc::c_int {
 }
 fn errmsg2(
     fmt: *const libc::c_char,
-    arg1: *mut libc::c_void,
-    arg2: *mut libc::c_void,
+    _arg1: *mut libc::c_void,
+    _arg2: *mut libc::c_void,
 ) -> libc::c_int {
     unsafe {
         let s = std::ffi::CStr::from_ptr(fmt);
@@ -80,7 +77,7 @@ fn errmsg2(
     }
     0
 }
-fn errdetail(fmt: *const libc::c_char, arg: *mut libc::c_void) -> libc::c_int {
+fn errdetail(fmt: *const libc::c_char, _arg: *mut libc::c_void) -> libc::c_int {
     unsafe {
         let s = std::ffi::CStr::from_ptr(fmt);
         println!("{}", s.to_str().unwrap());
@@ -91,7 +88,7 @@ fn GetCurrentTransactionStartTimestamp() -> TimestampTz {
     11223344
 }
 
-fn pg_localtime(timep: *const pg_time_t, tz: *const pg_tz) -> *mut pg_tm {
+fn pg_localtime(_timep: *const pg_time_t, _tz: *const pg_tz) -> *mut pg_tm {
     Box::into_raw(Box::new(pg_tm {
         tm_sec: 0,
         tm_min: 0,
@@ -108,26 +105,26 @@ fn pg_localtime(timep: *const pg_time_t, tz: *const pg_tz) -> *mut pg_tm {
 }
 
 fn pg_interpret_timezone_abbrev(
-    abbrev: *const libc::c_char,
-    timep: *const pg_time_t,
-    gmtoff: *mut libc::c_long,
-    isdst: &mut bool,
-    tz: *const pg_tz,
+    _abbrev: *const libc::c_char,
+    _timep: *const pg_time_t,
+    _gmtoff: *mut libc::c_long,
+    _isdst: &mut bool,
+    _tz: *const pg_tz,
 ) -> bool {
     unimplemented!()
 }
 fn pg_next_dst_boundary(
-    timep: *const pg_time_t,
-    before_gmtoff: *mut libc::c_long,
-    before_isdst: &mut bool,
-    boundary: *mut pg_time_t,
-    after_gmtoff: *mut libc::c_long,
-    after_isdst: &mut bool,
-    tz: *const pg_tz,
+    _timep: *const pg_time_t,
+    _before_gmtoff: *mut libc::c_long,
+    _before_isdst: &mut bool,
+    _boundary: *mut pg_time_t,
+    _after_gmtoff: *mut libc::c_long,
+    _after_isdst: &mut bool,
+    _tz: *const pg_tz,
 ) -> libc::c_int {
     0
 }
-fn pg_tzset(tzname: *const libc::c_char) -> *mut pg_tz {
+fn pg_tzset(_tzname: *const libc::c_char) -> *mut pg_tz {
     std::ptr::null_mut()
 }
 static mut session_timezone: *mut pg_tz = 0 as *mut _;
@@ -499,8 +496,7 @@ pub type MemoryContext = *mut MemoryContextData;
 pub struct MemoryContextMethods {
     pub alloc: Option<unsafe fn(MemoryContext, Size) -> *mut libc::c_void>,
     pub free_p: Option<unsafe fn(MemoryContext, *mut libc::c_void) -> ()>,
-    pub realloc:
-        Option<unsafe fn(MemoryContext, *mut libc::c_void, Size) -> *mut libc::c_void>,
+    pub realloc: Option<unsafe fn(MemoryContext, *mut libc::c_void, Size) -> *mut libc::c_void>,
     pub reset: Option<unsafe fn(MemoryContext) -> ()>,
     pub delete_context: Option<unsafe fn(MemoryContext) -> ()>,
     pub get_chunk_space: Option<unsafe fn(MemoryContext, *mut libc::c_void) -> Size>,
@@ -980,9 +976,6 @@ pub struct ItemPointerData_Inner {
     pub ip_blkid: BlockIdData,
     pub ip_posid: OffsetNumber,
 }
-#[allow(dead_code, non_upper_case_globals)]
-const ItemPointerData_PADDING: usize =
-    ::core::mem::size_of::<ItemPointerData>() - ::core::mem::size_of::<ItemPointerData_Inner>();
 #[derive(Copy, Clone)]
 #[repr(C)]
 pub struct HeapTupleHeaderData {
@@ -1234,8 +1227,7 @@ pub struct TupleTableSlotOps {
     pub release: Option<unsafe fn(*mut TupleTableSlot) -> ()>,
     pub clear: Option<unsafe fn(*mut TupleTableSlot) -> ()>,
     pub getsomeattrs: Option<unsafe fn(*mut TupleTableSlot, libc::c_int) -> ()>,
-    pub getsysattr:
-        Option<unsafe fn(*mut TupleTableSlot, libc::c_int, *mut bool) -> Datum>,
+    pub getsysattr: Option<unsafe fn(*mut TupleTableSlot, libc::c_int, *mut bool) -> Datum>,
     pub materialize: Option<unsafe fn(*mut TupleTableSlot) -> ()>,
     pub copyslot: Option<unsafe fn(*mut TupleTableSlot, *mut TupleTableSlot) -> ()>,
     pub get_heap_tuple: Option<unsafe fn(*mut TupleTableSlot) -> HeapTuple>,
@@ -1397,16 +1389,10 @@ pub struct ParamExternData {
     pub ptype: Oid,
 }
 pub type ParserSetupHook = Option<unsafe fn(*mut ParseState, *mut libc::c_void) -> ()>;
-pub type ParamCompileHook = Option<
-    unsafe fn(ParamListInfo, *mut Param, *mut ExprState, *mut Datum, &mut bool) -> (),
->;
+pub type ParamCompileHook =
+    Option<unsafe fn(ParamListInfo, *mut Param, *mut ExprState, *mut Datum, &mut bool) -> ()>;
 pub type ParamFetchHook = Option<
-    unsafe fn(
-        ParamListInfo,
-        libc::c_int,
-        bool,
-        *mut ParamExternData,
-    ) -> *mut ParamExternData,
+    unsafe fn(ParamListInfo, libc::c_int, bool, *mut ParamExternData) -> *mut ParamExternData,
 >;
 #[repr(C)]
 pub struct PlanState<'a> {
@@ -1889,13 +1875,13 @@ pub struct tzEntry {
     pub filename: *const libc::c_char,
 }
 #[inline]
-unsafe fn MemoryContextSwitchTo(mut context: MemoryContext) -> MemoryContext {
-    let mut old: MemoryContext = CurrentMemoryContext;
+unsafe fn MemoryContextSwitchTo(context: MemoryContext) -> MemoryContext {
+    let old: MemoryContext = CurrentMemoryContext;
     CurrentMemoryContext = context;
     return old;
 }
 #[inline]
-unsafe fn list_nth_cell(mut list: *const List, mut n: libc::c_int) -> *mut ListCell {
+unsafe fn list_nth_cell(list: *const List, n: libc::c_int) -> *mut ListCell {
     return &mut *((*list).elements).offset(n as isize) as *mut ListCell;
 }
 
@@ -1960,7 +1946,6 @@ pub static mut days: [*const libc::c_char; 8] = [
 ];
 
 const EPOCH: &'static str = "epoch";
-const INVALID: &'static str = "invalid";
 const EARLY: &'static str = "-infinity";
 const LATE: &'static str = "infinity";
 const NOW: &'static str = "now";
@@ -1976,55 +1961,9 @@ const DB_C: &'static str = "bc";
 // Millennium: ad, bc
 const AM: i32 = 0;
 const PM: i32 = 1;
-const HR24: i32 = 1;
 
 const AD: i32 = 0;
 const BC: i32 = 1;
-
-// Field types for time decoding.
-//
-// Can't have more of these than there are bits in an unsigned int
-// since these are turned into bit masks during parsing and decoding.
-//
-// Furthermore, the values for YEAR, MONTH, DAY, HOUR, MINUTE, SECOND
-// must be in the range 0..14 so that the associated bitmasks can fit
-// into the left half of an INTERVAL's typmod value.  Since those bits
-// are stored in typmods, you can't change them without initdb!
-const RESERV: i32 = 0;
-const MONTH: i32 = 1;
-const YEAR: i32 = 2;
-const DAY: i32 = 3;
-const JULIAN: i32 = 4;
-const TZ: i32 = 5; /* fixed-offset timezone abbreviation */
-const DTZ: i32 = 6; /* fixed-offset timezone abbrev, DST */
-const DYNTZ: i32 = 7; /* dynamic timezone abbreviation */
-const IGNORE_DTF: i32 = 8;
-const AMPM: i32 = 9;
-const HOUR: i32 = 10;
-const MINUTE: i32 = 11;
-const SECOND: i32 = 12;
-const MILLISECOND: i32 = 13;
-const MICROSECOND: i32 = 14;
-const DOY: i32 = 15;
-const DOW: i32 = 16;
-const UNITS: i32 = 17;
-const ADBC: i32 = 18;
-/* these are only for relative dates */
-const AGO: i32 = 19;
-const ABS_BEFORE: i32 = 20;
-const ABS_AFTER: i32 = 21;
-/* generic fields to help with parsing */
-const ISODATE: i32 = 22;
-const ISOTIME: i32 = 23;
-/* these are only for parsing intervals */
-const WEEK: i32 = 24;
-const DECADE: i32 = 25;
-const CENTURY: i32 = 26;
-const MILLENNIUM: i32 = 27;
-/* hack for parsing two-word timezone specs "MET DST" etc */
-const DTZMOD: i32 = 28; /* "DST" as a separate word */
-/* reserved for unrecognized string values */
-const UNKNOWN_FIELD: i32 = 31;
 
 /// holds date/time keywords.
 ///
@@ -2034,85 +1973,109 @@ const UNKNOWN_FIELD: i32 = 31;
 /// The static table contains no TZ, DTZ, or DYNTZ entries; rather those
 /// are loaded from configuration files and stored in zoneabbrevtbl, whose
 /// abbrevs[] field has the same format as the static DATE_TOKEN_TABLE.
-static DATE_TOKEN_TABLE: &'static [(&'static str, i32, i32)] = &[
+static DATE_TOKEN_TABLE: &'static [(&'static str, RealFieldType, i32)] = &[
     /* token, type, value */
-    (EARLY, RESERV, TokenFieldType::Early as i32), /* "-infinity" reserved for "early time" */
-    (DA_D, ADBC, AD),                              /* "ad" for years > 0 */
-    ("allballs", RESERV, TokenFieldType::Zulu as i32), /* 00:00:00 */
-    ("am", AMPM, AM),
-    ("apr", MONTH, 4),
-    ("april", MONTH, 4),
-    ("at", IGNORE_DTF, 0), /* "at" (throwaway) */
-    ("aug", MONTH, 8),
-    ("august", MONTH, 8),
-    (DB_C, ADBC, BC),                         /* "bc" for years <= 0 */
-    ("d", UNITS, TokenFieldType::Day as i32), /* "day of month" for ISO input */
-    ("dec", MONTH, 12),
-    ("december", MONTH, 12),
-    ("dow", UNITS, TokenFieldType::Dow as i32), /* day of week */
-    ("doy", UNITS, TokenFieldType::Doy as i32), /* day of year */
-    ("dst", DTZMOD, SECS_PER_HOUR),
-    (EPOCH, RESERV, TokenFieldType::Epoch as i32), /* "epoch" reserved for system epoch time */
-    ("feb", MONTH, 2),
-    ("february", MONTH, 2),
-    ("fri", DOW, 5),
-    ("friday", DOW, 5),
-    ("h", UNITS, TokenFieldType::Hour as i32), /* "hour" */
-    (LATE, RESERV, TokenFieldType::Late as i32), /* "infinity" reserved for "late time" */
-    ("isodow", UNITS, TokenFieldType::IsoDow as i32), /* ISO day of week, Sunday == 7 */
-    ("isoyear", UNITS, TokenFieldType::IsoYear as i32), /* year in terms of the ISO week date */
-    ("j", UNITS, TokenFieldType::Julian as i32),
-    ("jan", MONTH, 1),
-    ("january", MONTH, 1),
-    ("jd", UNITS, TokenFieldType::Julian as i32),
-    ("jul", MONTH, 7),
-    ("julian", UNITS, TokenFieldType::Julian as i32),
-    ("july", MONTH, 7),
-    ("jun", MONTH, 6),
-    ("june", MONTH, 6),
-    ("m", UNITS, TokenFieldType::Month as i32), /* "month" for ISO input */
-    ("mar", MONTH, 3),
-    ("march", MONTH, 3),
-    ("may", MONTH, 5),
-    ("mm", UNITS, TokenFieldType::Minute as i32), /* "minute" for ISO input */
-    ("mon", DOW, 1),
-    ("monday", DOW, 1),
-    ("nov", MONTH, 11),
-    ("november", MONTH, 11),
-    (NOW, RESERV, TokenFieldType::Now as i32), /* current transaction time */
-    ("oct", MONTH, 10),
-    ("october", MONTH, 10),
-    ("on", IGNORE_DTF, 0), /* "on" (throwaway) */
-    ("pm", AMPM, PM),
-    ("s", UNITS, TokenFieldType::Second as i32), /* "seconds" for ISO input */
-    ("sat", DOW, 6),
-    ("saturday", DOW, 6),
-    ("sep", MONTH, 9),
-    ("sept", MONTH, 9),
-    ("september", MONTH, 9),
-    ("sun", DOW, 0),
-    ("sunday", DOW, 0),
-    ("t", ISOTIME, TokenFieldType::Time as i32), /* Filler for ISO time fields */
-    ("thu", DOW, 4),
-    ("thur", DOW, 4),
-    ("thurs", DOW, 4),
-    ("thursday", DOW, 4),
-    (TODAY, RESERV, TokenFieldType::Today as i32), /* midnight */
-    (TOMORROW, RESERV, TokenFieldType::Tomorrow as i32), /* tomorrow midnight */
-    ("tue", DOW, 2),
-    ("tues", DOW, 2),
-    ("tuesday", DOW, 2),
-    ("wed", DOW, 3),
-    ("wednesday", DOW, 3),
-    ("weds", DOW, 3),
-    ("y", UNITS, TokenFieldType::Year as i32), /* "year" for ISO input */
-    (YESTERDAY, RESERV, TokenFieldType::Yesterday as i32), /* yesterday midnight */
+    (EARLY, RealFieldType::Reserved, TokenFieldType::Early as i32), /* "-infinity" reserved for "early time" */
+    (DA_D, RealFieldType::Adbc, AD),                                /* "ad" for years > 0 */
+    (
+        "allballs",
+        RealFieldType::Reserved,
+        TokenFieldType::Zulu as i32,
+    ), /* 00:00:00 */
+    ("am", RealFieldType::AmPm, AM),
+    ("apr", RealFieldType::Month, 4),
+    ("april", RealFieldType::Month, 4),
+    ("at", RealFieldType::IgnoreDtf, 0), /* "at" (throwaway) */
+    ("aug", RealFieldType::Month, 8),
+    ("august", RealFieldType::Month, 8),
+    (DB_C, RealFieldType::Adbc, BC), /* "bc" for years <= 0 */
+    ("d", RealFieldType::Units, TokenFieldType::Day as i32), /* "day of month" for ISO input */
+    ("dec", RealFieldType::Month, 12),
+    ("december", RealFieldType::Month, 12),
+    ("dow", RealFieldType::Units, TokenFieldType::Dow as i32), /* day of week */
+    ("doy", RealFieldType::Units, TokenFieldType::Doy as i32), /* day of year */
+    ("dst", RealFieldType::DtzMod, SECS_PER_HOUR),
+    (EPOCH, RealFieldType::Reserved, TokenFieldType::Epoch as i32), /* "epoch" reserved for system epoch time */
+    ("feb", RealFieldType::Month, 2),
+    ("february", RealFieldType::Month, 2),
+    ("fri", RealFieldType::Dow, 5),
+    ("friday", RealFieldType::Dow, 5),
+    ("h", RealFieldType::Units, TokenFieldType::Hour as i32), /* "hour" */
+    (LATE, RealFieldType::Reserved, TokenFieldType::Late as i32), /* "infinity" reserved for "late time" */
+    (
+        "isodow",
+        RealFieldType::Units,
+        TokenFieldType::IsoDow as i32,
+    ), /* ISO day of week, Sunday == 7 */
+    (
+        "isoyear",
+        RealFieldType::Units,
+        TokenFieldType::IsoYear as i32,
+    ), /* year in terms of the ISO week date */
+    ("j", RealFieldType::Units, TokenFieldType::Julian as i32),
+    ("jan", RealFieldType::Month, 1),
+    ("january", RealFieldType::Month, 1),
+    ("jd", RealFieldType::Units, TokenFieldType::Julian as i32),
+    ("jul", RealFieldType::Month, 7),
+    (
+        "julian",
+        RealFieldType::Units,
+        TokenFieldType::Julian as i32,
+    ),
+    ("july", RealFieldType::Month, 7),
+    ("jun", RealFieldType::Month, 6),
+    ("june", RealFieldType::Month, 6),
+    ("m", RealFieldType::Units, TokenFieldType::Month as i32), /* "month" for ISO input */
+    ("mar", RealFieldType::Month, 3),
+    ("march", RealFieldType::Month, 3),
+    ("may", RealFieldType::Month, 5),
+    ("mm", RealFieldType::Units, TokenFieldType::Minute as i32), /* "minute" for ISO input */
+    ("mon", RealFieldType::Dow, 1),
+    ("monday", RealFieldType::Dow, 1),
+    ("nov", RealFieldType::Month, 11),
+    ("november", RealFieldType::Month, 11),
+    (NOW, RealFieldType::Reserved, TokenFieldType::Now as i32), /* current transaction time */
+    ("oct", RealFieldType::Month, 10),
+    ("october", RealFieldType::Month, 10),
+    ("on", RealFieldType::IgnoreDtf, 0), /* "on" (throwaway) */
+    ("pm", RealFieldType::AmPm, PM),
+    ("s", RealFieldType::Units, TokenFieldType::Second as i32), /* "seconds" for ISO input */
+    ("sat", RealFieldType::Dow, 6),
+    ("saturday", RealFieldType::Dow, 6),
+    ("sep", RealFieldType::Month, 9),
+    ("sept", RealFieldType::Month, 9),
+    ("september", RealFieldType::Month, 9),
+    ("sun", RealFieldType::Dow, 0),
+    ("sunday", RealFieldType::Dow, 0),
+    ("t", RealFieldType::IsoTime, TokenFieldType::Time as i32), /* Filler for ISO time fields */
+    ("thu", RealFieldType::Dow, 4),
+    ("thur", RealFieldType::Dow, 4),
+    ("thurs", RealFieldType::Dow, 4),
+    ("thursday", RealFieldType::Dow, 4),
+    (TODAY, RealFieldType::Reserved, TokenFieldType::Today as i32), /* midnight */
+    (
+        TOMORROW,
+        RealFieldType::Reserved,
+        TokenFieldType::Tomorrow as i32,
+    ), /* tomorrow midnight */
+    ("tue", RealFieldType::Dow, 2),
+    ("tues", RealFieldType::Dow, 2),
+    ("tuesday", RealFieldType::Dow, 2),
+    ("wed", RealFieldType::Dow, 3),
+    ("wednesday", RealFieldType::Dow, 3),
+    ("weds", RealFieldType::Dow, 3),
+    ("y", RealFieldType::Units, TokenFieldType::Year as i32), /* "year" for ISO input */
+    (
+        YESTERDAY,
+        RealFieldType::Reserved,
+        TokenFieldType::Yesterday as i32,
+    ), /* yesterday midnight */
 ];
 
 static mut datetktbl: [datetkn; 71] = unsafe {
     [
         {
-            let mut init = datetkn {
+            let init = datetkn {
                 token: *::core::mem::transmute::<&[u8; 11], &mut [libc::c_char; 11]>(
                     b"-infinity\0\0",
                 ),
@@ -2122,7 +2085,7 @@ static mut datetktbl: [datetkn; 71] = unsafe {
             init
         },
         {
-            let mut init = datetkn {
+            let init = datetkn {
                 token: *::core::mem::transmute::<&[u8; 11], &mut [libc::c_char; 11]>(
                     b"ad\0\0\0\0\0\0\0\0\0",
                 ),
@@ -2132,7 +2095,7 @@ static mut datetktbl: [datetkn; 71] = unsafe {
             init
         },
         {
-            let mut init = datetkn {
+            let init = datetkn {
                 token: *::core::mem::transmute::<&[u8; 11], &mut [libc::c_char; 11]>(
                     b"allballs\0\0\0",
                 ),
@@ -2142,7 +2105,7 @@ static mut datetktbl: [datetkn; 71] = unsafe {
             init
         },
         {
-            let mut init = datetkn {
+            let init = datetkn {
                 token: *::core::mem::transmute::<&[u8; 11], &mut [libc::c_char; 11]>(
                     b"am\0\0\0\0\0\0\0\0\0",
                 ),
@@ -2152,7 +2115,7 @@ static mut datetktbl: [datetkn; 71] = unsafe {
             init
         },
         {
-            let mut init = datetkn {
+            let init = datetkn {
                 token: *::core::mem::transmute::<&[u8; 11], &mut [libc::c_char; 11]>(
                     b"apr\0\0\0\0\0\0\0\0",
                 ),
@@ -2162,7 +2125,7 @@ static mut datetktbl: [datetkn; 71] = unsafe {
             init
         },
         {
-            let mut init = datetkn {
+            let init = datetkn {
                 token: *::core::mem::transmute::<&[u8; 11], &mut [libc::c_char; 11]>(
                     b"april\0\0\0\0\0\0",
                 ),
@@ -2172,7 +2135,7 @@ static mut datetktbl: [datetkn; 71] = unsafe {
             init
         },
         {
-            let mut init = datetkn {
+            let init = datetkn {
                 token: *::core::mem::transmute::<&[u8; 11], &mut [libc::c_char; 11]>(
                     b"at\0\0\0\0\0\0\0\0\0",
                 ),
@@ -2182,7 +2145,7 @@ static mut datetktbl: [datetkn; 71] = unsafe {
             init
         },
         {
-            let mut init = datetkn {
+            let init = datetkn {
                 token: *::core::mem::transmute::<&[u8; 11], &mut [libc::c_char; 11]>(
                     b"aug\0\0\0\0\0\0\0\0",
                 ),
@@ -2192,7 +2155,7 @@ static mut datetktbl: [datetkn; 71] = unsafe {
             init
         },
         {
-            let mut init = datetkn {
+            let init = datetkn {
                 token: *::core::mem::transmute::<&[u8; 11], &mut [libc::c_char; 11]>(
                     b"august\0\0\0\0\0",
                 ),
@@ -2202,7 +2165,7 @@ static mut datetktbl: [datetkn; 71] = unsafe {
             init
         },
         {
-            let mut init = datetkn {
+            let init = datetkn {
                 token: *::core::mem::transmute::<&[u8; 11], &mut [libc::c_char; 11]>(
                     b"bc\0\0\0\0\0\0\0\0\0",
                 ),
@@ -2212,7 +2175,7 @@ static mut datetktbl: [datetkn; 71] = unsafe {
             init
         },
         {
-            let mut init = datetkn {
+            let init = datetkn {
                 token: *::core::mem::transmute::<&[u8; 11], &mut [libc::c_char; 11]>(
                     b"d\0\0\0\0\0\0\0\0\0\0",
                 ),
@@ -2222,7 +2185,7 @@ static mut datetktbl: [datetkn; 71] = unsafe {
             init
         },
         {
-            let mut init = datetkn {
+            let init = datetkn {
                 token: *::core::mem::transmute::<&[u8; 11], &mut [libc::c_char; 11]>(
                     b"dec\0\0\0\0\0\0\0\0",
                 ),
@@ -2232,7 +2195,7 @@ static mut datetktbl: [datetkn; 71] = unsafe {
             init
         },
         {
-            let mut init = datetkn {
+            let init = datetkn {
                 token: *::core::mem::transmute::<&[u8; 11], &mut [libc::c_char; 11]>(
                     b"december\0\0\0",
                 ),
@@ -2242,7 +2205,7 @@ static mut datetktbl: [datetkn; 71] = unsafe {
             init
         },
         {
-            let mut init = datetkn {
+            let init = datetkn {
                 token: *::core::mem::transmute::<&[u8; 11], &mut [libc::c_char; 11]>(
                     b"dow\0\0\0\0\0\0\0\0",
                 ),
@@ -2252,7 +2215,7 @@ static mut datetktbl: [datetkn; 71] = unsafe {
             init
         },
         {
-            let mut init = datetkn {
+            let init = datetkn {
                 token: *::core::mem::transmute::<&[u8; 11], &mut [libc::c_char; 11]>(
                     b"doy\0\0\0\0\0\0\0\0",
                 ),
@@ -2262,7 +2225,7 @@ static mut datetktbl: [datetkn; 71] = unsafe {
             init
         },
         {
-            let mut init = datetkn {
+            let init = datetkn {
                 token: *::core::mem::transmute::<&[u8; 11], &mut [libc::c_char; 11]>(
                     b"dst\0\0\0\0\0\0\0\0",
                 ),
@@ -2272,7 +2235,7 @@ static mut datetktbl: [datetkn; 71] = unsafe {
             init
         },
         {
-            let mut init = datetkn {
+            let init = datetkn {
                 token: *::core::mem::transmute::<&[u8; 11], &mut [libc::c_char; 11]>(
                     b"epoch\0\0\0\0\0\0",
                 ),
@@ -2282,7 +2245,7 @@ static mut datetktbl: [datetkn; 71] = unsafe {
             init
         },
         {
-            let mut init = datetkn {
+            let init = datetkn {
                 token: *::core::mem::transmute::<&[u8; 11], &mut [libc::c_char; 11]>(
                     b"feb\0\0\0\0\0\0\0\0",
                 ),
@@ -2292,7 +2255,7 @@ static mut datetktbl: [datetkn; 71] = unsafe {
             init
         },
         {
-            let mut init = datetkn {
+            let init = datetkn {
                 token: *::core::mem::transmute::<&[u8; 11], &mut [libc::c_char; 11]>(
                     b"february\0\0\0",
                 ),
@@ -2302,7 +2265,7 @@ static mut datetktbl: [datetkn; 71] = unsafe {
             init
         },
         {
-            let mut init = datetkn {
+            let init = datetkn {
                 token: *::core::mem::transmute::<&[u8; 11], &mut [libc::c_char; 11]>(
                     b"fri\0\0\0\0\0\0\0\0",
                 ),
@@ -2312,7 +2275,7 @@ static mut datetktbl: [datetkn; 71] = unsafe {
             init
         },
         {
-            let mut init = datetkn {
+            let init = datetkn {
                 token: *::core::mem::transmute::<&[u8; 11], &mut [libc::c_char; 11]>(
                     b"friday\0\0\0\0\0",
                 ),
@@ -2322,7 +2285,7 @@ static mut datetktbl: [datetkn; 71] = unsafe {
             init
         },
         {
-            let mut init = datetkn {
+            let init = datetkn {
                 token: *::core::mem::transmute::<&[u8; 11], &mut [libc::c_char; 11]>(
                     b"h\0\0\0\0\0\0\0\0\0\0",
                 ),
@@ -2332,7 +2295,7 @@ static mut datetktbl: [datetkn; 71] = unsafe {
             init
         },
         {
-            let mut init = datetkn {
+            let init = datetkn {
                 token: *::core::mem::transmute::<&[u8; 11], &mut [libc::c_char; 11]>(
                     b"infinity\0\0\0",
                 ),
@@ -2342,7 +2305,7 @@ static mut datetktbl: [datetkn; 71] = unsafe {
             init
         },
         {
-            let mut init = datetkn {
+            let init = datetkn {
                 token: *::core::mem::transmute::<&[u8; 11], &mut [libc::c_char; 11]>(
                     b"isodow\0\0\0\0\0",
                 ),
@@ -2352,7 +2315,7 @@ static mut datetktbl: [datetkn; 71] = unsafe {
             init
         },
         {
-            let mut init = datetkn {
+            let init = datetkn {
                 token: *::core::mem::transmute::<&[u8; 11], &mut [libc::c_char; 11]>(
                     b"isoyear\0\0\0\0",
                 ),
@@ -2362,7 +2325,7 @@ static mut datetktbl: [datetkn; 71] = unsafe {
             init
         },
         {
-            let mut init = datetkn {
+            let init = datetkn {
                 token: *::core::mem::transmute::<&[u8; 11], &mut [libc::c_char; 11]>(
                     b"j\0\0\0\0\0\0\0\0\0\0",
                 ),
@@ -2372,7 +2335,7 @@ static mut datetktbl: [datetkn; 71] = unsafe {
             init
         },
         {
-            let mut init = datetkn {
+            let init = datetkn {
                 token: *::core::mem::transmute::<&[u8; 11], &mut [libc::c_char; 11]>(
                     b"jan\0\0\0\0\0\0\0\0",
                 ),
@@ -2382,7 +2345,7 @@ static mut datetktbl: [datetkn; 71] = unsafe {
             init
         },
         {
-            let mut init = datetkn {
+            let init = datetkn {
                 token: *::core::mem::transmute::<&[u8; 11], &mut [libc::c_char; 11]>(
                     b"january\0\0\0\0",
                 ),
@@ -2392,7 +2355,7 @@ static mut datetktbl: [datetkn; 71] = unsafe {
             init
         },
         {
-            let mut init = datetkn {
+            let init = datetkn {
                 token: *::core::mem::transmute::<&[u8; 11], &mut [libc::c_char; 11]>(
                     b"jd\0\0\0\0\0\0\0\0\0",
                 ),
@@ -2402,7 +2365,7 @@ static mut datetktbl: [datetkn; 71] = unsafe {
             init
         },
         {
-            let mut init = datetkn {
+            let init = datetkn {
                 token: *::core::mem::transmute::<&[u8; 11], &mut [libc::c_char; 11]>(
                     b"jul\0\0\0\0\0\0\0\0",
                 ),
@@ -2412,7 +2375,7 @@ static mut datetktbl: [datetkn; 71] = unsafe {
             init
         },
         {
-            let mut init = datetkn {
+            let init = datetkn {
                 token: *::core::mem::transmute::<&[u8; 11], &mut [libc::c_char; 11]>(
                     b"julian\0\0\0\0\0",
                 ),
@@ -2422,7 +2385,7 @@ static mut datetktbl: [datetkn; 71] = unsafe {
             init
         },
         {
-            let mut init = datetkn {
+            let init = datetkn {
                 token: *::core::mem::transmute::<&[u8; 11], &mut [libc::c_char; 11]>(
                     b"july\0\0\0\0\0\0\0",
                 ),
@@ -2432,7 +2395,7 @@ static mut datetktbl: [datetkn; 71] = unsafe {
             init
         },
         {
-            let mut init = datetkn {
+            let init = datetkn {
                 token: *::core::mem::transmute::<&[u8; 11], &mut [libc::c_char; 11]>(
                     b"jun\0\0\0\0\0\0\0\0",
                 ),
@@ -2442,7 +2405,7 @@ static mut datetktbl: [datetkn; 71] = unsafe {
             init
         },
         {
-            let mut init = datetkn {
+            let init = datetkn {
                 token: *::core::mem::transmute::<&[u8; 11], &mut [libc::c_char; 11]>(
                     b"june\0\0\0\0\0\0\0",
                 ),
@@ -2452,7 +2415,7 @@ static mut datetktbl: [datetkn; 71] = unsafe {
             init
         },
         {
-            let mut init = datetkn {
+            let init = datetkn {
                 token: *::core::mem::transmute::<&[u8; 11], &mut [libc::c_char; 11]>(
                     b"m\0\0\0\0\0\0\0\0\0\0",
                 ),
@@ -2462,7 +2425,7 @@ static mut datetktbl: [datetkn; 71] = unsafe {
             init
         },
         {
-            let mut init = datetkn {
+            let init = datetkn {
                 token: *::core::mem::transmute::<&[u8; 11], &mut [libc::c_char; 11]>(
                     b"mar\0\0\0\0\0\0\0\0",
                 ),
@@ -2472,7 +2435,7 @@ static mut datetktbl: [datetkn; 71] = unsafe {
             init
         },
         {
-            let mut init = datetkn {
+            let init = datetkn {
                 token: *::core::mem::transmute::<&[u8; 11], &mut [libc::c_char; 11]>(
                     b"march\0\0\0\0\0\0",
                 ),
@@ -2482,7 +2445,7 @@ static mut datetktbl: [datetkn; 71] = unsafe {
             init
         },
         {
-            let mut init = datetkn {
+            let init = datetkn {
                 token: *::core::mem::transmute::<&[u8; 11], &mut [libc::c_char; 11]>(
                     b"may\0\0\0\0\0\0\0\0",
                 ),
@@ -2492,7 +2455,7 @@ static mut datetktbl: [datetkn; 71] = unsafe {
             init
         },
         {
-            let mut init = datetkn {
+            let init = datetkn {
                 token: *::core::mem::transmute::<&[u8; 11], &mut [libc::c_char; 11]>(
                     b"mm\0\0\0\0\0\0\0\0\0",
                 ),
@@ -2502,7 +2465,7 @@ static mut datetktbl: [datetkn; 71] = unsafe {
             init
         },
         {
-            let mut init = datetkn {
+            let init = datetkn {
                 token: *::core::mem::transmute::<&[u8; 11], &mut [libc::c_char; 11]>(
                     b"mon\0\0\0\0\0\0\0\0",
                 ),
@@ -2512,7 +2475,7 @@ static mut datetktbl: [datetkn; 71] = unsafe {
             init
         },
         {
-            let mut init = datetkn {
+            let init = datetkn {
                 token: *::core::mem::transmute::<&[u8; 11], &mut [libc::c_char; 11]>(
                     b"monday\0\0\0\0\0",
                 ),
@@ -2522,7 +2485,7 @@ static mut datetktbl: [datetkn; 71] = unsafe {
             init
         },
         {
-            let mut init = datetkn {
+            let init = datetkn {
                 token: *::core::mem::transmute::<&[u8; 11], &mut [libc::c_char; 11]>(
                     b"nov\0\0\0\0\0\0\0\0",
                 ),
@@ -2532,7 +2495,7 @@ static mut datetktbl: [datetkn; 71] = unsafe {
             init
         },
         {
-            let mut init = datetkn {
+            let init = datetkn {
                 token: *::core::mem::transmute::<&[u8; 11], &mut [libc::c_char; 11]>(
                     b"november\0\0\0",
                 ),
@@ -2542,7 +2505,7 @@ static mut datetktbl: [datetkn; 71] = unsafe {
             init
         },
         {
-            let mut init = datetkn {
+            let init = datetkn {
                 token: *::core::mem::transmute::<&[u8; 11], &mut [libc::c_char; 11]>(
                     b"now\0\0\0\0\0\0\0\0",
                 ),
@@ -2552,7 +2515,7 @@ static mut datetktbl: [datetkn; 71] = unsafe {
             init
         },
         {
-            let mut init = datetkn {
+            let init = datetkn {
                 token: *::core::mem::transmute::<&[u8; 11], &mut [libc::c_char; 11]>(
                     b"oct\0\0\0\0\0\0\0\0",
                 ),
@@ -2562,7 +2525,7 @@ static mut datetktbl: [datetkn; 71] = unsafe {
             init
         },
         {
-            let mut init = datetkn {
+            let init = datetkn {
                 token: *::core::mem::transmute::<&[u8; 11], &mut [libc::c_char; 11]>(
                     b"october\0\0\0\0",
                 ),
@@ -2572,7 +2535,7 @@ static mut datetktbl: [datetkn; 71] = unsafe {
             init
         },
         {
-            let mut init = datetkn {
+            let init = datetkn {
                 token: *::core::mem::transmute::<&[u8; 11], &mut [libc::c_char; 11]>(
                     b"on\0\0\0\0\0\0\0\0\0",
                 ),
@@ -2582,7 +2545,7 @@ static mut datetktbl: [datetkn; 71] = unsafe {
             init
         },
         {
-            let mut init = datetkn {
+            let init = datetkn {
                 token: *::core::mem::transmute::<&[u8; 11], &mut [libc::c_char; 11]>(
                     b"pm\0\0\0\0\0\0\0\0\0",
                 ),
@@ -2592,7 +2555,7 @@ static mut datetktbl: [datetkn; 71] = unsafe {
             init
         },
         {
-            let mut init = datetkn {
+            let init = datetkn {
                 token: *::core::mem::transmute::<&[u8; 11], &mut [libc::c_char; 11]>(
                     b"s\0\0\0\0\0\0\0\0\0\0",
                 ),
@@ -2602,7 +2565,7 @@ static mut datetktbl: [datetkn; 71] = unsafe {
             init
         },
         {
-            let mut init = datetkn {
+            let init = datetkn {
                 token: *::core::mem::transmute::<&[u8; 11], &mut [libc::c_char; 11]>(
                     b"sat\0\0\0\0\0\0\0\0",
                 ),
@@ -2612,7 +2575,7 @@ static mut datetktbl: [datetkn; 71] = unsafe {
             init
         },
         {
-            let mut init = datetkn {
+            let init = datetkn {
                 token: *::core::mem::transmute::<&[u8; 11], &mut [libc::c_char; 11]>(
                     b"saturday\0\0\0",
                 ),
@@ -2622,7 +2585,7 @@ static mut datetktbl: [datetkn; 71] = unsafe {
             init
         },
         {
-            let mut init = datetkn {
+            let init = datetkn {
                 token: *::core::mem::transmute::<&[u8; 11], &mut [libc::c_char; 11]>(
                     b"sep\0\0\0\0\0\0\0\0",
                 ),
@@ -2632,7 +2595,7 @@ static mut datetktbl: [datetkn; 71] = unsafe {
             init
         },
         {
-            let mut init = datetkn {
+            let init = datetkn {
                 token: *::core::mem::transmute::<&[u8; 11], &mut [libc::c_char; 11]>(
                     b"sept\0\0\0\0\0\0\0",
                 ),
@@ -2642,7 +2605,7 @@ static mut datetktbl: [datetkn; 71] = unsafe {
             init
         },
         {
-            let mut init = datetkn {
+            let init = datetkn {
                 token: *::core::mem::transmute::<&[u8; 11], &mut [libc::c_char; 11]>(
                     b"september\0\0",
                 ),
@@ -2652,7 +2615,7 @@ static mut datetktbl: [datetkn; 71] = unsafe {
             init
         },
         {
-            let mut init = datetkn {
+            let init = datetkn {
                 token: *::core::mem::transmute::<&[u8; 11], &mut [libc::c_char; 11]>(
                     b"sun\0\0\0\0\0\0\0\0",
                 ),
@@ -2662,7 +2625,7 @@ static mut datetktbl: [datetkn; 71] = unsafe {
             init
         },
         {
-            let mut init = datetkn {
+            let init = datetkn {
                 token: *::core::mem::transmute::<&[u8; 11], &mut [libc::c_char; 11]>(
                     b"sunday\0\0\0\0\0",
                 ),
@@ -2672,7 +2635,7 @@ static mut datetktbl: [datetkn; 71] = unsafe {
             init
         },
         {
-            let mut init = datetkn {
+            let init = datetkn {
                 token: *::core::mem::transmute::<&[u8; 11], &mut [libc::c_char; 11]>(
                     b"t\0\0\0\0\0\0\0\0\0\0",
                 ),
@@ -2682,7 +2645,7 @@ static mut datetktbl: [datetkn; 71] = unsafe {
             init
         },
         {
-            let mut init = datetkn {
+            let init = datetkn {
                 token: *::core::mem::transmute::<&[u8; 11], &mut [libc::c_char; 11]>(
                     b"thu\0\0\0\0\0\0\0\0",
                 ),
@@ -2692,7 +2655,7 @@ static mut datetktbl: [datetkn; 71] = unsafe {
             init
         },
         {
-            let mut init = datetkn {
+            let init = datetkn {
                 token: *::core::mem::transmute::<&[u8; 11], &mut [libc::c_char; 11]>(
                     b"thur\0\0\0\0\0\0\0",
                 ),
@@ -2702,7 +2665,7 @@ static mut datetktbl: [datetkn; 71] = unsafe {
             init
         },
         {
-            let mut init = datetkn {
+            let init = datetkn {
                 token: *::core::mem::transmute::<&[u8; 11], &mut [libc::c_char; 11]>(
                     b"thurs\0\0\0\0\0\0",
                 ),
@@ -2712,7 +2675,7 @@ static mut datetktbl: [datetkn; 71] = unsafe {
             init
         },
         {
-            let mut init = datetkn {
+            let init = datetkn {
                 token: *::core::mem::transmute::<&[u8; 11], &mut [libc::c_char; 11]>(
                     b"thursday\0\0\0",
                 ),
@@ -2722,7 +2685,7 @@ static mut datetktbl: [datetkn; 71] = unsafe {
             init
         },
         {
-            let mut init = datetkn {
+            let init = datetkn {
                 token: *::core::mem::transmute::<&[u8; 11], &mut [libc::c_char; 11]>(
                     b"today\0\0\0\0\0\0",
                 ),
@@ -2732,7 +2695,7 @@ static mut datetktbl: [datetkn; 71] = unsafe {
             init
         },
         {
-            let mut init = datetkn {
+            let init = datetkn {
                 token: *::core::mem::transmute::<&[u8; 11], &mut [libc::c_char; 11]>(
                     b"tomorrow\0\0\0",
                 ),
@@ -2742,7 +2705,7 @@ static mut datetktbl: [datetkn; 71] = unsafe {
             init
         },
         {
-            let mut init = datetkn {
+            let init = datetkn {
                 token: *::core::mem::transmute::<&[u8; 11], &mut [libc::c_char; 11]>(
                     b"tue\0\0\0\0\0\0\0\0",
                 ),
@@ -2752,7 +2715,7 @@ static mut datetktbl: [datetkn; 71] = unsafe {
             init
         },
         {
-            let mut init = datetkn {
+            let init = datetkn {
                 token: *::core::mem::transmute::<&[u8; 11], &mut [libc::c_char; 11]>(
                     b"tues\0\0\0\0\0\0\0",
                 ),
@@ -2762,7 +2725,7 @@ static mut datetktbl: [datetkn; 71] = unsafe {
             init
         },
         {
-            let mut init = datetkn {
+            let init = datetkn {
                 token: *::core::mem::transmute::<&[u8; 11], &mut [libc::c_char; 11]>(
                     b"tuesday\0\0\0\0",
                 ),
@@ -2772,7 +2735,7 @@ static mut datetktbl: [datetkn; 71] = unsafe {
             init
         },
         {
-            let mut init = datetkn {
+            let init = datetkn {
                 token: *::core::mem::transmute::<&[u8; 11], &mut [libc::c_char; 11]>(
                     b"wed\0\0\0\0\0\0\0\0",
                 ),
@@ -2782,7 +2745,7 @@ static mut datetktbl: [datetkn; 71] = unsafe {
             init
         },
         {
-            let mut init = datetkn {
+            let init = datetkn {
                 token: *::core::mem::transmute::<&[u8; 11], &mut [libc::c_char; 11]>(
                     b"wednesday\0\0",
                 ),
@@ -2792,7 +2755,7 @@ static mut datetktbl: [datetkn; 71] = unsafe {
             init
         },
         {
-            let mut init = datetkn {
+            let init = datetkn {
                 token: *::core::mem::transmute::<&[u8; 11], &mut [libc::c_char; 11]>(
                     b"weds\0\0\0\0\0\0\0",
                 ),
@@ -2802,7 +2765,7 @@ static mut datetktbl: [datetkn; 71] = unsafe {
             init
         },
         {
-            let mut init = datetkn {
+            let init = datetkn {
                 token: *::core::mem::transmute::<&[u8; 11], &mut [libc::c_char; 11]>(
                     b"y\0\0\0\0\0\0\0\0\0\0",
                 ),
@@ -2812,7 +2775,7 @@ static mut datetktbl: [datetkn; 71] = unsafe {
             init
         },
         {
-            let mut init = datetkn {
+            let init = datetkn {
                 token: *::core::mem::transmute::<&[u8; 11], &mut [libc::c_char; 11]>(
                     b"yesterday\0\0",
                 ),
@@ -2827,7 +2790,7 @@ static mut szdatetktbl: libc::c_int = 0;
 static mut deltatktbl: [datetkn; 61] = unsafe {
     [
         {
-            let mut init = datetkn {
+            let init = datetkn {
                 token: *::core::mem::transmute::<&[u8; 11], &mut [libc::c_char; 11]>(
                     b"@\0\0\0\0\0\0\0\0\0\0",
                 ),
@@ -2837,7 +2800,7 @@ static mut deltatktbl: [datetkn; 61] = unsafe {
             init
         },
         {
-            let mut init = datetkn {
+            let init = datetkn {
                 token: *::core::mem::transmute::<&[u8; 11], &mut [libc::c_char; 11]>(
                     b"ago\0\0\0\0\0\0\0\0",
                 ),
@@ -2847,7 +2810,7 @@ static mut deltatktbl: [datetkn; 61] = unsafe {
             init
         },
         {
-            let mut init = datetkn {
+            let init = datetkn {
                 token: *::core::mem::transmute::<&[u8; 11], &mut [libc::c_char; 11]>(
                     b"c\0\0\0\0\0\0\0\0\0\0",
                 ),
@@ -2857,7 +2820,7 @@ static mut deltatktbl: [datetkn; 61] = unsafe {
             init
         },
         {
-            let mut init = datetkn {
+            let init = datetkn {
                 token: *::core::mem::transmute::<&[u8; 11], &mut [libc::c_char; 11]>(
                     b"cent\0\0\0\0\0\0\0",
                 ),
@@ -2867,7 +2830,7 @@ static mut deltatktbl: [datetkn; 61] = unsafe {
             init
         },
         {
-            let mut init = datetkn {
+            let init = datetkn {
                 token: *::core::mem::transmute::<&[u8; 11], &mut [libc::c_char; 11]>(
                     b"centuries\0\0",
                 ),
@@ -2877,7 +2840,7 @@ static mut deltatktbl: [datetkn; 61] = unsafe {
             init
         },
         {
-            let mut init = datetkn {
+            let init = datetkn {
                 token: *::core::mem::transmute::<&[u8; 11], &mut [libc::c_char; 11]>(
                     b"century\0\0\0\0",
                 ),
@@ -2887,7 +2850,7 @@ static mut deltatktbl: [datetkn; 61] = unsafe {
             init
         },
         {
-            let mut init = datetkn {
+            let init = datetkn {
                 token: *::core::mem::transmute::<&[u8; 11], &mut [libc::c_char; 11]>(
                     b"d\0\0\0\0\0\0\0\0\0\0",
                 ),
@@ -2897,7 +2860,7 @@ static mut deltatktbl: [datetkn; 61] = unsafe {
             init
         },
         {
-            let mut init = datetkn {
+            let init = datetkn {
                 token: *::core::mem::transmute::<&[u8; 11], &mut [libc::c_char; 11]>(
                     b"day\0\0\0\0\0\0\0\0",
                 ),
@@ -2907,7 +2870,7 @@ static mut deltatktbl: [datetkn; 61] = unsafe {
             init
         },
         {
-            let mut init = datetkn {
+            let init = datetkn {
                 token: *::core::mem::transmute::<&[u8; 11], &mut [libc::c_char; 11]>(
                     b"days\0\0\0\0\0\0\0",
                 ),
@@ -2917,7 +2880,7 @@ static mut deltatktbl: [datetkn; 61] = unsafe {
             init
         },
         {
-            let mut init = datetkn {
+            let init = datetkn {
                 token: *::core::mem::transmute::<&[u8; 11], &mut [libc::c_char; 11]>(
                     b"dec\0\0\0\0\0\0\0\0",
                 ),
@@ -2927,7 +2890,7 @@ static mut deltatktbl: [datetkn; 61] = unsafe {
             init
         },
         {
-            let mut init = datetkn {
+            let init = datetkn {
                 token: *::core::mem::transmute::<&[u8; 11], &mut [libc::c_char; 11]>(
                     b"decade\0\0\0\0\0",
                 ),
@@ -2937,7 +2900,7 @@ static mut deltatktbl: [datetkn; 61] = unsafe {
             init
         },
         {
-            let mut init = datetkn {
+            let init = datetkn {
                 token: *::core::mem::transmute::<&[u8; 11], &mut [libc::c_char; 11]>(
                     b"decades\0\0\0\0",
                 ),
@@ -2947,7 +2910,7 @@ static mut deltatktbl: [datetkn; 61] = unsafe {
             init
         },
         {
-            let mut init = datetkn {
+            let init = datetkn {
                 token: *::core::mem::transmute::<&[u8; 11], &mut [libc::c_char; 11]>(
                     b"decs\0\0\0\0\0\0\0",
                 ),
@@ -2957,7 +2920,7 @@ static mut deltatktbl: [datetkn; 61] = unsafe {
             init
         },
         {
-            let mut init = datetkn {
+            let init = datetkn {
                 token: *::core::mem::transmute::<&[u8; 11], &mut [libc::c_char; 11]>(
                     b"h\0\0\0\0\0\0\0\0\0\0",
                 ),
@@ -2967,7 +2930,7 @@ static mut deltatktbl: [datetkn; 61] = unsafe {
             init
         },
         {
-            let mut init = datetkn {
+            let init = datetkn {
                 token: *::core::mem::transmute::<&[u8; 11], &mut [libc::c_char; 11]>(
                     b"hour\0\0\0\0\0\0\0",
                 ),
@@ -2977,7 +2940,7 @@ static mut deltatktbl: [datetkn; 61] = unsafe {
             init
         },
         {
-            let mut init = datetkn {
+            let init = datetkn {
                 token: *::core::mem::transmute::<&[u8; 11], &mut [libc::c_char; 11]>(
                     b"hours\0\0\0\0\0\0",
                 ),
@@ -2987,7 +2950,7 @@ static mut deltatktbl: [datetkn; 61] = unsafe {
             init
         },
         {
-            let mut init = datetkn {
+            let init = datetkn {
                 token: *::core::mem::transmute::<&[u8; 11], &mut [libc::c_char; 11]>(
                     b"hr\0\0\0\0\0\0\0\0\0",
                 ),
@@ -2997,7 +2960,7 @@ static mut deltatktbl: [datetkn; 61] = unsafe {
             init
         },
         {
-            let mut init = datetkn {
+            let init = datetkn {
                 token: *::core::mem::transmute::<&[u8; 11], &mut [libc::c_char; 11]>(
                     b"hrs\0\0\0\0\0\0\0\0",
                 ),
@@ -3007,7 +2970,7 @@ static mut deltatktbl: [datetkn; 61] = unsafe {
             init
         },
         {
-            let mut init = datetkn {
+            let init = datetkn {
                 token: *::core::mem::transmute::<&[u8; 11], &mut [libc::c_char; 11]>(
                     b"m\0\0\0\0\0\0\0\0\0\0",
                 ),
@@ -3017,7 +2980,7 @@ static mut deltatktbl: [datetkn; 61] = unsafe {
             init
         },
         {
-            let mut init = datetkn {
+            let init = datetkn {
                 token: *::core::mem::transmute::<&[u8; 11], &mut [libc::c_char; 11]>(
                     b"microsecon\0",
                 ),
@@ -3027,7 +2990,7 @@ static mut deltatktbl: [datetkn; 61] = unsafe {
             init
         },
         {
-            let mut init = datetkn {
+            let init = datetkn {
                 token: *::core::mem::transmute::<&[u8; 11], &mut [libc::c_char; 11]>(
                     b"mil\0\0\0\0\0\0\0\0",
                 ),
@@ -3037,7 +3000,7 @@ static mut deltatktbl: [datetkn; 61] = unsafe {
             init
         },
         {
-            let mut init = datetkn {
+            let init = datetkn {
                 token: *::core::mem::transmute::<&[u8; 11], &mut [libc::c_char; 11]>(
                     b"millennia\0\0",
                 ),
@@ -3047,7 +3010,7 @@ static mut deltatktbl: [datetkn; 61] = unsafe {
             init
         },
         {
-            let mut init = datetkn {
+            let init = datetkn {
                 token: *::core::mem::transmute::<&[u8; 11], &mut [libc::c_char; 11]>(
                     b"millennium\0",
                 ),
@@ -3057,7 +3020,7 @@ static mut deltatktbl: [datetkn; 61] = unsafe {
             init
         },
         {
-            let mut init = datetkn {
+            let init = datetkn {
                 token: *::core::mem::transmute::<&[u8; 11], &mut [libc::c_char; 11]>(
                     b"millisecon\0",
                 ),
@@ -3067,7 +3030,7 @@ static mut deltatktbl: [datetkn; 61] = unsafe {
             init
         },
         {
-            let mut init = datetkn {
+            let init = datetkn {
                 token: *::core::mem::transmute::<&[u8; 11], &mut [libc::c_char; 11]>(
                     b"mils\0\0\0\0\0\0\0",
                 ),
@@ -3077,7 +3040,7 @@ static mut deltatktbl: [datetkn; 61] = unsafe {
             init
         },
         {
-            let mut init = datetkn {
+            let init = datetkn {
                 token: *::core::mem::transmute::<&[u8; 11], &mut [libc::c_char; 11]>(
                     b"min\0\0\0\0\0\0\0\0",
                 ),
@@ -3087,7 +3050,7 @@ static mut deltatktbl: [datetkn; 61] = unsafe {
             init
         },
         {
-            let mut init = datetkn {
+            let init = datetkn {
                 token: *::core::mem::transmute::<&[u8; 11], &mut [libc::c_char; 11]>(
                     b"mins\0\0\0\0\0\0\0",
                 ),
@@ -3097,7 +3060,7 @@ static mut deltatktbl: [datetkn; 61] = unsafe {
             init
         },
         {
-            let mut init = datetkn {
+            let init = datetkn {
                 token: *::core::mem::transmute::<&[u8; 11], &mut [libc::c_char; 11]>(
                     b"minute\0\0\0\0\0",
                 ),
@@ -3107,7 +3070,7 @@ static mut deltatktbl: [datetkn; 61] = unsafe {
             init
         },
         {
-            let mut init = datetkn {
+            let init = datetkn {
                 token: *::core::mem::transmute::<&[u8; 11], &mut [libc::c_char; 11]>(
                     b"minutes\0\0\0\0",
                 ),
@@ -3117,7 +3080,7 @@ static mut deltatktbl: [datetkn; 61] = unsafe {
             init
         },
         {
-            let mut init = datetkn {
+            let init = datetkn {
                 token: *::core::mem::transmute::<&[u8; 11], &mut [libc::c_char; 11]>(
                     b"mon\0\0\0\0\0\0\0\0",
                 ),
@@ -3127,7 +3090,7 @@ static mut deltatktbl: [datetkn; 61] = unsafe {
             init
         },
         {
-            let mut init = datetkn {
+            let init = datetkn {
                 token: *::core::mem::transmute::<&[u8; 11], &mut [libc::c_char; 11]>(
                     b"mons\0\0\0\0\0\0\0",
                 ),
@@ -3137,7 +3100,7 @@ static mut deltatktbl: [datetkn; 61] = unsafe {
             init
         },
         {
-            let mut init = datetkn {
+            let init = datetkn {
                 token: *::core::mem::transmute::<&[u8; 11], &mut [libc::c_char; 11]>(
                     b"month\0\0\0\0\0\0",
                 ),
@@ -3147,7 +3110,7 @@ static mut deltatktbl: [datetkn; 61] = unsafe {
             init
         },
         {
-            let mut init = datetkn {
+            let init = datetkn {
                 token: *::core::mem::transmute::<&[u8; 11], &mut [libc::c_char; 11]>(
                     b"months\0\0\0\0\0",
                 ),
@@ -3157,7 +3120,7 @@ static mut deltatktbl: [datetkn; 61] = unsafe {
             init
         },
         {
-            let mut init = datetkn {
+            let init = datetkn {
                 token: *::core::mem::transmute::<&[u8; 11], &mut [libc::c_char; 11]>(
                     b"ms\0\0\0\0\0\0\0\0\0",
                 ),
@@ -3167,7 +3130,7 @@ static mut deltatktbl: [datetkn; 61] = unsafe {
             init
         },
         {
-            let mut init = datetkn {
+            let init = datetkn {
                 token: *::core::mem::transmute::<&[u8; 11], &mut [libc::c_char; 11]>(
                     b"msec\0\0\0\0\0\0\0",
                 ),
@@ -3177,7 +3140,7 @@ static mut deltatktbl: [datetkn; 61] = unsafe {
             init
         },
         {
-            let mut init = datetkn {
+            let init = datetkn {
                 token: *::core::mem::transmute::<&[u8; 11], &mut [libc::c_char; 11]>(
                     b"msecond\0\0\0\0",
                 ),
@@ -3187,7 +3150,7 @@ static mut deltatktbl: [datetkn; 61] = unsafe {
             init
         },
         {
-            let mut init = datetkn {
+            let init = datetkn {
                 token: *::core::mem::transmute::<&[u8; 11], &mut [libc::c_char; 11]>(
                     b"mseconds\0\0\0",
                 ),
@@ -3197,7 +3160,7 @@ static mut deltatktbl: [datetkn; 61] = unsafe {
             init
         },
         {
-            let mut init = datetkn {
+            let init = datetkn {
                 token: *::core::mem::transmute::<&[u8; 11], &mut [libc::c_char; 11]>(
                     b"msecs\0\0\0\0\0\0",
                 ),
@@ -3207,7 +3170,7 @@ static mut deltatktbl: [datetkn; 61] = unsafe {
             init
         },
         {
-            let mut init = datetkn {
+            let init = datetkn {
                 token: *::core::mem::transmute::<&[u8; 11], &mut [libc::c_char; 11]>(
                     b"qtr\0\0\0\0\0\0\0\0",
                 ),
@@ -3217,7 +3180,7 @@ static mut deltatktbl: [datetkn; 61] = unsafe {
             init
         },
         {
-            let mut init = datetkn {
+            let init = datetkn {
                 token: *::core::mem::transmute::<&[u8; 11], &mut [libc::c_char; 11]>(
                     b"quarter\0\0\0\0",
                 ),
@@ -3227,7 +3190,7 @@ static mut deltatktbl: [datetkn; 61] = unsafe {
             init
         },
         {
-            let mut init = datetkn {
+            let init = datetkn {
                 token: *::core::mem::transmute::<&[u8; 11], &mut [libc::c_char; 11]>(
                     b"s\0\0\0\0\0\0\0\0\0\0",
                 ),
@@ -3237,7 +3200,7 @@ static mut deltatktbl: [datetkn; 61] = unsafe {
             init
         },
         {
-            let mut init = datetkn {
+            let init = datetkn {
                 token: *::core::mem::transmute::<&[u8; 11], &mut [libc::c_char; 11]>(
                     b"sec\0\0\0\0\0\0\0\0",
                 ),
@@ -3247,7 +3210,7 @@ static mut deltatktbl: [datetkn; 61] = unsafe {
             init
         },
         {
-            let mut init = datetkn {
+            let init = datetkn {
                 token: *::core::mem::transmute::<&[u8; 11], &mut [libc::c_char; 11]>(
                     b"second\0\0\0\0\0",
                 ),
@@ -3257,7 +3220,7 @@ static mut deltatktbl: [datetkn; 61] = unsafe {
             init
         },
         {
-            let mut init = datetkn {
+            let init = datetkn {
                 token: *::core::mem::transmute::<&[u8; 11], &mut [libc::c_char; 11]>(
                     b"seconds\0\0\0\0",
                 ),
@@ -3267,7 +3230,7 @@ static mut deltatktbl: [datetkn; 61] = unsafe {
             init
         },
         {
-            let mut init = datetkn {
+            let init = datetkn {
                 token: *::core::mem::transmute::<&[u8; 11], &mut [libc::c_char; 11]>(
                     b"secs\0\0\0\0\0\0\0",
                 ),
@@ -3277,7 +3240,7 @@ static mut deltatktbl: [datetkn; 61] = unsafe {
             init
         },
         {
-            let mut init = datetkn {
+            let init = datetkn {
                 token: *::core::mem::transmute::<&[u8; 11], &mut [libc::c_char; 11]>(
                     b"timezone\0\0\0",
                 ),
@@ -3287,7 +3250,7 @@ static mut deltatktbl: [datetkn; 61] = unsafe {
             init
         },
         {
-            let mut init = datetkn {
+            let init = datetkn {
                 token: *::core::mem::transmute::<&[u8; 11], &mut [libc::c_char; 11]>(
                     b"timezone_h\0",
                 ),
@@ -3297,7 +3260,7 @@ static mut deltatktbl: [datetkn; 61] = unsafe {
             init
         },
         {
-            let mut init = datetkn {
+            let init = datetkn {
                 token: *::core::mem::transmute::<&[u8; 11], &mut [libc::c_char; 11]>(
                     b"timezone_m\0",
                 ),
@@ -3307,7 +3270,7 @@ static mut deltatktbl: [datetkn; 61] = unsafe {
             init
         },
         {
-            let mut init = datetkn {
+            let init = datetkn {
                 token: *::core::mem::transmute::<&[u8; 11], &mut [libc::c_char; 11]>(
                     b"us\0\0\0\0\0\0\0\0\0",
                 ),
@@ -3317,7 +3280,7 @@ static mut deltatktbl: [datetkn; 61] = unsafe {
             init
         },
         {
-            let mut init = datetkn {
+            let init = datetkn {
                 token: *::core::mem::transmute::<&[u8; 11], &mut [libc::c_char; 11]>(
                     b"usec\0\0\0\0\0\0\0",
                 ),
@@ -3327,7 +3290,7 @@ static mut deltatktbl: [datetkn; 61] = unsafe {
             init
         },
         {
-            let mut init = datetkn {
+            let init = datetkn {
                 token: *::core::mem::transmute::<&[u8; 11], &mut [libc::c_char; 11]>(
                     b"usecond\0\0\0\0",
                 ),
@@ -3337,7 +3300,7 @@ static mut deltatktbl: [datetkn; 61] = unsafe {
             init
         },
         {
-            let mut init = datetkn {
+            let init = datetkn {
                 token: *::core::mem::transmute::<&[u8; 11], &mut [libc::c_char; 11]>(
                     b"useconds\0\0\0",
                 ),
@@ -3347,7 +3310,7 @@ static mut deltatktbl: [datetkn; 61] = unsafe {
             init
         },
         {
-            let mut init = datetkn {
+            let init = datetkn {
                 token: *::core::mem::transmute::<&[u8; 11], &mut [libc::c_char; 11]>(
                     b"usecs\0\0\0\0\0\0",
                 ),
@@ -3357,7 +3320,7 @@ static mut deltatktbl: [datetkn; 61] = unsafe {
             init
         },
         {
-            let mut init = datetkn {
+            let init = datetkn {
                 token: *::core::mem::transmute::<&[u8; 11], &mut [libc::c_char; 11]>(
                     b"w\0\0\0\0\0\0\0\0\0\0",
                 ),
@@ -3367,7 +3330,7 @@ static mut deltatktbl: [datetkn; 61] = unsafe {
             init
         },
         {
-            let mut init = datetkn {
+            let init = datetkn {
                 token: *::core::mem::transmute::<&[u8; 11], &mut [libc::c_char; 11]>(
                     b"week\0\0\0\0\0\0\0",
                 ),
@@ -3377,7 +3340,7 @@ static mut deltatktbl: [datetkn; 61] = unsafe {
             init
         },
         {
-            let mut init = datetkn {
+            let init = datetkn {
                 token: *::core::mem::transmute::<&[u8; 11], &mut [libc::c_char; 11]>(
                     b"weeks\0\0\0\0\0\0",
                 ),
@@ -3387,7 +3350,7 @@ static mut deltatktbl: [datetkn; 61] = unsafe {
             init
         },
         {
-            let mut init = datetkn {
+            let init = datetkn {
                 token: *::core::mem::transmute::<&[u8; 11], &mut [libc::c_char; 11]>(
                     b"y\0\0\0\0\0\0\0\0\0\0",
                 ),
@@ -3397,7 +3360,7 @@ static mut deltatktbl: [datetkn; 61] = unsafe {
             init
         },
         {
-            let mut init = datetkn {
+            let init = datetkn {
                 token: *::core::mem::transmute::<&[u8; 11], &mut [libc::c_char; 11]>(
                     b"year\0\0\0\0\0\0\0",
                 ),
@@ -3407,7 +3370,7 @@ static mut deltatktbl: [datetkn; 61] = unsafe {
             init
         },
         {
-            let mut init = datetkn {
+            let init = datetkn {
                 token: *::core::mem::transmute::<&[u8; 11], &mut [libc::c_char; 11]>(
                     b"years\0\0\0\0\0\0",
                 ),
@@ -3417,7 +3380,7 @@ static mut deltatktbl: [datetkn; 61] = unsafe {
             init
         },
         {
-            let mut init = datetkn {
+            let init = datetkn {
                 token: *::core::mem::transmute::<&[u8; 11], &mut [libc::c_char; 11]>(
                     b"yr\0\0\0\0\0\0\0\0\0",
                 ),
@@ -3427,7 +3390,7 @@ static mut deltatktbl: [datetkn; 61] = unsafe {
             init
         },
         {
-            let mut init = datetkn {
+            let init = datetkn {
                 token: *::core::mem::transmute::<&[u8; 11], &mut [libc::c_char; 11]>(
                     b"yrs\0\0\0\0\0\0\0\0",
                 ),
@@ -3523,13 +3486,7 @@ static mut abbrevcache: [*const datetkn; 25] = [
     0 as *const datetkn,
 ];
 
-pub unsafe fn date2j(
-    mut y: libc::c_int,
-    mut m: libc::c_int,
-    mut d: libc::c_int,
-) -> libc::c_int {
-    let mut julian: libc::c_int = 0;
-    let mut century: libc::c_int = 0;
+pub unsafe fn date2j(mut y: libc::c_int, mut m: libc::c_int, d: libc::c_int) -> libc::c_int {
     if m > 2 as libc::c_int {
         m += 1 as libc::c_int;
         y += 4800 as libc::c_int;
@@ -3537,27 +3494,23 @@ pub unsafe fn date2j(
         m += 13 as libc::c_int;
         y += 4799 as libc::c_int;
     }
-    century = y / 100 as libc::c_int;
-    julian = y * 365 as libc::c_int - 32167 as libc::c_int;
+    let century = y / 100 as libc::c_int;
+    let mut julian = y * 365 as libc::c_int - 32167 as libc::c_int;
     julian += y / 4 as libc::c_int - century + century / 4 as libc::c_int;
     julian += 7834 as libc::c_int * m / 256 as libc::c_int + d;
     return julian;
 }
 
 pub unsafe fn j2date(
-    mut jd: libc::c_int,
-    mut year: *mut libc::c_int,
-    mut month: *mut libc::c_int,
-    mut day: *mut libc::c_int,
+    jd: libc::c_int,
+    year: *mut libc::c_int,
+    month: *mut libc::c_int,
+    day: *mut libc::c_int,
 ) {
-    let mut julian: libc::c_uint = 0;
-    let mut quad: libc::c_uint = 0;
-    let mut extra: libc::c_uint = 0;
-    let mut y: libc::c_int = 0;
-    julian = jd as libc::c_uint;
+    let mut julian = jd as libc::c_uint;
     julian = julian.wrapping_add(32044 as libc::c_int as libc::c_uint);
-    quad = julian.wrapping_div(146097 as libc::c_int as libc::c_uint);
-    extra = julian
+    let mut quad = julian.wrapping_div(146097 as libc::c_int as libc::c_uint);
+    let extra = julian
         .wrapping_sub(quad.wrapping_mul(146097 as libc::c_int as libc::c_uint))
         .wrapping_mul(4 as libc::c_int as libc::c_uint)
         .wrapping_add(3 as libc::c_int as libc::c_uint);
@@ -3568,7 +3521,7 @@ pub unsafe fn j2date(
     );
     quad = julian.wrapping_div(1461 as libc::c_int as libc::c_uint);
     julian = julian.wrapping_sub(quad.wrapping_mul(1461 as libc::c_int as libc::c_uint));
-    y = julian
+    let mut y = julian
         .wrapping_mul(4 as libc::c_int as libc::c_uint)
         .wrapping_div(1461 as libc::c_int as libc::c_uint) as libc::c_int;
     julian = (if y != 0 as libc::c_int {
@@ -3607,17 +3560,13 @@ pub unsafe fn j2day(mut date: libc::c_int) -> libc::c_int {
     return date;
 }
 
-pub unsafe fn GetCurrentDateTime(mut tm: *mut pg_tm) {
+pub unsafe fn GetCurrentDateTime(tm: *mut pg_tm) {
     let mut fsec: fsec_t = 0;
     GetCurrentTimeUsec(tm, &mut fsec, 0 as *mut libc::c_int);
 }
 
-pub unsafe fn GetCurrentTimeUsec(
-    mut tm: *mut pg_tm,
-    mut fsec: *mut fsec_t,
-    mut tzp: *mut libc::c_int,
-) {
-    let mut cur_ts: TimestampTz = GetCurrentTransactionStartTimestamp();
+pub unsafe fn GetCurrentTimeUsec(tm: *mut pg_tm, fsec: *mut fsec_t, tzp: *mut libc::c_int) {
+    let cur_ts: TimestampTz = GetCurrentTransactionStartTimestamp();
     static mut cache_ts: TimestampTz = 0 as libc::c_int as TimestampTz;
     static mut cache_timezone: *mut pg_tz = 0 as *const pg_tz as *mut pg_tz;
     static mut cache_tm: pg_tm = pg_tm {
@@ -3686,10 +3635,10 @@ pub unsafe fn GetCurrentTimeUsec(
 }
 unsafe fn AppendSeconds(
     mut cp: *mut libc::c_char,
-    mut sec: libc::c_int,
-    mut fsec: fsec_t,
+    sec: libc::c_int,
+    fsec: fsec_t,
     mut precision: libc::c_int,
-    mut fillzeros: bool,
+    fillzeros: bool,
 ) -> *mut libc::c_char {
     if fillzeros {
         cp = pg_ultostr_zeropad(
@@ -3721,10 +3670,9 @@ unsafe fn AppendSeconds(
             if !(fresh1 != 0) {
                 break;
             }
-            let mut oldval: int32 = value;
-            let mut remainder: int32 = 0;
+            let oldval: int32 = value;
             value /= 10 as libc::c_int;
-            remainder = oldval - value * 10 as libc::c_int;
+            let remainder = oldval - value * 10 as libc::c_int;
             if remainder != 0 {
                 gotnonzero = true;
             }
@@ -3750,24 +3698,23 @@ unsafe fn AppendSeconds(
     };
 }
 unsafe fn AppendTimestampSeconds(
-    mut cp: *mut libc::c_char,
-    mut tm: *mut pg_tm,
-    mut fsec: fsec_t,
+    cp: *mut libc::c_char,
+    tm: *mut pg_tm,
+    fsec: fsec_t,
 ) -> *mut libc::c_char {
     return AppendSeconds(cp, (*tm).tm_sec, fsec, 6 as libc::c_int, true);
 }
 unsafe fn AdjustFractSeconds(
     mut frac: libc::c_double,
     mut tm: *mut pg_tm,
-    mut fsec: *mut fsec_t,
-    mut scale: libc::c_int,
+    fsec: *mut fsec_t,
+    scale: libc::c_int,
 ) {
-    let mut sec: libc::c_int = 0;
     if frac == 0 as libc::c_int as libc::c_double {
         return;
     }
     frac *= scale as libc::c_double;
-    sec = frac as libc::c_int;
+    let sec = frac as libc::c_int;
     (*tm).tm_sec += sec;
     frac -= sec as libc::c_double;
     *fsec =
@@ -3776,26 +3723,21 @@ unsafe fn AdjustFractSeconds(
 unsafe fn AdjustFractDays(
     mut frac: libc::c_double,
     mut tm: *mut pg_tm,
-    mut fsec: *mut fsec_t,
-    mut scale: libc::c_int,
+    fsec: *mut fsec_t,
+    scale: libc::c_int,
 ) {
-    let mut extra_days: libc::c_int = 0;
     if frac == 0 as libc::c_int as libc::c_double {
         return;
     }
     frac *= scale as libc::c_double;
-    extra_days = frac as libc::c_int;
+    let extra_days = frac as libc::c_int;
     (*tm).tm_mday += extra_days;
     frac -= extra_days as libc::c_double;
     AdjustFractSeconds(frac, tm, fsec, 86400 as libc::c_int);
 }
-unsafe fn ParseFractionalSecond(
-    mut cp: *mut libc::c_char,
-    mut fsec: *mut fsec_t,
-) -> libc::c_int {
-    let mut frac: libc::c_double = 0.;
+unsafe fn ParseFractionalSecond(mut cp: *mut libc::c_char, fsec: *mut fsec_t) -> libc::c_int {
     *__errno_location() = 0 as libc::c_int;
-    frac = strtod(cp, &mut cp);
+    let frac = strtod(cp, &mut cp);
     if *cp as libc::c_int != '\0' as i32 || *__errno_location() != 0 as libc::c_int {
         eprintln!("parse fractional second failed");
         return -(1 as libc::c_int);
@@ -3990,21 +3932,18 @@ pub fn parse_datetime(input: &str) -> Result<Vec<(String, TokenFieldType)>, i32>
 /// 1997-05-27
 
 pub unsafe fn DecodeDateTime(
-    mut field: *mut *mut libc::c_char,
-    mut ftype: *mut libc::c_int,
-    mut nf: libc::c_int,
-    mut dtype: *mut libc::c_int,
+    field: *mut *mut libc::c_char,
+    ftype: *mut libc::c_int,
+    nf: libc::c_int,
+    dtype: *mut libc::c_int,
     mut tm: *mut pg_tm,
-    mut fsec: *mut fsec_t,
-    mut tzp: *mut libc::c_int,
+    fsec: *mut fsec_t,
+    tzp: *mut libc::c_int,
 ) -> libc::c_int {
     let mut fmask = FieldMask::none();
     let mut tmask = FieldMask::none();
-    let mut type_0 = RealFieldType::Reserved;
-    let mut i: libc::c_int = 0;
     let mut ptype = TokenFieldType::Number; // "prefix type" for ISO y2001m02d04 format
     let mut val: libc::c_int = 0;
-    let mut dterr: libc::c_int = 0;
     let mut mer: libc::c_int = 2 as libc::c_int;
     let mut haveTextMonth = false;
     let mut isjulian = false;
@@ -4042,19 +3981,17 @@ pub unsafe fn DecodeDateTime(
         *tzp = 0 as libc::c_int;
     }
     let mut current_block_236: u64;
-    i = 0 as libc::c_int;
-    while i < nf {
+    for i in 0..nf {
         match *ftype.offset(i as isize) {
             2 => {
                 if ptype == TokenFieldType::Julian {
                     let mut cp: *mut libc::c_char = 0 as *mut libc::c_char;
-                    let mut val_0: libc::c_int = 0;
                     if tzp.is_null() {
                         eprintln!("tzp is null");
                         return -(1 as libc::c_int);
                     }
                     *__errno_location() = 0 as libc::c_int;
-                    val_0 = strtoint(*field.offset(i as isize), &mut cp, 10 as libc::c_int);
+                    let val_0 = strtoint(*field.offset(i as isize), &mut cp, 10 as libc::c_int);
                     if *__errno_location() == 34 as libc::c_int || val_0 < 0 as libc::c_int {
                         return -(2 as libc::c_int);
                     }
@@ -4065,7 +4002,7 @@ pub unsafe fn DecodeDateTime(
                         &mut (*tm).tm_mday,
                     );
                     isjulian = true;
-                    dterr = DecodeTimezone(cp, tzp);
+                    let dterr = DecodeTimezone(cp, tzp);
                     if dterr != 0 {
                         return dterr;
                     }
@@ -4094,7 +4031,6 @@ pub unsafe fn DecodeDateTime(
                         != 0
                         || ptype != TokenFieldType::Number
                     {
-                        let mut cp_0: *mut libc::c_char = 0 as *mut libc::c_char;
                         if ptype != TokenFieldType::Number {
                             if ptype != TokenFieldType::Time {
                                 eprintln!("ptype is not Time: {:?}", ptype);
@@ -4109,17 +4045,17 @@ pub unsafe fn DecodeDateTime(
                             eprintln!("started with a digit but already have a time");
                             return -1;
                         }
-                        cp_0 = strchr(*field.offset(i as isize), '-' as i32);
+                        let cp_0 = strchr(*field.offset(i as isize), '-' as i32);
                         if cp_0.is_null() {
                             eprintln!("couldn't find '-' character");
                             return -(1 as libc::c_int);
                         }
-                        dterr = DecodeTimezone(cp_0, tzp);
+                        let dterr = DecodeTimezone(cp_0, tzp);
                         if dterr != 0 {
                             return dterr;
                         }
                         *cp_0 = '\0' as i32 as libc::c_char;
-                        dterr = DecodeNumberField(
+                        let dterr = DecodeNumberField(
                             strlen(*field.offset(i as isize)) as libc::c_int,
                             *field.offset(i as isize),
                             fmask,
@@ -4179,7 +4115,7 @@ pub unsafe fn DecodeDateTime(
                         tmask = FieldMask::from(RealFieldType::Tz);
                     }
                 } else {
-                    dterr = DecodeDate(
+                    let dterr = DecodeDate(
                         *field.offset(i as isize),
                         fmask,
                         &mut tmask,
@@ -4200,7 +4136,7 @@ pub unsafe fn DecodeDateTime(
                     }
                     ptype = TokenFieldType::Number
                 }
-                dterr = DecodeTime(
+                let dterr = DecodeTime(
                     *field.offset(i as isize),
                     fmask,
                     0x7fff as libc::c_int,
@@ -4222,7 +4158,7 @@ pub unsafe fn DecodeDateTime(
                     eprintln!("tzp is null");
                     return -(1 as libc::c_int);
                 }
-                dterr = DecodeTimezone(*field.offset(i as isize), &mut tz);
+                let dterr = DecodeTimezone(*field.offset(i as isize), &mut tz);
                 if dterr != 0 {
                     return dterr;
                 }
@@ -4233,9 +4169,8 @@ pub unsafe fn DecodeDateTime(
             0 => {
                 if ptype != TokenFieldType::Number {
                     let mut cp_1: *mut libc::c_char = 0 as *mut libc::c_char;
-                    let mut val_1: libc::c_int = 0;
                     *__errno_location() = 0 as libc::c_int;
-                    val_1 = strtoint(*field.offset(i as isize), &mut cp_1, 10 as libc::c_int);
+                    let val_1 = strtoint(*field.offset(i as isize), &mut cp_1, 10 as libc::c_int);
                     if *__errno_location() == 34 as libc::c_int {
                         return -(2 as libc::c_int);
                     }
@@ -4284,7 +4219,7 @@ pub unsafe fn DecodeDateTime(
                             (*tm).tm_sec = val_1;
                             tmask = FieldMask::from(RealFieldType::Second);
                             if *cp_1 as libc::c_int == '.' as i32 {
-                                dterr = ParseFractionalSecond(cp_1, fsec);
+                                let dterr = ParseFractionalSecond(cp_1, fsec);
                                 if dterr != 0 {
                                     return dterr;
                                 }
@@ -4293,7 +4228,7 @@ pub unsafe fn DecodeDateTime(
                         }
                         TokenFieldType::Tz => {
                             tmask = FieldMask::from(RealFieldType::Tz);
-                            dterr = DecodeTimezone(*field.offset(i as isize), tzp);
+                            let dterr = DecodeTimezone(*field.offset(i as isize), tzp);
                             if dterr != 0 {
                                 return dterr;
                             }
@@ -4311,9 +4246,8 @@ pub unsafe fn DecodeDateTime(
                             );
                             isjulian = true;
                             if *cp_1 as libc::c_int == '.' as i32 {
-                                let mut time: libc::c_double = 0.;
                                 *__errno_location() = 0 as libc::c_int;
-                                time = strtod(cp_1, &mut cp_1);
+                                let mut time = strtod(cp_1, &mut cp_1);
                                 if *cp_1 as libc::c_int != '\0' as i32
                                     || *__errno_location() != 0 as libc::c_int
                                 {
@@ -4332,7 +4266,7 @@ pub unsafe fn DecodeDateTime(
                             }
                         }
                         TokenFieldType::Time => {
-                            dterr = DecodeNumberField(
+                            let dterr = DecodeNumberField(
                                 strlen(*field.offset(i as isize)) as libc::c_int,
                                 *field.offset(i as isize),
                                 fmask | *FIELD_MASK_DATE,
@@ -4357,12 +4291,10 @@ pub unsafe fn DecodeDateTime(
                     ptype = TokenFieldType::Number;
                     *dtype = 2 as libc::c_int;
                 } else {
-                    let mut cp_2: *mut libc::c_char = 0 as *mut libc::c_char;
-                    let mut flen: libc::c_int = 0;
-                    flen = strlen(*field.offset(i as isize)) as libc::c_int;
-                    cp_2 = strchr(*field.offset(i as isize), '.' as i32);
+                    let flen = strlen(*field.offset(i as isize)) as libc::c_int;
+                    let cp_2 = strchr(*field.offset(i as isize), '.' as i32);
                     if !cp_2.is_null() && !fmask.intersects(*FIELD_MASK_DATE) {
-                        dterr = DecodeDate(
+                        let dterr = DecodeDate(
                             *field.offset(i as isize),
                             fmask,
                             &mut tmask,
@@ -4376,7 +4308,7 @@ pub unsafe fn DecodeDateTime(
                         && (flen as libc::c_ulong).wrapping_sub(strlen(cp_2))
                             > 2 as libc::c_int as libc::c_ulong
                     {
-                        dterr = DecodeNumberField(
+                        let dterr = DecodeNumberField(
                             flen,
                             *field.offset(i as isize),
                             fmask,
@@ -4392,7 +4324,7 @@ pub unsafe fn DecodeDateTime(
                         && (!fmask.intersects(*FIELD_MASK_DATE)
                             || !fmask.intersects(*FIELD_MASK_TIME))
                     {
-                        dterr = DecodeNumberField(
+                        let dterr = DecodeNumberField(
                             flen,
                             *field.offset(i as isize),
                             fmask,
@@ -4405,7 +4337,7 @@ pub unsafe fn DecodeDateTime(
                             return dterr;
                         }
                     } else {
-                        dterr = DecodeNumber(
+                        let dterr = DecodeNumber(
                             flen,
                             *field.offset(i as isize),
                             haveTextMonth,
@@ -4423,7 +4355,8 @@ pub unsafe fn DecodeDateTime(
                 current_block_236 = 13797367574128857302;
             }
             1 | 6 => {
-                type_0 = DecodeTimezoneAbbrev(i, *field.offset(i as isize), &mut val, &mut valtz);
+                let mut type_0 =
+                    DecodeTimezoneAbbrev(i, *field.offset(i as isize), &mut val, &mut valtz);
                 if type_0 == RealFieldType::UnknownField {
                     type_0 = DecodeSpecial(i, *field.offset(i as isize), &mut val);
                 }
@@ -4603,10 +4536,9 @@ pub unsafe fn DecodeDateTime(
             }
             _ => {}
         }
-        i += 1;
     }
     // do final checking/adjustment of Y/M/D fields
-    dterr = ValidateDate(fmask, isjulian, is2digits, bc, tm);
+    let dterr = ValidateDate(fmask, isjulian, is2digits, bc, tm);
     if dterr != 0 {
         return dterr;
     }
@@ -4656,50 +4588,39 @@ pub unsafe fn DecodeDateTime(
     return 0 as libc::c_int;
 }
 
-pub unsafe fn DetermineTimeZoneOffset(
-    mut tm: *mut pg_tm,
-    mut tzp: *mut pg_tz,
-) -> libc::c_int {
+pub unsafe fn DetermineTimeZoneOffset(tm: *mut pg_tm, tzp: *mut pg_tz) -> libc::c_int {
     let mut t: pg_time_t = 0;
     return DetermineTimeZoneOffsetInternal(tm, tzp, &mut t);
 }
 unsafe fn DetermineTimeZoneOffsetInternal(
     mut tm: *mut pg_tm,
-    mut tzp: *mut pg_tz,
-    mut tp: *mut pg_time_t,
+    tzp: *mut pg_tz,
+    tp: *mut pg_time_t,
 ) -> libc::c_int {
-    let mut date: libc::c_int = 0;
-    let mut sec: libc::c_int = 0;
-    let mut day: pg_time_t = 0;
-    let mut mytime: pg_time_t = 0;
-    let mut prevtime: pg_time_t = 0;
     let mut boundary: pg_time_t = 0;
-    let mut beforetime: pg_time_t = 0;
-    let mut aftertime: pg_time_t = 0;
     let mut before_gmtoff: libc::c_long = 0;
     let mut after_gmtoff: libc::c_long = 0;
     let mut before_isdst = false;
     let mut after_isdst = false;
-    let mut res: libc::c_int = 0;
     if ((*tm).tm_year > -(4713 as libc::c_int)
         || (*tm).tm_year == -(4713 as libc::c_int) && (*tm).tm_mon >= 11 as libc::c_int)
         && ((*tm).tm_year < 5874898 as libc::c_int
             || (*tm).tm_year == 5874898 as libc::c_int && (*tm).tm_mon < 6 as libc::c_int)
     {
-        date = date2j((*tm).tm_year, (*tm).tm_mon, (*tm).tm_mday) - 2440588 as libc::c_int;
-        day = date as pg_time_t * 86400 as libc::c_int as libc::c_long;
+        let date = date2j((*tm).tm_year, (*tm).tm_mon, (*tm).tm_mday) - 2440588 as libc::c_int;
+        let day = date as pg_time_t * 86400 as libc::c_int as libc::c_long;
         if !(day / 86400 as libc::c_int as libc::c_long != date as libc::c_long) {
-            sec = (*tm).tm_sec
+            let sec = (*tm).tm_sec
                 + ((*tm).tm_min + (*tm).tm_hour * 60 as libc::c_int) * 60 as libc::c_int;
-            mytime = day + sec as libc::c_long;
+            let mytime = day + sec as libc::c_long;
             if !(mytime < 0 as libc::c_int as libc::c_long
                 && day > 0 as libc::c_int as libc::c_long)
             {
-                prevtime = mytime - 86400 as libc::c_int as libc::c_long;
+                let mut prevtime = mytime - 86400 as libc::c_int as libc::c_long;
                 if !(mytime < 0 as libc::c_int as libc::c_long
                     && prevtime > 0 as libc::c_int as libc::c_long)
                 {
-                    res = pg_next_dst_boundary(
+                    let res = pg_next_dst_boundary(
                         &mut prevtime,
                         &mut before_gmtoff,
                         &mut before_isdst,
@@ -4714,7 +4635,7 @@ unsafe fn DetermineTimeZoneOffsetInternal(
                             *tp = mytime - before_gmtoff;
                             return -(before_gmtoff as libc::c_int);
                         }
-                        beforetime = mytime - before_gmtoff;
+                        let beforetime = mytime - before_gmtoff;
                         if !(before_gmtoff > 0 as libc::c_int as libc::c_long
                             && mytime < 0 as libc::c_int as libc::c_long
                             && beforetime > 0 as libc::c_int as libc::c_long
@@ -4722,7 +4643,7 @@ unsafe fn DetermineTimeZoneOffsetInternal(
                                 && mytime > 0 as libc::c_int as libc::c_long
                                 && beforetime < 0 as libc::c_int as libc::c_long)
                         {
-                            aftertime = mytime - after_gmtoff;
+                            let aftertime = mytime - after_gmtoff;
                             if !(after_gmtoff > 0 as libc::c_int as libc::c_long
                                 && mytime < 0 as libc::c_int as libc::c_long
                                 && aftertime > 0 as libc::c_int as libc::c_long
@@ -4762,14 +4683,13 @@ unsafe fn DetermineTimeZoneOffsetInternal(
 
 pub unsafe fn DetermineTimeZoneAbbrevOffset(
     mut tm: *mut pg_tm,
-    mut abbr: *const libc::c_char,
-    mut tzp: *mut pg_tz,
+    abbr: *const libc::c_char,
+    tzp: *mut pg_tz,
 ) -> libc::c_int {
     let mut t: pg_time_t = 0;
-    let mut zone_offset: libc::c_int = 0;
     let mut abbr_offset: libc::c_int = 0;
     let mut abbr_isdst = false;
-    zone_offset = DetermineTimeZoneOffsetInternal(tm, tzp, &mut t);
+    let zone_offset = DetermineTimeZoneOffsetInternal(tm, tzp, &mut t);
     if DetermineTimeZoneAbbrevOffsetInternal(t, abbr, tzp, &mut abbr_offset, &mut abbr_isdst) {
         (*tm).tm_isdst = Some(abbr_isdst);
         return abbr_offset;
@@ -4778,13 +4698,12 @@ pub unsafe fn DetermineTimeZoneAbbrevOffset(
 }
 
 pub unsafe fn DetermineTimeZoneAbbrevOffsetTS(
-    mut ts: TimestampTz,
-    mut abbr: *const libc::c_char,
-    mut tzp: *mut pg_tz,
-    mut isdst: &mut bool,
+    ts: TimestampTz,
+    abbr: *const libc::c_char,
+    tzp: *mut pg_tz,
+    isdst: &mut bool,
 ) -> libc::c_int {
-    let mut t: pg_time_t = timestamptz_to_time_t(ts);
-    let mut zone_offset: libc::c_int = 0;
+    let t: pg_time_t = timestamptz_to_time_t(ts);
     let mut abbr_offset: libc::c_int = 0;
     let mut tz: libc::c_int = 0;
     let mut tm: pg_tm = pg_tm {
@@ -4842,26 +4761,25 @@ pub unsafe fn DetermineTimeZoneAbbrevOffsetTS(
             unreachable!();
         }
     }
-    zone_offset = DetermineTimeZoneOffset(&mut tm, tzp);
+    let zone_offset = DetermineTimeZoneOffset(&mut tm, tzp);
     *isdst = tm.tm_isdst.unwrap();
     return zone_offset;
 }
 unsafe fn DetermineTimeZoneAbbrevOffsetInternal(
     mut t: pg_time_t,
-    mut abbr: *const libc::c_char,
-    mut tzp: *mut pg_tz,
-    mut offset: *mut libc::c_int,
-    mut isdst: &mut bool,
+    abbr: *const libc::c_char,
+    tzp: *mut pg_tz,
+    offset: *mut libc::c_int,
+    isdst: &mut bool,
 ) -> bool {
     let mut upabbr: [libc::c_char; 256] = [0; 256];
-    let mut p: *mut libc::c_uchar = 0 as *mut libc::c_uchar;
     let mut gmtoff: libc::c_long = 0;
     strlcpy(
         upabbr.as_mut_ptr(),
         abbr,
         ::core::mem::size_of::<[libc::c_char; 256]>() as libc::c_ulong,
     );
-    p = upabbr.as_mut_ptr() as *mut libc::c_uchar;
+    let mut p = upabbr.as_mut_ptr() as *mut libc::c_uchar;
     while *p != 0 {
         *p = pg_toupper(*p);
         p = p.offset(1);
@@ -4885,21 +4803,18 @@ unsafe fn DetermineTimeZoneAbbrevOffsetInternal(
 // if time zones are allowed. - thomas 2001-12-26
 
 pub unsafe fn DecodeTimeOnly(
-    mut field: *mut *mut libc::c_char,
-    mut ftype: *mut libc::c_int,
-    mut nf: libc::c_int,
-    mut dtype: *mut libc::c_int,
+    field: *mut *mut libc::c_char,
+    ftype: *mut libc::c_int,
+    nf: libc::c_int,
+    dtype: *mut libc::c_int,
     mut tm: *mut pg_tm,
-    mut fsec: *mut fsec_t,
-    mut tzp: *mut libc::c_int,
+    fsec: *mut fsec_t,
+    tzp: *mut libc::c_int,
 ) -> libc::c_int {
     let mut fmask = FieldMask::none();
     let mut tmask = FieldMask::none();
-    let mut type_0 = RealFieldType::Reserved;
     let mut ptype: libc::c_int = 0 as libc::c_int;
-    let mut i: libc::c_int = 0;
     let mut val: libc::c_int = 0;
-    let mut dterr: libc::c_int = 0;
     let mut isjulian: bool = false;
     let mut is2digits: bool = false;
     let mut bc: bool = false;
@@ -4918,8 +4833,7 @@ pub unsafe fn DecodeTimeOnly(
         *tzp = 0 as libc::c_int;
     }
     let mut current_block_201: u64;
-    i = 0 as libc::c_int;
-    while i < nf {
+    for i in 0..nf {
         match *ftype.offset(i as isize) {
             2 => {
                 if tzp.is_null() {
@@ -4930,7 +4844,7 @@ pub unsafe fn DecodeTimeOnly(
                     && (*ftype.offset((nf - 1 as libc::c_int) as isize) == 2 as libc::c_int
                         || *ftype.offset(1 as libc::c_int as isize) == 3 as libc::c_int)
                 {
-                    dterr = DecodeDate(
+                    let dterr = DecodeDate(
                         *field.offset(i as isize),
                         fmask,
                         &mut tmask,
@@ -4946,22 +4860,21 @@ pub unsafe fn DecodeTimeOnly(
                     & _ISdigit as libc::c_int as libc::c_ushort as libc::c_int
                     != 0
                 {
-                    let mut cp: *mut libc::c_char = 0 as *mut libc::c_char;
                     // Starts with a digit but we already have a time
                     // field? Then we are in trouble with time already...
                     if fmask.contains(*FIELD_MASK_TIME) {
                         return -(1 as libc::c_int);
                     }
-                    cp = strchr(*field.offset(i as isize), '-' as i32);
+                    let cp = strchr(*field.offset(i as isize), '-' as i32);
                     if cp.is_null() {
                         return -(1 as libc::c_int);
                     }
-                    dterr = DecodeTimezone(cp, tzp);
+                    let dterr = DecodeTimezone(cp, tzp);
                     if dterr != 0 {
                         return dterr;
                     }
                     *cp = '\0' as i32 as libc::c_char;
-                    dterr = DecodeNumberField(
+                    let dterr = DecodeNumberField(
                         strlen(*field.offset(i as isize)) as libc::c_int,
                         *field.offset(i as isize),
                         fmask | *FIELD_MASK_DATE,
@@ -5026,7 +4939,7 @@ pub unsafe fn DecodeTimeOnly(
                 current_block_201 = 18009804086567542307;
             }
             3 => {
-                dterr = DecodeTime(
+                let dterr = DecodeTime(
                     *field.offset(i as isize),
                     fmask | *FIELD_MASK_DATE,
                     0x7fff as libc::c_int,
@@ -5044,7 +4957,7 @@ pub unsafe fn DecodeTimeOnly(
                 if tzp.is_null() {
                     return -(1 as libc::c_int);
                 }
-                dterr = DecodeTimezone(*field.offset(i as isize), &mut tz);
+                let dterr = DecodeTimezone(*field.offset(i as isize), &mut tz);
                 if dterr != 0 {
                     return dterr;
                 }
@@ -5055,7 +4968,6 @@ pub unsafe fn DecodeTimeOnly(
             0 => {
                 if ptype != 0 as libc::c_int {
                     let mut cp_0: *mut libc::c_char = 0 as *mut libc::c_char;
-                    let mut val_0: libc::c_int = 0;
                     match ptype {
                         31 | 25 | 23 | 21 => {
                             if tzp.is_null() {
@@ -5065,7 +4977,7 @@ pub unsafe fn DecodeTimeOnly(
                         _ => {}
                     }
                     *__errno_location() = 0 as libc::c_int;
-                    val_0 = strtoint(*field.offset(i as isize), &mut cp_0, 10 as libc::c_int);
+                    let val_0 = strtoint(*field.offset(i as isize), &mut cp_0, 10 as libc::c_int);
                     if *__errno_location() == 34 as libc::c_int {
                         return -(2 as libc::c_int);
                     }
@@ -5108,7 +5020,7 @@ pub unsafe fn DecodeTimeOnly(
                             (*tm).tm_sec = val_0;
                             tmask = FieldMask::from(RealFieldType::Second);
                             if *cp_0 as libc::c_int == '.' as i32 {
-                                dterr = ParseFractionalSecond(cp_0, fsec);
+                                let dterr = ParseFractionalSecond(cp_0, fsec);
                                 if dterr != 0 {
                                     return dterr;
                                 }
@@ -5117,7 +5029,7 @@ pub unsafe fn DecodeTimeOnly(
                         }
                         4 => {
                             tmask = FieldMask::from(RealFieldType::Tz);
-                            dterr = DecodeTimezone(*field.offset(i as isize), tzp);
+                            let dterr = DecodeTimezone(*field.offset(i as isize), tzp);
                             if dterr != 0 {
                                 return dterr;
                             }
@@ -5135,9 +5047,8 @@ pub unsafe fn DecodeTimeOnly(
                             );
                             isjulian = true;
                             if *cp_0 as libc::c_int == '.' as i32 {
-                                let mut time: libc::c_double = 0.;
                                 *__errno_location() = 0 as libc::c_int;
-                                time = strtod(cp_0, &mut cp_0);
+                                let mut time = strtod(cp_0, &mut cp_0);
                                 if *cp_0 as libc::c_int != '\0' as i32
                                     || *__errno_location() != 0 as libc::c_int
                                 {
@@ -5155,7 +5066,7 @@ pub unsafe fn DecodeTimeOnly(
                             }
                         }
                         3 => {
-                            dterr = DecodeNumberField(
+                            let dterr = DecodeNumberField(
                                 strlen(*field.offset(i as isize)) as libc::c_int,
                                 *field.offset(i as isize),
                                 fmask | *FIELD_MASK_DATE,
@@ -5177,16 +5088,14 @@ pub unsafe fn DecodeTimeOnly(
                     ptype = 0 as libc::c_int;
                     *dtype = 2 as libc::c_int;
                 } else {
-                    let mut cp_1: *mut libc::c_char = 0 as *mut libc::c_char;
-                    let mut flen: libc::c_int = 0;
-                    flen = strlen(*field.offset(i as isize)) as libc::c_int;
-                    cp_1 = strchr(*field.offset(i as isize), '.' as i32);
+                    let flen = strlen(*field.offset(i as isize)) as libc::c_int;
+                    let cp_1 = strchr(*field.offset(i as isize), '.' as i32);
                     if !cp_1.is_null() {
                         if i == 0 as libc::c_int
                             && nf >= 2 as libc::c_int
                             && *ftype.offset((nf - 1 as libc::c_int) as isize) == 2 as libc::c_int
                         {
-                            dterr = DecodeDate(
+                            let dterr = DecodeDate(
                                 *field.offset(i as isize),
                                 fmask,
                                 &mut tmask,
@@ -5199,7 +5108,7 @@ pub unsafe fn DecodeTimeOnly(
                         } else if (flen as libc::c_ulong).wrapping_sub(strlen(cp_1))
                             > 2 as libc::c_int as libc::c_ulong
                         {
-                            dterr = DecodeNumberField(
+                            let dterr = DecodeNumberField(
                                 flen,
                                 *field.offset(i as isize),
                                 fmask | *FIELD_MASK_DATE,
@@ -5216,7 +5125,7 @@ pub unsafe fn DecodeTimeOnly(
                             return -(1 as libc::c_int);
                         }
                     } else if flen > 4 as libc::c_int {
-                        dterr = DecodeNumberField(
+                        let dterr = DecodeNumberField(
                             flen,
                             *field.offset(i as isize),
                             fmask | *FIELD_MASK_DATE,
@@ -5230,7 +5139,7 @@ pub unsafe fn DecodeTimeOnly(
                         }
                         *ftype.offset(i as isize) = dterr;
                     } else {
-                        dterr = DecodeNumber(
+                        let dterr = DecodeNumber(
                             flen,
                             *field.offset(i as isize),
                             false,
@@ -5248,7 +5157,8 @@ pub unsafe fn DecodeTimeOnly(
                 current_block_201 = 18009804086567542307;
             }
             1 | 6 => {
-                type_0 = DecodeTimezoneAbbrev(i, *field.offset(i as isize), &mut val, &mut valtz);
+                let mut type_0 =
+                    DecodeTimezoneAbbrev(i, *field.offset(i as isize), &mut val, &mut valtz);
                 if type_0 == RealFieldType::UnknownField {
                     type_0 = DecodeSpecial(i, *field.offset(i as isize), &mut val);
                 }
@@ -5364,10 +5274,9 @@ pub unsafe fn DecodeTimeOnly(
             }
             _ => {}
         }
-        i += 1;
     }
     // do final checking/adjustment of Y/M/D fields
-    dterr = ValidateDate(fmask, isjulian, is2digits, bc, tm);
+    let dterr = ValidateDate(fmask, isjulian, is2digits, bc, tm);
     if dterr != 0 {
         return dterr;
     }
@@ -5486,17 +5395,13 @@ pub unsafe fn DecodeTimeOnly(
 unsafe fn DecodeDate(
     mut str: *mut libc::c_char,
     mut fmask: FieldMask,
-    mut tmask: &mut FieldMask,
-    mut is2digits: &mut bool,
+    tmask: &mut FieldMask,
+    is2digits: &mut bool,
     mut tm: *mut pg_tm,
 ) -> libc::c_int {
     let mut fsec: fsec_t = 0;
     let mut nf: libc::c_int = 0 as libc::c_int;
-    let mut i: libc::c_int = 0;
-    let mut len: libc::c_int = 0;
-    let mut dterr: libc::c_int = 0;
     let mut haveTextMonth: bool = false;
-    let mut type_0 = RealFieldType::Reserved;
     let mut val: libc::c_int = 0;
     let mut dmask = FieldMask::none();
     let mut field: [*mut libc::c_char; 25] = [0 as *mut libc::c_char; 25];
@@ -5545,14 +5450,13 @@ unsafe fn DecodeDate(
         }
         nf += 1;
     }
-    i = 0 as libc::c_int;
-    while i < nf {
+    for i in 0..nf {
         if *(*__ctype_b_loc()).offset(*field[i as usize] as libc::c_uchar as libc::c_int as isize)
             as libc::c_int
             & _ISalpha as libc::c_int as libc::c_ushort as libc::c_int
             != 0
         {
-            type_0 = DecodeSpecial(i, field[i as usize], &mut val);
+            let type_0 = DecodeSpecial(i, field[i as usize], &mut val);
             if type_0 != RealFieldType::IgnoreDtf {
                 dmask = FieldMask::from(type_0);
                 match type_0 {
@@ -5573,16 +5477,14 @@ unsafe fn DecodeDate(
                 field[i as usize] = 0 as *mut libc::c_char;
             }
         }
-        i += 1;
     }
-    i = 0 as libc::c_int;
-    while i < nf {
+    for i in 0..nf {
         if !(field[i as usize]).is_null() {
-            len = strlen(field[i as usize]) as libc::c_int;
+            let len = strlen(field[i as usize]) as libc::c_int;
             if len <= 0 as libc::c_int {
                 return -(1 as libc::c_int);
             }
-            dterr = DecodeNumber(
+            let dterr = DecodeNumber(
                 len,
                 field[i as usize],
                 haveTextMonth,
@@ -5601,7 +5503,6 @@ unsafe fn DecodeDate(
             fmask |= dmask;
             *tmask |= dmask;
         }
-        i += 1;
     }
     if fmask & !(RealFieldType::Doy | RealFieldType::Tz) != *FIELD_MASK_DATE {
         return -(1 as libc::c_int);
@@ -5614,10 +5515,10 @@ unsafe fn DecodeDate(
 /// Check valid year/month/day values, handle BC and DOY cases Return 0 if okay, a DTERR code if not.
 
 pub unsafe fn ValidateDate(
-    mut fmask: FieldMask,
-    mut isjulian: bool,
-    mut is2digits: bool,
-    mut bc: bool,
+    fmask: FieldMask,
+    isjulian: bool,
+    is2digits: bool,
+    bc: bool,
     mut tm: *mut pg_tm,
 ) -> libc::c_int {
     if fmask.contains(RealFieldType::Year) {
@@ -5682,15 +5583,14 @@ pub unsafe fn ValidateDate(
 /// Only check the lower limit on hours, since this same code can be
 /// used to represent time spans.
 unsafe fn DecodeTime(
-    mut str: *mut libc::c_char,
-    mut fmask: FieldMask,
-    mut range: libc::c_int,
-    mut tmask: &mut FieldMask,
+    str: *mut libc::c_char,
+    _fmask: FieldMask,
+    range: libc::c_int,
+    tmask: &mut FieldMask,
     mut tm: *mut pg_tm,
-    mut fsec: *mut fsec_t,
+    fsec: *mut fsec_t,
 ) -> libc::c_int {
     let mut cp: *mut libc::c_char = 0 as *mut libc::c_char;
-    let mut dterr: libc::c_int = 0;
     *tmask = *FIELD_MASK_TIME;
     *__errno_location() = 0 as libc::c_int;
     (*tm).tm_hour = strtoint(str, &mut cp, 10 as libc::c_int);
@@ -5720,7 +5620,7 @@ unsafe fn DecodeTime(
             (*tm).tm_hour = 0 as libc::c_int;
         }
     } else if *cp as libc::c_int == '.' as i32 {
-        dterr = ParseFractionalSecond(cp, fsec);
+        let dterr = ParseFractionalSecond(cp, fsec);
         if dterr != 0 {
             return dterr;
         }
@@ -5740,7 +5640,7 @@ unsafe fn DecodeTime(
         if *cp as libc::c_int == '\0' as i32 {
             *fsec = 0 as libc::c_int;
         } else if *cp as libc::c_int == '.' as i32 {
-            dterr = ParseFractionalSecond(cp, fsec);
+            let dterr = ParseFractionalSecond(cp, fsec);
             if dterr != 0 {
                 return dterr;
             }
@@ -5763,21 +5663,19 @@ unsafe fn DecodeTime(
     return 0 as libc::c_int;
 }
 unsafe fn DecodeNumber(
-    mut flen: libc::c_int,
-    mut str: *mut libc::c_char,
-    mut haveTextMonth: bool,
-    mut fmask: FieldMask,
-    mut tmask: &mut FieldMask,
+    flen: libc::c_int,
+    str: *mut libc::c_char,
+    haveTextMonth: bool,
+    fmask: FieldMask,
+    tmask: &mut FieldMask,
     mut tm: *mut pg_tm,
-    mut fsec: *mut fsec_t,
-    mut is2digits: &mut bool,
+    fsec: *mut fsec_t,
+    is2digits: &mut bool,
 ) -> libc::c_int {
-    let mut val: libc::c_int = 0;
     let mut cp: *mut libc::c_char = 0 as *mut libc::c_char;
-    let mut dterr: libc::c_int = 0;
     *tmask = FieldMask::none();
     *__errno_location() = 0 as libc::c_int;
-    val = strtoint(str, &mut cp, 10 as libc::c_int);
+    let val = strtoint(str, &mut cp, 10 as libc::c_int);
     if *__errno_location() == 34 as libc::c_int {
         return -(2 as libc::c_int);
     }
@@ -5786,7 +5684,7 @@ unsafe fn DecodeNumber(
     }
     if *cp as libc::c_int == '.' as i32 {
         if cp.offset_from(str) as libc::c_long > 2 as libc::c_int as libc::c_long {
-            dterr = DecodeNumberField(
+            let dterr = DecodeNumberField(
                 flen,
                 str,
                 fmask | *FIELD_MASK_DATE,
@@ -5800,7 +5698,7 @@ unsafe fn DecodeNumber(
             }
             return 0 as libc::c_int;
         }
-        dterr = ParseFractionalSecond(cp, fsec);
+        let dterr = ParseFractionalSecond(cp, fsec);
         if dterr != 0 {
             return dterr;
         }
@@ -5881,7 +5779,7 @@ unsafe fn DecodeNumber(
             (*tm).tm_year = val;
         }
         14 => {
-            dterr = DecodeNumberField(flen, str, fmask, tmask, tm, fsec, is2digits);
+            let dterr = DecodeNumberField(flen, str, fmask, tmask, tm, fsec, is2digits);
             if dterr < 0 as libc::c_int {
                 return dterr;
             }
@@ -5897,19 +5795,17 @@ unsafe fn DecodeNumber(
 }
 unsafe fn DecodeNumberField(
     mut len: libc::c_int,
-    mut str: *mut libc::c_char,
-    mut fmask: FieldMask,
-    mut tmask: &mut FieldMask,
+    str: *mut libc::c_char,
+    fmask: FieldMask,
+    tmask: &mut FieldMask,
     mut tm: *mut pg_tm,
-    mut fsec: *mut fsec_t,
-    mut is2digits: &mut bool,
+    fsec: *mut fsec_t,
+    is2digits: &mut bool,
 ) -> libc::c_int {
-    let mut cp: *mut libc::c_char = 0 as *mut libc::c_char;
-    cp = strchr(str, '.' as i32);
+    let cp = strchr(str, '.' as i32);
     if !cp.is_null() {
-        let mut frac: libc::c_double = 0.;
         *__errno_location() = 0 as libc::c_int;
-        frac = strtod(cp, 0 as *mut *mut libc::c_char);
+        let frac = strtod(cp, 0 as *mut *mut libc::c_char);
         if *__errno_location() != 0 as libc::c_int {
             return -(1 as libc::c_int);
         }
@@ -5955,20 +5851,16 @@ unsafe fn DecodeNumberField(
     return -(1 as libc::c_int);
 }
 
-pub unsafe fn DecodeTimezone(
-    mut str: *mut libc::c_char,
-    mut tzp: *mut libc::c_int,
-) -> libc::c_int {
-    let mut tz: libc::c_int = 0;
-    let mut hr: libc::c_int = 0;
-    let mut min: libc::c_int = 0;
+pub unsafe fn DecodeTimezone(str: *mut libc::c_char, tzp: *mut libc::c_int) -> libc::c_int {
+    let mut tz: libc::c_int;
+    let min: libc::c_int;
     let mut sec: libc::c_int = 0 as libc::c_int;
     let mut cp: *mut libc::c_char = 0 as *mut libc::c_char;
     if *str as libc::c_int != '+' as i32 && *str as libc::c_int != '-' as i32 {
         return -(1 as libc::c_int);
     }
     *__errno_location() = 0 as libc::c_int;
-    hr = strtoint(
+    let mut hr = strtoint(
         str.offset(1 as libc::c_int as isize),
         &mut cp,
         10 as libc::c_int,
@@ -6024,14 +5916,12 @@ pub unsafe fn DecodeTimezone(
 }
 
 pub unsafe fn DecodeTimezoneAbbrev(
-    mut field: libc::c_int,
-    mut lowtoken: *mut libc::c_char,
-    mut offset: *mut libc::c_int,
-    mut tz: *mut *mut pg_tz,
+    field: libc::c_int,
+    lowtoken: *mut libc::c_char,
+    offset: *mut libc::c_int,
+    tz: *mut *mut pg_tz,
 ) -> RealFieldType {
-    let mut type_0: libc::c_int = 0;
-    let mut tp: *const datetkn = 0 as *const datetkn;
-    tp = abbrevcache[field as usize];
+    let mut tp = abbrevcache[field as usize];
     if tp.is_null()
         || strncmp(
             lowtoken,
@@ -6050,7 +5940,6 @@ pub unsafe fn DecodeTimezoneAbbrev(
         }
     }
     if tp.is_null() {
-        type_0 = 31 as libc::c_int;
         *offset = 0 as libc::c_int;
         *tz = 0 as *mut pg_tz;
         RealFieldType::UnknownField
@@ -6060,24 +5949,22 @@ pub unsafe fn DecodeTimezoneAbbrev(
             RealFieldType::DynTz => {
                 *offset = 0 as libc::c_int;
                 *tz = FetchDynamicTimeZone(zoneabbrevtbl, tp);
-                RealFieldType::DynTz
             }
-            typ => {
+            _ => {
                 *offset = (*tp).value;
                 *tz = 0 as *mut pg_tz;
-                typ
             }
         }
+        (*tp).type_0
     }
 }
 
 pub unsafe fn DecodeSpecial(
-    mut field: libc::c_int,
-    mut lowtoken: *mut libc::c_char,
-    mut val: *mut libc::c_int,
+    field: libc::c_int,
+    lowtoken: *mut libc::c_char,
+    val: *mut libc::c_int,
 ) -> RealFieldType {
-    let mut tp: *const datetkn = 0 as *const datetkn;
-    tp = datecache[field as usize];
+    let mut tp = datecache[field as usize];
     if tp.is_null()
         || strncmp(
             lowtoken,
@@ -6097,7 +5984,7 @@ pub unsafe fn DecodeSpecial(
     }
 }
 #[inline]
-unsafe fn ClearPgTm(mut tm: *mut pg_tm, mut fsec: *mut fsec_t) {
+unsafe fn ClearPgTm(mut tm: *mut pg_tm, fsec: *mut fsec_t) {
     (*tm).tm_year = 0 as libc::c_int;
     (*tm).tm_mon = 0 as libc::c_int;
     (*tm).tm_mday = 0 as libc::c_int;
@@ -6108,23 +5995,23 @@ unsafe fn ClearPgTm(mut tm: *mut pg_tm, mut fsec: *mut fsec_t) {
 }
 
 pub unsafe fn DecodeInterval(
-    mut field: *mut *mut libc::c_char,
-    mut ftype: *mut libc::c_int,
-    mut nf: libc::c_int,
-    mut range: libc::c_int,
-    mut dtype: *mut libc::c_int,
+    field: *mut *mut libc::c_char,
+    ftype: *mut libc::c_int,
+    nf: libc::c_int,
+    range: libc::c_int,
+    dtype: *mut libc::c_int,
     mut tm: *mut pg_tm,
-    mut fsec: *mut fsec_t,
+    fsec: *mut fsec_t,
 ) -> libc::c_int {
     let mut is_before = false;
     let mut cp: *mut libc::c_char = 0 as *mut libc::c_char;
     let mut fmask = FieldMask::none();
     let mut tmask = FieldMask::none();
-    let mut type_0: libc::c_int = 0;
-    let mut i: libc::c_int = 0;
-    let mut dterr: libc::c_int = 0;
+    let mut type_0;
+    let mut i;
+    let mut dterr;
     let mut val: libc::c_int = 0;
-    let mut fval: libc::c_double = 0.;
+    let mut fval;
     *dtype = 17 as libc::c_int;
     type_0 = 8 as libc::c_int;
     ClearPgTm(tm, fsec);
@@ -6235,8 +6122,7 @@ pub unsafe fn DecodeInterval(
                     return -(2 as libc::c_int);
                 }
                 if *cp as libc::c_int == '-' as i32 {
-                    let mut val2: libc::c_int = 0;
-                    val2 = strtoint(
+                    let mut val2 = strtoint(
                         cp.offset(1 as libc::c_int as isize),
                         &mut cp,
                         10 as libc::c_int,
@@ -6280,12 +6166,11 @@ pub unsafe fn DecodeInterval(
                 } else {
                     return -(1 as libc::c_int);
                 }
-                tmask = FieldMask::none();
-                match type_0 {
+                tmask = match type_0 {
                     30 => {
                         *fsec = (*fsec as libc::c_double + rint(val as libc::c_double + fval))
                             as fsec_t;
-                        tmask = FieldMask::from(RealFieldType::Microsecond);
+                        FieldMask::from(RealFieldType::Microsecond)
                     }
                     29 => {
                         (*tm).tm_sec += val / 1000 as libc::c_int;
@@ -6295,7 +6180,7 @@ pub unsafe fn DecodeInterval(
                                 (val as libc::c_double + fval)
                                     * 1000 as libc::c_int as libc::c_double,
                             )) as fsec_t;
-                        tmask = FieldMask::from(RealFieldType::Millisecond);
+                        FieldMask::from(RealFieldType::Millisecond)
                     }
                     18 => {
                         (*tm).tm_sec += val;
@@ -6303,43 +6188,43 @@ pub unsafe fn DecodeInterval(
                             + rint(fval * 1000000 as libc::c_int as libc::c_double))
                             as fsec_t;
                         if fval == 0 as libc::c_int as libc::c_double {
-                            tmask = FieldMask::from(RealFieldType::Second);
+                            FieldMask::from(RealFieldType::Second)
                         } else {
-                            tmask = *FIELD_MASK_ALL_SECS;
+                            *FIELD_MASK_ALL_SECS
                         }
                     }
                     19 => {
                         (*tm).tm_min += val;
                         AdjustFractSeconds(fval, tm, fsec, 60 as libc::c_int);
-                        tmask = FieldMask::from(RealFieldType::Minute);
+                        FieldMask::from(RealFieldType::Minute)
                     }
                     20 => {
                         (*tm).tm_hour += val;
                         AdjustFractSeconds(fval, tm, fsec, 3600 as libc::c_int);
-                        tmask = FieldMask::from(RealFieldType::Hour);
                         type_0 = 21 as libc::c_int;
+                        FieldMask::from(RealFieldType::Hour)
                     }
                     21 => {
                         (*tm).tm_mday += val;
                         AdjustFractSeconds(fval, tm, fsec, 86400 as libc::c_int);
-                        tmask = FieldMask::from(RealFieldType::Day);
+                        FieldMask::from(RealFieldType::Day)
                     }
                     22 => {
                         (*tm).tm_mday += val * 7 as libc::c_int;
                         AdjustFractDays(fval, tm, fsec, 7 as libc::c_int);
-                        tmask = FieldMask::from(RealFieldType::Week);
+                        FieldMask::from(RealFieldType::Week)
                     }
                     23 => {
                         (*tm).tm_mon += val;
                         AdjustFractDays(fval, tm, fsec, 30 as libc::c_int);
-                        tmask = FieldMask::from(RealFieldType::Month);
+                        FieldMask::from(RealFieldType::Month)
                     }
                     25 => {
                         (*tm).tm_year += val;
                         (*tm).tm_mon = ((*tm).tm_mon as libc::c_double
                             + rint(fval * 12 as libc::c_int as libc::c_double))
                             as libc::c_int;
-                        tmask = FieldMask::from(RealFieldType::Year);
+                        FieldMask::from(RealFieldType::Year)
                     }
                     26 => {
                         (*tm).tm_year += val * 10 as libc::c_int;
@@ -6348,7 +6233,7 @@ pub unsafe fn DecodeInterval(
                                 fval * 12 as libc::c_int as libc::c_double
                                     * 10 as libc::c_int as libc::c_double,
                             )) as libc::c_int;
-                        tmask = FieldMask::from(RealFieldType::Decade);
+                        FieldMask::from(RealFieldType::Decade)
                     }
                     27 => {
                         (*tm).tm_year += val * 100 as libc::c_int;
@@ -6357,7 +6242,7 @@ pub unsafe fn DecodeInterval(
                                 fval * 12 as libc::c_int as libc::c_double
                                     * 100 as libc::c_int as libc::c_double,
                             )) as libc::c_int;
-                        tmask = FieldMask::from(RealFieldType::Century);
+                        FieldMask::from(RealFieldType::Century)
                     }
                     28 => {
                         (*tm).tm_year += val * 1000 as libc::c_int;
@@ -6366,10 +6251,10 @@ pub unsafe fn DecodeInterval(
                                 fval * 12 as libc::c_int as libc::c_double
                                     * 1000 as libc::c_int as libc::c_double,
                             )) as libc::c_int;
-                        tmask = FieldMask::from(RealFieldType::Millennium);
+                        FieldMask::from(RealFieldType::Millennium)
                     }
                     _ => return -(1 as libc::c_int),
-                }
+                };
                 current_block_109 = 2793352396589381719;
             }
             _ => {}
@@ -6389,8 +6274,7 @@ pub unsafe fn DecodeInterval(
         return -(1 as libc::c_int);
     }
     if *fsec != 0 as libc::c_int {
-        let mut sec: libc::c_int = 0;
-        sec = (*fsec as libc::c_long / 1000000 as libc::c_long) as libc::c_int;
+        let sec = (*fsec as libc::c_long / 1000000 as libc::c_long) as libc::c_int;
         *fsec = (*fsec as libc::c_long - sec as libc::c_long * 1000000 as libc::c_long) as fsec_t;
         (*tm).tm_sec += sec;
     }
@@ -6445,12 +6329,11 @@ pub unsafe fn DecodeInterval(
     return 0 as libc::c_int;
 }
 unsafe fn ParseISO8601Number(
-    mut str: *mut libc::c_char,
-    mut endptr: *mut *mut libc::c_char,
-    mut ipart: *mut libc::c_int,
-    mut fpart: *mut libc::c_double,
+    str: *mut libc::c_char,
+    endptr: *mut *mut libc::c_char,
+    ipart: *mut libc::c_int,
+    fpart: *mut libc::c_double,
 ) -> libc::c_int {
-    let mut val: libc::c_double = 0.;
     if !(*(*__ctype_b_loc()).offset(*str as libc::c_uchar as libc::c_int as isize) as libc::c_int
         & _ISdigit as libc::c_int as libc::c_ushort as libc::c_int
         != 0
@@ -6460,7 +6343,7 @@ unsafe fn ParseISO8601Number(
         return -(1 as libc::c_int);
     }
     *__errno_location() = 0 as libc::c_int;
-    val = strtod(str, endptr);
+    let val = strtod(str, endptr);
     if *endptr == str || *__errno_location() != 0 as libc::c_int {
         return -(1 as libc::c_int);
     }
@@ -6489,9 +6372,9 @@ unsafe fn ISO8601IntegerWidth(mut fieldstart: *mut libc::c_char) -> libc::c_int 
 
 pub unsafe fn DecodeISO8601Interval(
     mut str: *mut libc::c_char,
-    mut dtype: *mut libc::c_int,
+    dtype: *mut libc::c_int,
     mut tm: *mut pg_tm,
-    mut fsec: *mut fsec_t,
+    fsec: *mut fsec_t,
 ) -> libc::c_int {
     let mut datepart = true;
     let mut havefield = false;
@@ -6505,24 +6388,21 @@ pub unsafe fn DecodeISO8601Interval(
     str = str.offset(1);
     let mut current_block_100: u64;
     while *str != 0 {
-        let mut fieldstart: *mut libc::c_char = 0 as *mut libc::c_char;
         let mut val: libc::c_int = 0;
         let mut fval: libc::c_double = 0.;
-        let mut unit: libc::c_char = 0;
-        let mut dterr: libc::c_int = 0;
         if *str as libc::c_int == 'T' as i32 {
             datepart = false;
             havefield = false;
             str = str.offset(1);
         } else {
-            fieldstart = str;
-            dterr = ParseISO8601Number(str, &mut str, &mut val, &mut fval);
+            let fieldstart = str;
+            let dterr = ParseISO8601Number(str, &mut str, &mut val, &mut fval);
             if dterr != 0 {
                 return dterr;
             }
             let fresh43 = str;
             str = str.offset(1);
-            unit = *fresh43;
+            let unit = *fresh43;
             if datepart {
                 match unit as libc::c_int {
                     89 => {
@@ -6586,7 +6466,7 @@ pub unsafe fn DecodeISO8601Interval(
                             havefield = false;
                             continue;
                         } else {
-                            dterr = ParseISO8601Number(str, &mut str, &mut val, &mut fval);
+                            let dterr = ParseISO8601Number(str, &mut str, &mut val, &mut fval);
                             if dterr != 0 {
                                 return dterr;
                             }
@@ -6604,7 +6484,7 @@ pub unsafe fn DecodeISO8601Interval(
                                     return -(1 as libc::c_int);
                                 }
                                 str = str.offset(1);
-                                dterr = ParseISO8601Number(str, &mut str, &mut val, &mut fval);
+                                let dterr = ParseISO8601Number(str, &mut str, &mut val, &mut fval);
                                 if dterr != 0 {
                                     return dterr;
                                 }
@@ -6625,7 +6505,7 @@ pub unsafe fn DecodeISO8601Interval(
                     }
                 }
             } else {
-                let mut current_block_97: u64;
+                let current_block_97: u64;
                 match unit as libc::c_int {
                     72 => {
                         (*tm).tm_hour += val;
@@ -6668,7 +6548,7 @@ pub unsafe fn DecodeISO8601Interval(
                         if unit as libc::c_int == '\0' as i32 {
                             return 0 as libc::c_int;
                         }
-                        dterr = ParseISO8601Number(str, &mut str, &mut val, &mut fval);
+                        let dterr = ParseISO8601Number(str, &mut str, &mut val, &mut fval);
                         if dterr != 0 {
                             return dterr;
                         }
@@ -6681,7 +6561,7 @@ pub unsafe fn DecodeISO8601Interval(
                             return -(1 as libc::c_int);
                         }
                         str = str.offset(1);
-                        dterr = ParseISO8601Number(str, &mut str, &mut val, &mut fval);
+                        let dterr = ParseISO8601Number(str, &mut str, &mut val, &mut fval);
                         if dterr != 0 {
                             return dterr;
                         }
@@ -6701,13 +6581,11 @@ pub unsafe fn DecodeISO8601Interval(
 }
 
 pub unsafe fn DecodeUnits(
-    mut field: libc::c_int,
-    mut lowtoken: *mut libc::c_char,
-    mut val: *mut libc::c_int,
+    field: libc::c_int,
+    lowtoken: *mut libc::c_char,
+    val: *mut libc::c_int,
 ) -> libc::c_int {
-    let mut type_0: libc::c_int = 0;
-    let mut tp: *const datetkn = 0 as *const datetkn;
-    tp = deltacache[field as usize];
+    let mut tp = deltacache[field as usize];
     if tp.is_null()
         || strncmp(
             lowtoken,
@@ -6718,20 +6596,19 @@ pub unsafe fn DecodeUnits(
         tp = datebsearch(lowtoken, deltatktbl.as_ptr(), szdeltatktbl);
     }
     if tp.is_null() {
-        type_0 = 31 as libc::c_int;
         *val = 0 as libc::c_int;
+        31 as libc::c_int
     } else {
         deltacache[field as usize] = tp;
-        type_0 = (*tp).type_0 as libc::c_int;
         *val = (*tp).value;
+        (*tp).type_0 as libc::c_int
     }
-    return type_0;
 }
 
 pub unsafe fn DateTimeParseError(
-    mut dterr: libc::c_int,
-    mut str: *const libc::c_char,
-    mut datatype: *const libc::c_char,
+    dterr: libc::c_int,
+    str: *const libc::c_char,
+    datatype: *const libc::c_char,
 ) -> () {
     match dterr {
         -2 => {
@@ -6912,16 +6789,16 @@ pub unsafe fn DateTimeParseError(
     };
 }
 unsafe fn datebsearch(
-    mut key: *const libc::c_char,
+    key: *const libc::c_char,
     mut base: *const datetkn,
-    mut nel: libc::c_int,
+    nel: libc::c_int,
 ) -> *const datetkn {
     if nel > 0 as libc::c_int {
         let mut last: *const datetkn = base
             .offset(nel as isize)
             .offset(-(1 as libc::c_int as isize));
-        let mut position: *const datetkn = 0 as *const datetkn;
-        let mut result: libc::c_int = 0;
+        let mut position: *const datetkn;
+        let mut result;
         while last >= base {
             position =
                 base.offset((last.offset_from(base) as libc::c_long >> 1 as libc::c_int) as isize);
@@ -6949,16 +6826,13 @@ unsafe fn datebsearch(
 
 unsafe fn EncodeTimezone(
     mut str: *mut libc::c_char,
-    mut tz: libc::c_int,
-    mut style: libc::c_int,
+    tz: libc::c_int,
+    style: libc::c_int,
 ) -> *mut libc::c_char {
-    let mut hour: libc::c_int = 0;
-    let mut min: libc::c_int = 0;
-    let mut sec: libc::c_int = 0;
-    sec = abs(tz);
-    min = sec / 60 as libc::c_int;
+    let mut sec = abs(tz);
+    let mut min = sec / 60 as libc::c_int;
     sec -= min * 60 as libc::c_int;
-    hour = min / 60 as libc::c_int;
+    let hour = min / 60 as libc::c_int;
     min -= hour * 60 as libc::c_int;
     let fresh44 = str;
     str = str.offset(1);
@@ -6989,11 +6863,7 @@ unsafe fn EncodeTimezone(
     return str;
 }
 
-pub unsafe fn EncodeDateOnly(
-    mut tm: *mut pg_tm,
-    mut style: libc::c_int,
-    mut str: *mut libc::c_char,
-) {
+pub unsafe fn EncodeDateOnly(tm: *mut pg_tm, style: libc::c_int, mut str: *mut libc::c_char) {
     match style {
         1 | 4 => {
             str = pg_ultostr_zeropad(
@@ -7100,11 +6970,11 @@ pub unsafe fn EncodeDateOnly(
 }
 
 pub unsafe fn EncodeTimeOnly(
-    mut tm: *mut pg_tm,
-    mut fsec: fsec_t,
-    mut print_tz: bool,
-    mut tz: libc::c_int,
-    mut style: libc::c_int,
+    tm: *mut pg_tm,
+    fsec: fsec_t,
+    print_tz: bool,
+    tz: libc::c_int,
+    style: libc::c_int,
     mut str: *mut libc::c_char,
 ) {
     str = pg_ultostr_zeropad(str, (*tm).tm_hour as uint32, 2 as libc::c_int);
@@ -7124,14 +6994,13 @@ pub unsafe fn EncodeTimeOnly(
 
 pub unsafe fn EncodeDateTime(
     mut tm: *mut pg_tm,
-    mut fsec: fsec_t,
+    fsec: fsec_t,
     mut print_tz: bool,
-    mut tz: libc::c_int,
-    mut tzn: *const libc::c_char,
-    mut style: libc::c_int,
+    tz: libc::c_int,
+    tzn: *const libc::c_char,
+    style: libc::c_int,
     mut str: *mut libc::c_char,
 ) {
-    let mut day: libc::c_int = 0;
     if (*tm).tm_isdst.is_none() {
         print_tz = false;
     }
@@ -7271,7 +7140,7 @@ pub unsafe fn EncodeDateTime(
             }
         }
         0 | _ => {
-            day = date2j((*tm).tm_year, (*tm).tm_mon, (*tm).tm_mday);
+            let day = date2j((*tm).tm_year, (*tm).tm_mon, (*tm).tm_mday);
             (*tm).tm_wday = j2day(day);
             memcpy(
                 str as *mut libc::c_void,
@@ -7358,9 +7227,9 @@ pub unsafe fn EncodeDateTime(
     *str = '\0' as i32 as libc::c_char;
 }
 unsafe fn AddISO8601IntPart(
-    mut cp: *mut libc::c_char,
-    mut value: libc::c_int,
-    mut units: libc::c_char,
+    cp: *mut libc::c_char,
+    value: libc::c_int,
+    units: libc::c_char,
 ) -> *mut libc::c_char {
     if value == 0 as libc::c_int {
         return cp;
@@ -7374,11 +7243,11 @@ unsafe fn AddISO8601IntPart(
     return cp.offset(strlen(cp) as isize);
 }
 unsafe fn AddPostgresIntPart(
-    mut cp: *mut libc::c_char,
-    mut value: libc::c_int,
-    mut units: *const libc::c_char,
-    mut is_zero: &mut bool,
-    mut is_before: &mut bool,
+    cp: *mut libc::c_char,
+    value: libc::c_int,
+    units: *const libc::c_char,
+    is_zero: &mut bool,
+    is_before: &mut bool,
 ) -> *mut libc::c_char {
     if value == 0 as libc::c_int {
         return cp;
@@ -7409,11 +7278,11 @@ unsafe fn AddPostgresIntPart(
     return cp.offset(strlen(cp) as isize);
 }
 unsafe fn AddVerboseIntPart(
-    mut cp: *mut libc::c_char,
+    cp: *mut libc::c_char,
     mut value: libc::c_int,
-    mut units: *const libc::c_char,
-    mut is_zero: &mut bool,
-    mut is_before: &mut bool,
+    units: *const libc::c_char,
+    is_zero: &mut bool,
+    is_before: &mut bool,
 ) -> *mut libc::c_char {
     if value == 0 as libc::c_int {
         return cp;
@@ -7440,10 +7309,10 @@ unsafe fn AddVerboseIntPart(
 }
 
 pub unsafe fn EncodeInterval(
-    mut tm: *mut pg_tm,
+    tm: *mut pg_tm,
     mut fsec: fsec_t,
-    mut style: libc::c_int,
-    mut str: *mut libc::c_char,
+    style: libc::c_int,
+    str: *mut libc::c_char,
 ) {
     let mut cp: *mut libc::c_char = str;
     let mut year: libc::c_int = (*tm).tm_year;
@@ -7456,14 +7325,14 @@ pub unsafe fn EncodeInterval(
     let mut is_zero: bool = true;
     match style {
         2 => {
-            let mut has_negative =
+            let has_negative =
                 year < 0 || mon < 0 || mday < 0 || hour < 0 || min < 0 || sec < 0 || fsec < 0;
-            let mut has_positive =
+            let has_positive =
                 year > 0 || mon > 0 || mday > 0 || hour > 0 || min > 0 || sec > 0 || fsec > 0;
-            let mut has_year_month = year != 0 || mon != 0;
-            let mut has_day_time = mday != 0 || hour != 0 || min != 0 || sec != 0 || fsec != 0;
-            let mut has_day = mday != 0;
-            let mut sql_standard_value =
+            let has_year_month = year != 0 || mon != 0;
+            let has_day_time = mday != 0 || hour != 0 || min != 0 || sec != 0 || fsec != 0;
+            let has_day = mday != 0;
+            let sql_standard_value =
                 !(has_negative && has_positive) && !(has_year_month && has_day_time);
             if has_negative as libc::c_int != 0 && sql_standard_value as libc::c_int != 0 {
                 let fresh84 = cp;
@@ -7480,18 +7349,18 @@ pub unsafe fn EncodeInterval(
             if !has_negative && !has_positive {
                 pg_sprintf(cp, b"0\0" as *const u8 as *const libc::c_char);
             } else if !sql_standard_value {
-                let mut year_sign: libc::c_char =
-                    (if year < 0 as libc::c_int || mon < 0 as libc::c_int {
-                        '-' as i32
-                    } else {
-                        '+' as i32
-                    }) as libc::c_char;
-                let mut day_sign: libc::c_char = (if mday < 0 as libc::c_int {
+                let year_sign: libc::c_char = (if year < 0 as libc::c_int || mon < 0 as libc::c_int
+                {
                     '-' as i32
                 } else {
                     '+' as i32
                 }) as libc::c_char;
-                let mut sec_sign: libc::c_char = (if hour < 0 as libc::c_int
+                let day_sign: libc::c_char = (if mday < 0 as libc::c_int {
+                    '-' as i32
+                } else {
+                    '+' as i32
+                }) as libc::c_char;
+                let sec_sign: libc::c_char = (if hour < 0 as libc::c_int
                     || min < 0 as libc::c_int
                     || sec < 0 as libc::c_int
                     || fsec < 0 as libc::c_int
@@ -7584,7 +7453,10 @@ pub unsafe fn EncodeInterval(
                     cp = cp.offset(1);
                     *fresh88 = 'S' as i32 as libc::c_char;
                     let fresh89 = cp;
-                    cp = cp.offset(1);
+                    #[allow(unused_assignments)]
+                    {
+                        cp = cp.offset(1);
+                    }
                     *fresh89 = '\0' as i32 as libc::c_char;
                 }
             }
@@ -7617,7 +7489,7 @@ pub unsafe fn EncodeInterval(
                 || sec != 0 as libc::c_int
                 || fsec != 0 as libc::c_int
             {
-                let mut minus: bool = hour < 0 || min < 0 || sec < 0 || fsec < 0;
+                let minus: bool = hour < 0 || min < 0 || sec < 0 || fsec < 0;
                 pg_sprintf(
                     cp,
                     b"%s%s%02d:%02d:\0" as *const u8 as *const libc::c_char,
@@ -7718,13 +7590,12 @@ pub unsafe fn EncodeInterval(
     };
 }
 unsafe fn CheckDateTokenTable(
-    mut tablename: *const libc::c_char,
-    mut base: *const datetkn,
-    mut nel: libc::c_int,
+    tablename: *const libc::c_char,
+    base: *const datetkn,
+    nel: libc::c_int,
 ) -> bool {
     let mut ok = true;
     let mut i: libc::c_int = 0;
-    i = 0 as libc::c_int;
     while i < nel {
         if strlen(((*base.offset(i as isize)).token).as_ptr()) > 10 as libc::c_int as libc::c_ulong
         {
@@ -7815,18 +7686,17 @@ pub unsafe fn CheckDateTokenTables() -> bool {
     return ok;
 }
 
-pub unsafe fn TemporalSimplify(mut max_precis: int32, mut node: *mut Node) -> *mut Node {
-    let mut expr: *mut FuncExpr = node as *mut FuncExpr;
+pub unsafe fn TemporalSimplify(max_precis: int32, node: *mut Node) -> *mut Node {
+    let expr: *mut FuncExpr = node as *mut FuncExpr;
     let mut ret: *mut Node = 0 as *mut Node;
-    let mut typmod: *mut Node = 0 as *mut Node;
-    typmod = (*list_nth_cell((*expr).args, 1 as libc::c_int)).ptr_value as *mut Node;
+    let typmod = (*list_nth_cell((*expr).args, 1 as libc::c_int)).ptr_value as *mut Node;
     if (*(typmod as *const Node)).type_0 as libc::c_uint == T_Const as libc::c_int as libc::c_uint
         && !(*(typmod as *mut Const)).constisnull
     {
-        let mut source: *mut Node =
+        let source: *mut Node =
             (*list_nth_cell((*expr).args, 0 as libc::c_int)).ptr_value as *mut Node;
-        let mut old_precis: int32 = exprTypmod(source);
-        let mut new_precis: int32 = (*(typmod as *mut Const)).constvalue as int32;
+        let old_precis: int32 = exprTypmod(source);
+        let new_precis: int32 = (*(typmod as *mut Const)).constvalue as int32;
         if new_precis < 0 as libc::c_int
             || new_precis == max_precis
             || old_precis >= 0 as libc::c_int && new_precis >= old_precis
@@ -7838,23 +7708,18 @@ pub unsafe fn TemporalSimplify(mut max_precis: int32, mut node: *mut Node) -> *m
 }
 
 pub unsafe fn ConvertTimeZoneAbbrevs(
-    mut abbrevs: *mut tzEntry,
-    mut n: libc::c_int,
+    abbrevs: *mut tzEntry,
+    n: libc::c_int,
 ) -> *mut TimeZoneAbbrevTable {
-    let mut tbl: *mut TimeZoneAbbrevTable = 0 as *mut TimeZoneAbbrevTable;
-    let mut tbl_size: Size = 0;
-    let mut i: libc::c_int = 0;
-    tbl_size = (12 as libc::c_ulong).wrapping_add(
+    let mut tbl_size = (12 as libc::c_ulong).wrapping_add(
         (n as libc::c_ulong).wrapping_mul(::core::mem::size_of::<datetkn>() as libc::c_ulong),
     );
     tbl_size = tbl_size.wrapping_add((8 as libc::c_int - 1 as libc::c_int) as libc::c_ulong)
         & !((8 as libc::c_int - 1 as libc::c_int) as uintptr_t);
-    i = 0 as libc::c_int;
-    while i < n {
-        let mut abbr: *mut tzEntry = abbrevs.offset(i as isize);
+    for i in 0..n {
+        let abbr: *mut tzEntry = abbrevs.offset(i as isize);
         if !((*abbr).zone).is_null() {
-            let mut dsize: Size = 0;
-            dsize = (8 as libc::c_ulong)
+            let dsize = (8 as libc::c_ulong)
                 .wrapping_add(strlen((*abbr).zone))
                 .wrapping_add(1 as libc::c_int as libc::c_ulong);
             tbl_size = (tbl_size as libc::c_ulong).wrapping_add(
@@ -7862,9 +7727,8 @@ pub unsafe fn ConvertTimeZoneAbbrevs(
                     & !((8 as libc::c_int - 1 as libc::c_int) as uintptr_t),
             ) as Size as Size;
         }
-        i += 1;
     }
-    tbl = malloc(tbl_size) as *mut TimeZoneAbbrevTable;
+    let mut tbl = malloc(tbl_size) as *mut TimeZoneAbbrevTable;
     if tbl.is_null() {
         return 0 as *mut TimeZoneAbbrevTable;
     }
@@ -7875,9 +7739,8 @@ pub unsafe fn ConvertTimeZoneAbbrevs(
     );
     tbl_size = tbl_size.wrapping_add((8 as libc::c_int - 1 as libc::c_int) as libc::c_ulong)
         & !((8 as libc::c_int - 1 as libc::c_int) as uintptr_t);
-    i = 0 as libc::c_int;
-    while i < n {
-        let mut abbr_0: *mut tzEntry = abbrevs.offset(i as isize);
+    for i in 0..n {
+        let abbr_0: *mut tzEntry = abbrevs.offset(i as isize);
         let mut dtoken: *mut datetkn = ((*tbl).abbrevs).as_mut_ptr().offset(i as isize);
         strlcpy(
             ((*dtoken).token).as_mut_ptr(),
@@ -7885,14 +7748,13 @@ pub unsafe fn ConvertTimeZoneAbbrevs(
             (10 as libc::c_int + 1 as libc::c_int) as libc::c_ulong,
         );
         if !((*abbr_0).zone).is_null() {
-            let mut dtza: *mut DynamicZoneAbbrev = 0 as *mut DynamicZoneAbbrev;
-            let mut dsize_0: Size = 0;
-            dtza = (tbl as *mut libc::c_char).offset(tbl_size as isize) as *mut DynamicZoneAbbrev;
+            let dtza =
+                (tbl as *mut libc::c_char).offset(tbl_size as isize) as *mut DynamicZoneAbbrev;
             (*dtza).tz = 0 as *mut pg_tz;
             strcpy(((*dtza).zone).as_mut_ptr(), (*abbr_0).zone);
             (*dtoken).type_0 = RealFieldType::DynTz;
             (*dtoken).value = tbl_size as int32;
-            dsize_0 = (8 as libc::c_ulong)
+            let dsize_0 = (8 as libc::c_ulong)
                 .wrapping_add(strlen((*abbr_0).zone))
                 .wrapping_add(1 as libc::c_int as libc::c_ulong);
             tbl_size = (tbl_size as libc::c_ulong).wrapping_add(
@@ -7907,12 +7769,11 @@ pub unsafe fn ConvertTimeZoneAbbrevs(
             };
             (*dtoken).value = (*abbr_0).offset;
         }
-        i += 1;
     }
     return tbl;
 }
 
-pub unsafe fn InstallTimeZoneAbbrevs(mut tbl: *mut TimeZoneAbbrevTable) {
+pub unsafe fn InstallTimeZoneAbbrevs(tbl: *mut TimeZoneAbbrevTable) {
     zoneabbrevtbl = tbl;
     memset(
         abbrevcache.as_mut_ptr() as *mut libc::c_void,
@@ -7920,12 +7781,8 @@ pub unsafe fn InstallTimeZoneAbbrevs(mut tbl: *mut TimeZoneAbbrevTable) {
         ::core::mem::size_of::<[*const datetkn; 25]>() as libc::c_ulong,
     );
 }
-unsafe fn FetchDynamicTimeZone(
-    mut tbl: *mut TimeZoneAbbrevTable,
-    mut tp: *const datetkn,
-) -> *mut pg_tz {
-    let mut dtza: *mut DynamicZoneAbbrev = 0 as *mut DynamicZoneAbbrev;
-    dtza = (tbl as *mut libc::c_char).offset((*tp).value as isize) as *mut DynamicZoneAbbrev;
+unsafe fn FetchDynamicTimeZone(tbl: *mut TimeZoneAbbrevTable, tp: *const datetkn) -> *mut pg_tz {
+    let dtza = (tbl as *mut libc::c_char).offset((*tp).value as isize) as *mut DynamicZoneAbbrev;
     if ((*dtza).tz).is_null() {
         (*dtza).tz = pg_tzset(((*dtza).zone).as_mut_ptr());
         if ((*dtza).tz).is_null() {
@@ -7971,17 +7828,17 @@ unsafe fn FetchDynamicTimeZone(
 }
 
 pub unsafe fn pg_timezone_abbrevs(mut fcinfo: FunctionCallInfo) -> Datum {
-    let mut funcctx: *mut FuncCallContext = 0 as *mut FuncCallContext;
-    let mut pindex: *mut libc::c_int = 0 as *mut libc::c_int;
-    let mut result: Datum = 0;
-    let mut tuple: HeapTuple = 0 as *mut HeapTupleData;
+    let mut funcctx: *mut FuncCallContext;
+    let mut pindex: *mut libc::c_int;
+    let result: Datum;
+    let tuple: HeapTuple;
     let mut values: [Datum; 3] = [0; 3];
     let mut nulls: [bool; 3] = [false; 3];
-    let mut tp: *const datetkn = 0 as *const datetkn;
+    let tp: *const datetkn;
     let mut buffer: [libc::c_char; 11] = [0; 11];
-    let mut gmtoffset: libc::c_int = 0;
-    let mut is_dst = false;
-    let mut p: *mut libc::c_uchar = 0 as *mut libc::c_uchar;
+    let gmtoffset: libc::c_int;
+    let is_dst;
+    let mut p: *mut libc::c_uchar;
     let mut tm: pg_tm = pg_tm {
         tm_sec: 0,
         tm_min: 0,
@@ -7995,16 +7852,13 @@ pub unsafe fn pg_timezone_abbrevs(mut fcinfo: FunctionCallInfo) -> Datum {
         tm_gmtoff: 0,
         tm_zone: 0 as *const libc::c_char,
     };
-    let mut resInterval: *mut Interval = 0 as *mut Interval;
     if ((*(*fcinfo).flinfo).fn_extra).is_null() {
-        let mut tupdesc: TupleDesc = 0 as *mut TupleDescData;
-        let mut oldcontext: MemoryContext = 0 as *mut MemoryContextData;
         funcctx = init_MultiFuncCall(fcinfo);
-        oldcontext = MemoryContextSwitchTo((*funcctx).multi_call_memory_ctx);
+        let oldcontext = MemoryContextSwitchTo((*funcctx).multi_call_memory_ctx);
         pindex = palloc(::core::mem::size_of::<libc::c_int>() as libc::c_ulong) as *mut libc::c_int;
         *pindex = 0 as libc::c_int;
         (*funcctx).user_fctx = pindex as *mut libc::c_void;
-        tupdesc = CreateTemplateTupleDesc(3 as libc::c_int);
+        let tupdesc = CreateTemplateTupleDesc(3 as libc::c_int);
         TupleDescInitEntry(
             tupdesc,
             1 as libc::c_int as AttrNumber,
@@ -8035,9 +7889,8 @@ pub unsafe fn pg_timezone_abbrevs(mut fcinfo: FunctionCallInfo) -> Datum {
     funcctx = per_MultiFuncCall(fcinfo);
     pindex = (*funcctx).user_fctx as *mut libc::c_int;
     if zoneabbrevtbl.is_null() || *pindex >= (*zoneabbrevtbl).numabbrevs {
-        let mut rsi: *mut ReturnSetInfo = 0 as *mut ReturnSetInfo;
         end_MultiFuncCall(fcinfo, funcctx);
-        rsi = (*fcinfo).resultinfo as *mut ReturnSetInfo;
+        let rsi = (*fcinfo).resultinfo as *mut ReturnSetInfo;
         (*rsi).isDone = ExprEndResult;
         (*fcinfo).isnull = true;
         return 0 as libc::c_int as Datum;
@@ -8055,11 +7908,9 @@ pub unsafe fn pg_timezone_abbrevs(mut fcinfo: FunctionCallInfo) -> Datum {
             is_dst = true;
         }
         7 => {
-            let mut tzp: *mut pg_tz = 0 as *mut pg_tz;
-            let mut now: TimestampTz = 0;
             let mut isdst = false;
-            tzp = FetchDynamicTimeZone(zoneabbrevtbl, tp);
-            now = GetCurrentTransactionStartTimestamp();
+            let tzp = FetchDynamicTimeZone(zoneabbrevtbl, tp);
+            let now = GetCurrentTransactionStartTimestamp();
             gmtoffset =
                 -DetermineTimeZoneAbbrevOffsetTS(now, ((*tp).token).as_ptr(), tzp, &mut isdst);
             is_dst = isdst;
@@ -8157,7 +8008,7 @@ pub unsafe fn pg_timezone_abbrevs(mut fcinfo: FunctionCallInfo) -> Datum {
         memset(_vstart_0, _val_0, _len_0);
     }
     tm.tm_sec = gmtoffset;
-    resInterval = palloc(::core::mem::size_of::<Interval>() as libc::c_ulong) as *mut Interval;
+    let resInterval = palloc(::core::mem::size_of::<Interval>() as libc::c_ulong) as *mut Interval;
     tm2interval(&mut tm, 0 as libc::c_int, resInterval);
     values[1 as libc::c_int as usize] = resInterval as Datum;
     values[2 as libc::c_int as usize] = (if is_dst as libc::c_int != 0 {
@@ -8172,20 +8023,16 @@ pub unsafe fn pg_timezone_abbrevs(mut fcinfo: FunctionCallInfo) -> Datum {
         nulls.as_mut_slice(),
     );
     result = HeapTupleHeaderGetDatum((*tuple).t_data);
-    let mut rsi_0: *mut ReturnSetInfo = 0 as *mut ReturnSetInfo;
     (*funcctx).call_cntr = ((*funcctx).call_cntr).wrapping_add(1);
-    rsi_0 = (*fcinfo).resultinfo as *mut ReturnSetInfo;
+    let rsi_0 = (*fcinfo).resultinfo as *mut ReturnSetInfo;
     (*rsi_0).isDone = ExprMultipleResult;
     return result;
 }
 
-pub unsafe fn pg_timezone_names(mut fcinfo: FunctionCallInfo) -> Datum {
+pub unsafe fn pg_timezone_names(fcinfo: FunctionCallInfo) -> Datum {
     let mut rsinfo: *mut ReturnSetInfo = (*fcinfo).resultinfo as *mut ReturnSetInfo;
-    let mut randomAccess = false;
     let mut tupdesc: TupleDesc = 0 as *mut TupleDescData;
-    let mut tupstore: *mut Tuplestorestate = 0 as *mut Tuplestorestate;
-    let mut tzenum: *mut pg_tzenum = 0 as *mut pg_tzenum;
-    let mut tz: *mut pg_tz = 0 as *mut pg_tz;
+    let mut tz: *mut pg_tz;
     let mut values: [Datum; 4] = [0; 4];
     let mut nulls: [bool; 4] = [false; 4];
     let mut tzoff: libc::c_int = 0;
@@ -8204,7 +8051,7 @@ pub unsafe fn pg_timezone_names(mut fcinfo: FunctionCallInfo) -> Datum {
     };
     let mut fsec: fsec_t = 0;
     let mut tzn: *const libc::c_char = 0 as *const libc::c_char;
-    let mut resInterval: *mut Interval = 0 as *mut Interval;
+    let mut resInterval: *mut Interval;
     let mut itm: pg_tm = pg_tm {
         tm_sec: 0,
         tm_min: 0,
@@ -8218,7 +8065,6 @@ pub unsafe fn pg_timezone_names(mut fcinfo: FunctionCallInfo) -> Datum {
         tm_gmtoff: 0,
         tm_zone: 0 as *const libc::c_char,
     };
-    let mut oldcontext: MemoryContext = 0 as *mut MemoryContextData;
     if rsinfo.is_null()
         || !((*(rsinfo as *const Node)).type_0 as libc::c_uint
             == T_ReturnSetInfo as libc::c_int as libc::c_uint)
@@ -8284,7 +8130,7 @@ pub unsafe fn pg_timezone_names(mut fcinfo: FunctionCallInfo) -> Datum {
             unreachable!();
         }
     }
-    oldcontext = MemoryContextSwitchTo((*(*rsinfo).econtext).ecxt_per_query_memory);
+    let oldcontext = MemoryContextSwitchTo((*(*rsinfo).econtext).ecxt_per_query_memory);
     if get_call_result_type(fcinfo, 0 as *mut Oid, &mut tupdesc) as libc::c_uint
         != TYPEFUNC_COMPOSITE as libc::c_int as libc::c_uint
     {
@@ -8310,13 +8156,13 @@ pub unsafe fn pg_timezone_names(mut fcinfo: FunctionCallInfo) -> Datum {
             unreachable!();
         }
     }
-    randomAccess = (*rsinfo).allowedModes & SFRM_Materialize_Random as libc::c_int != 0;
-    tupstore = tuplestore_begin_heap(randomAccess, false, work_mem);
+    let randomAccess = (*rsinfo).allowedModes & SFRM_Materialize_Random as libc::c_int != 0;
+    let tupstore = tuplestore_begin_heap(randomAccess, false, work_mem);
     (*rsinfo).returnMode = SFRM_Materialize;
     (*rsinfo).setResult = tupstore;
     (*rsinfo).setDesc = tupdesc;
     MemoryContextSwitchTo(oldcontext);
-    tzenum = pg_tzenumerate_start();
+    let tzenum = pg_tzenumerate_start();
     loop {
         tz = pg_tzenumerate_next(tzenum);
         if tz.is_null() {
