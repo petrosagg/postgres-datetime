@@ -45,11 +45,11 @@ fn dt2time(
         *fsec = (time - (*sec as i64 * USECS_PER_SEC)).try_into().unwrap();
     }
 }
-fn errstart(elevel: libc::c_int, domain: *const libc::c_char) -> bool_0 {
-    0
+fn errstart(elevel: libc::c_int, domain: *const libc::c_char) -> bool {
+    false
 }
-fn errstart_cold(elevel: libc::c_int, domain: *const libc::c_char) -> bool_0 {
-    0
+fn errstart_cold(elevel: libc::c_int, domain: *const libc::c_char) -> bool {
+    false
 }
 fn errfinish(filename: *const libc::c_char, lineno: libc::c_int, funcname: *const libc::c_char) {}
 fn errcode(sqlerrcode: libc::c_int) -> libc::c_int {
@@ -111,9 +111,9 @@ fn pg_interpret_timezone_abbrev(
     abbrev: *const libc::c_char,
     timep: *const pg_time_t,
     gmtoff: *mut libc::c_long,
-    isdst: *mut libc::c_int,
+    isdst: &mut bool,
     tz: *const pg_tz,
-) -> bool_0 {
+) -> bool {
     unimplemented!()
 }
 fn pg_next_dst_boundary(
@@ -177,7 +177,7 @@ fn strtoint(
         return val.try_into().unwrap();
     }
 }
-fn time_overflows(hour: libc::c_int, min: libc::c_int, sec: libc::c_int, fsec: fsec_t) -> bool_0 {
+fn time_overflows(hour: libc::c_int, min: libc::c_int, sec: libc::c_int, fsec: fsec_t) -> bool {
     /* Range-check the fields individually. */
     if hour < 0
         || hour > HOURS_PER_DAY
@@ -188,7 +188,7 @@ fn time_overflows(hour: libc::c_int, min: libc::c_int, sec: libc::c_int, fsec: f
         || fsec < 0
         || fsec as i64 > USECS_PER_SEC
     {
-        return 1;
+        return true;
     }
 
     /*
@@ -201,10 +201,10 @@ fn time_overflows(hour: libc::c_int, min: libc::c_int, sec: libc::c_int, fsec: f
         + fsec as i64)
         > USECS_PER_DAY
     {
-        return 1;
+        return true;
     }
 
-    return 0;
+    false
 }
 
 /// TMODULO()
@@ -376,18 +376,18 @@ extern "C" {
     fn heap_form_tuple(
         tupleDescriptor: TupleDesc,
         values: *mut Datum,
-        isnull: *mut bool_0,
+        isnull: &mut [bool],
     ) -> HeapTuple;
     fn tuplestore_begin_heap(
-        randomAccess: bool_0,
-        interXact: bool_0,
+        randomAccess: bool,
+        interXact: bool,
         maxKBytes: libc::c_int,
     ) -> *mut Tuplestorestate;
     fn tuplestore_putvalues(
         state: *mut Tuplestorestate,
         tdesc: TupleDesc,
         values: *mut Datum,
-        isnull: *mut bool_0,
+        isnull: &mut [bool],
     );
     fn end_MultiFuncCall(fcinfo: FunctionCallInfo, funcctx: *mut FuncCallContext);
     fn per_MultiFuncCall(fcinfo: FunctionCallInfo) -> *mut FuncCallContext;
@@ -401,7 +401,7 @@ extern "C" {
     ) -> TypeFuncClass;
     static mut IntervalStyle: libc::c_int;
     static mut work_mem: libc::c_int;
-    fn pg_get_timezone_offset(tz: *const pg_tz, gmtoff: *mut libc::c_long) -> bool_0;
+    fn pg_get_timezone_offset(tz: *const pg_tz, gmtoff: *mut libc::c_long) -> bool;
     fn pg_get_timezone_name(tz: *mut pg_tz) -> *const libc::c_char;
     fn pg_tzenumerate_start() -> *mut pg_tzenum;
     fn pg_tzenumerate_next(dir: *mut pg_tzenum) -> *mut pg_tz;
@@ -430,7 +430,6 @@ pub struct timespec {
     pub tv_nsec: __syscall_slong_t,
 }
 pub type uintptr_t = libc::c_ulong;
-pub type bool_0 = libc::c_uchar;
 pub type int16 = libc::c_short;
 pub type int32 = libc::c_int;
 pub type uint8 = libc::c_uchar;
@@ -473,8 +472,8 @@ pub const _ISupper: C2RustUnnamed = 256;
 #[repr(C)]
 pub struct MemoryContextData {
     pub type_0: NodeTag,
-    pub isReset: bool_0,
-    pub allowInCritSection: bool_0,
+    pub isReset: bool,
+    pub allowInCritSection: bool,
     pub mem_allocated: Size,
     pub methods: *const MemoryContextMethods,
     pub parent: MemoryContext,
@@ -504,14 +503,14 @@ pub struct MemoryContextMethods {
     pub reset: Option<unsafe extern "C" fn(MemoryContext) -> ()>,
     pub delete_context: Option<unsafe extern "C" fn(MemoryContext) -> ()>,
     pub get_chunk_space: Option<unsafe extern "C" fn(MemoryContext, *mut libc::c_void) -> Size>,
-    pub is_empty: Option<unsafe extern "C" fn(MemoryContext) -> bool_0>,
+    pub is_empty: Option<unsafe extern "C" fn(MemoryContext) -> bool>,
     pub stats: Option<
         unsafe extern "C" fn(
             MemoryContext,
             MemoryStatsPrintFunc,
             *mut libc::c_void,
             *mut MemoryContextCounters,
-            bool_0,
+            bool,
         ) -> (),
     >,
 }
@@ -523,9 +522,8 @@ pub struct MemoryContextCounters {
     pub totalspace: Size,
     pub freespace: Size,
 }
-pub type MemoryStatsPrintFunc = Option<
-    unsafe extern "C" fn(MemoryContext, *mut libc::c_void, *const libc::c_char, bool_0) -> (),
->;
+pub type MemoryStatsPrintFunc =
+    Option<unsafe extern "C" fn(MemoryContext, *mut libc::c_void, *const libc::c_char, bool) -> ()>;
 pub type NodeTag = libc::c_uint;
 pub const T_SupportRequestIndexCondition: NodeTag = 430;
 pub const T_SupportRequestRows: NodeTag = 429;
@@ -963,7 +961,7 @@ pub type Datum = uintptr_t;
 #[repr(C)]
 pub struct NullableDatum {
     pub value: Datum,
-    pub isnull: bool_0,
+    pub isnull: bool,
 }
 #[derive(Copy, Clone)]
 #[repr(C)]
@@ -1055,17 +1053,17 @@ pub struct FormData_pg_attribute {
     pub attndims: int32,
     pub attcacheoff: int32,
     pub atttypmod: int32,
-    pub attbyval: bool_0,
+    pub attbyval: bool,
     pub attalign: libc::c_char,
     pub attstorage: libc::c_char,
     pub attcompression: libc::c_char,
-    pub attnotnull: bool_0,
-    pub atthasdef: bool_0,
-    pub atthasmissing: bool_0,
+    pub attnotnull: bool,
+    pub atthasdef: bool,
+    pub atthasmissing: bool,
     pub attidentity: libc::c_char,
     pub attgenerated: libc::c_char,
-    pub attisdropped: bool_0,
-    pub attislocal: bool_0,
+    pub attisdropped: bool,
+    pub attislocal: bool,
     pub attinhcount: int32,
     pub attcollation: Oid,
 }
@@ -1118,8 +1116,8 @@ pub struct AttrDefault {
 pub struct ConstrCheck {
     pub ccname: *mut libc::c_char,
     pub ccbin: *mut libc::c_char,
-    pub ccvalid: bool_0,
-    pub ccnoinherit: bool_0,
+    pub ccvalid: bool,
+    pub ccnoinherit: bool,
 }
 #[derive(Copy, Clone)]
 #[repr(C)]
@@ -1129,8 +1127,8 @@ pub struct TupleConstr {
     pub missing: *mut AttrMissing,
     pub num_defval: uint16,
     pub num_check: uint16,
-    pub has_not_null: bool_0,
-    pub has_generated_stored: bool_0,
+    pub has_not_null: bool,
+    pub has_generated_stored: bool,
 }
 #[derive(Copy, Clone)]
 #[repr(C)]
@@ -1179,8 +1177,8 @@ pub struct Const {
     pub constcollid: Oid,
     pub constlen: libc::c_int,
     pub constvalue: Datum,
-    pub constisnull: bool_0,
-    pub constbyval: bool_0,
+    pub constisnull: bool,
+    pub constbyval: bool,
     pub location: libc::c_int,
 }
 pub type ParamKind = libc::c_uint;
@@ -1210,8 +1208,8 @@ pub struct FuncExpr {
     pub xpr: Expr,
     pub funcid: Oid,
     pub funcresulttype: Oid,
-    pub funcretset: bool_0,
-    pub funcvariadic: bool_0,
+    pub funcretset: bool,
+    pub funcvariadic: bool,
     pub funcformat: CoercionForm,
     pub funccollid: Oid,
     pub inputcollid: Oid,
@@ -1236,7 +1234,7 @@ pub struct TupleTableSlotOps {
     pub clear: Option<unsafe extern "C" fn(*mut TupleTableSlot) -> ()>,
     pub getsomeattrs: Option<unsafe extern "C" fn(*mut TupleTableSlot, libc::c_int) -> ()>,
     pub getsysattr:
-        Option<unsafe extern "C" fn(*mut TupleTableSlot, libc::c_int, *mut bool_0) -> Datum>,
+        Option<unsafe extern "C" fn(*mut TupleTableSlot, libc::c_int, *mut bool) -> Datum>,
     pub materialize: Option<unsafe extern "C" fn(*mut TupleTableSlot) -> ()>,
     pub copyslot: Option<unsafe extern "C" fn(*mut TupleTableSlot, *mut TupleTableSlot) -> ()>,
     pub get_heap_tuple: Option<unsafe extern "C" fn(*mut TupleTableSlot) -> HeapTuple>,
@@ -1244,30 +1242,28 @@ pub struct TupleTableSlotOps {
     pub copy_heap_tuple: Option<unsafe extern "C" fn(*mut TupleTableSlot) -> HeapTuple>,
     pub copy_minimal_tuple: Option<unsafe extern "C" fn(*mut TupleTableSlot) -> MinimalTuple>,
 }
-#[derive(Copy, Clone)]
 #[repr(C)]
-pub struct TupleTableSlot {
+pub struct TupleTableSlot<'a> {
     pub type_0: NodeTag,
     pub tts_flags: uint16,
     pub tts_nvalid: AttrNumber,
     pub tts_ops: *const TupleTableSlotOps,
     pub tts_tupleDescriptor: TupleDesc,
     pub tts_values: *mut Datum,
-    pub tts_isnull: *mut bool_0,
+    pub tts_isnull: &'a mut bool,
     pub tts_mcxt: MemoryContext,
     pub tts_tid: ItemPointerData,
     pub tts_tableOid: Oid,
 }
-#[derive(Copy, Clone)]
 #[repr(C)]
-pub struct TupleConversionMap {
+pub struct TupleConversionMap<'a> {
     pub indesc: TupleDesc,
     pub outdesc: TupleDesc,
     pub attrMap: *mut AttrMap,
     pub invalues: *mut Datum,
-    pub inisnull: *mut bool_0,
+    pub inisnull: &'a mut bool,
     pub outvalues: *mut Datum,
-    pub outisnull: *mut bool_0,
+    pub outisnull: &'a mut bool,
 }
 pub type instr_time = timespec;
 #[derive(Copy, Clone)]
@@ -1296,11 +1292,11 @@ pub struct WalUsage {
 #[derive(Copy, Clone)]
 #[repr(C)]
 pub struct Instrumentation {
-    pub need_timer: bool_0,
-    pub need_bufusage: bool_0,
-    pub need_walusage: bool_0,
-    pub async_mode: bool_0,
-    pub running: bool_0,
+    pub need_timer: bool,
+    pub need_bufusage: bool,
+    pub need_walusage: bool,
+    pub async_mode: bool,
+    pub running: bool,
     pub starttime: instr_time,
     pub counter: instr_time,
     pub firsttuple: libc::c_double,
@@ -1331,7 +1327,7 @@ pub struct FunctionCallInfoBaseData {
     pub context: fmNodePtr,
     pub resultinfo: fmNodePtr,
     pub fncollation: Oid,
-    pub isnull: bool_0,
+    pub isnull: bool,
     pub nargs: libc::c_short,
     pub args: [NullableDatum; 0],
 }
@@ -1341,8 +1337,8 @@ pub struct FmgrInfo {
     pub fn_addr: PGFunction,
     pub fn_oid: Oid,
     pub fn_nargs: libc::c_short,
-    pub fn_strict: bool_0,
-    pub fn_retset: bool_0,
+    pub fn_strict: bool,
+    pub fn_retset: bool,
     pub fn_stats: libc::c_uchar,
     pub fn_extra: *mut libc::c_void,
     pub fn_mcxt: MemoryContext,
@@ -1357,26 +1353,25 @@ pub struct pairingheap_node {
     pub next_sibling: *mut pairingheap_node,
     pub prev_or_parent: *mut pairingheap_node,
 }
-#[derive(Copy, Clone)]
 #[repr(C)]
-pub struct ExprState {
+pub struct ExprState<'a> {
     pub type_0: NodeTag,
     pub flags: uint8,
-    pub resnull: bool_0,
+    pub resnull: bool,
     pub resvalue: Datum,
-    pub resultslot: *mut TupleTableSlot,
+    pub resultslot: *mut TupleTableSlot<'a>,
     pub steps: *mut ExprEvalStep,
     pub evalfunc: ExprStateEvalFunc,
     pub expr: *mut Expr,
     pub evalfunc_private: *mut libc::c_void,
     pub steps_len: libc::c_int,
     pub steps_alloc: libc::c_int,
-    pub parent: *mut PlanState,
+    pub parent: *mut PlanState<'a>,
     pub ext_params: ParamListInfo,
     pub innermost_caseval: *mut Datum,
-    pub innermost_casenull: *mut bool_0,
+    pub innermost_casenull: &'a mut bool,
     pub innermost_domainval: *mut Datum,
-    pub innermost_domainnull: *mut bool_0,
+    pub innermost_domainnull: &'a mut bool,
 }
 pub type ParamListInfo = *mut ParamListInfoData;
 #[derive(Copy, Clone)]
@@ -1396,83 +1391,80 @@ pub struct ParamListInfoData {
 #[repr(C)]
 pub struct ParamExternData {
     pub value: Datum,
-    pub isnull: bool_0,
+    pub isnull: bool,
     pub pflags: uint16,
     pub ptype: Oid,
 }
 pub type ParserSetupHook = Option<unsafe extern "C" fn(*mut ParseState, *mut libc::c_void) -> ()>;
 pub type ParamCompileHook = Option<
-    unsafe extern "C" fn(ParamListInfo, *mut Param, *mut ExprState, *mut Datum, *mut bool_0) -> (),
+    unsafe extern "C" fn(ParamListInfo, *mut Param, *mut ExprState, *mut Datum, &mut bool) -> (),
 >;
 pub type ParamFetchHook = Option<
     unsafe extern "C" fn(
         ParamListInfo,
         libc::c_int,
-        bool_0,
+        bool,
         *mut ParamExternData,
     ) -> *mut ParamExternData,
 >;
-#[derive(Copy, Clone)]
 #[repr(C)]
-pub struct PlanState {
+pub struct PlanState<'a> {
     pub type_0: NodeTag,
     pub plan: *mut Plan,
-    pub state: *mut EState,
+    pub state: *mut EState<'a>,
     pub ExecProcNode: ExecProcNodeMtd,
     pub ExecProcNodeReal: ExecProcNodeMtd,
     pub instrument: *mut Instrumentation,
     pub worker_instrument: *mut WorkerInstrumentation,
     pub worker_jit_instrument: *mut SharedJitInstrumentation,
-    pub qual: *mut ExprState,
-    pub lefttree: *mut PlanState,
-    pub righttree: *mut PlanState,
+    pub qual: *mut ExprState<'a>,
+    pub lefttree: *mut PlanState<'a>,
+    pub righttree: *mut PlanState<'a>,
     pub initPlan: *mut List,
     pub subPlan: *mut List,
     pub chgParam: *mut Bitmapset,
     pub ps_ResultTupleDesc: TupleDesc,
-    pub ps_ResultTupleSlot: *mut TupleTableSlot,
-    pub ps_ExprContext: *mut ExprContext,
-    pub ps_ProjInfo: *mut ProjectionInfo,
-    pub async_capable: bool_0,
+    pub ps_ResultTupleSlot: *mut TupleTableSlot<'a>,
+    pub ps_ExprContext: *mut ExprContext<'a>,
+    pub ps_ProjInfo: *mut ProjectionInfo<'a>,
+    pub async_capable: bool,
     pub scandesc: TupleDesc,
     pub scanops: *const TupleTableSlotOps,
     pub outerops: *const TupleTableSlotOps,
     pub innerops: *const TupleTableSlotOps,
     pub resultops: *const TupleTableSlotOps,
-    pub scanopsfixed: bool_0,
-    pub outeropsfixed: bool_0,
-    pub inneropsfixed: bool_0,
-    pub resultopsfixed: bool_0,
-    pub scanopsset: bool_0,
-    pub outeropsset: bool_0,
-    pub inneropsset: bool_0,
-    pub resultopsset: bool_0,
+    pub scanopsfixed: bool,
+    pub outeropsfixed: bool,
+    pub inneropsfixed: bool,
+    pub resultopsfixed: bool,
+    pub scanopsset: bool,
+    pub outeropsset: bool,
+    pub inneropsset: bool,
+    pub resultopsset: bool,
 }
-#[derive(Copy, Clone)]
 #[repr(C)]
-pub struct ProjectionInfo {
+pub struct ProjectionInfo<'a> {
     pub type_0: NodeTag,
-    pub pi_state: ExprState,
-    pub pi_exprContext: *mut ExprContext,
+    pub pi_state: ExprState<'a>,
+    pub pi_exprContext: *mut ExprContext<'a>,
 }
-#[derive(Copy, Clone)]
 #[repr(C)]
-pub struct ExprContext {
+pub struct ExprContext<'a> {
     pub type_0: NodeTag,
-    pub ecxt_scantuple: *mut TupleTableSlot,
-    pub ecxt_innertuple: *mut TupleTableSlot,
-    pub ecxt_outertuple: *mut TupleTableSlot,
+    pub ecxt_scantuple: *mut TupleTableSlot<'a>,
+    pub ecxt_innertuple: *mut TupleTableSlot<'a>,
+    pub ecxt_outertuple: *mut TupleTableSlot<'a>,
     pub ecxt_per_query_memory: MemoryContext,
     pub ecxt_per_tuple_memory: MemoryContext,
     pub ecxt_param_exec_vals: *mut ParamExecData,
     pub ecxt_param_list_info: ParamListInfo,
     pub ecxt_aggvalues: *mut Datum,
-    pub ecxt_aggnulls: *mut bool_0,
+    pub ecxt_aggnulls: &'a mut bool,
     pub caseValue_datum: Datum,
-    pub caseValue_isNull: bool_0,
+    pub caseValue_isNull: bool,
     pub domainValue_datum: Datum,
-    pub domainValue_isNull: bool_0,
-    pub ecxt_estate: *mut EState,
+    pub domainValue_isNull: bool,
+    pub ecxt_estate: *mut EState<'a>,
     pub ecxt_callbacks: *mut ExprContext_CB,
 }
 #[derive(Copy, Clone)]
@@ -1485,7 +1477,7 @@ pub struct ExprContext_CB {
 pub type ExprContextCallbackFunction = Option<unsafe extern "C" fn(Datum) -> ()>;
 #[derive(Copy, Clone)]
 #[repr(C)]
-pub struct EState {
+pub struct EState<'a> {
     pub type_0: NodeTag,
     pub es_direction: ScanDirection,
     pub es_snapshot: Snapshot,
@@ -1496,9 +1488,9 @@ pub struct EState {
     pub es_rowmarks: *mut *mut ExecRowMark,
     pub es_plannedstmt: *mut PlannedStmt,
     pub es_sourceText: *const libc::c_char,
-    pub es_junkFilter: *mut JunkFilter,
+    pub es_junkFilter: *mut JunkFilter<'a>,
     pub es_output_cid: CommandId,
-    pub es_result_relations: *mut *mut ResultRelInfo,
+    pub es_result_relations: *mut *mut ResultRelInfo<'a>,
     pub es_opened_result_relations: *mut List,
     pub es_partition_directory: PartitionDirectory,
     pub es_tuple_routing_result_relations: *mut List,
@@ -1511,32 +1503,31 @@ pub struct EState {
     pub es_processed: uint64,
     pub es_top_eflags: libc::c_int,
     pub es_instrument: libc::c_int,
-    pub es_finished: bool_0,
+    pub es_finished: bool,
     pub es_exprcontexts: *mut List,
     pub es_subplanstates: *mut List,
     pub es_auxmodifytables: *mut List,
-    pub es_per_tuple_exprcontext: *mut ExprContext,
-    pub es_epq_active: *mut EPQState,
-    pub es_use_parallel_mode: bool_0,
+    pub es_per_tuple_exprcontext: *mut ExprContext<'a>,
+    pub es_epq_active: *mut EPQState<'a>,
+    pub es_use_parallel_mode: bool,
     pub es_query_dsa: *mut dsa_area,
     pub es_jit_flags: libc::c_int,
     pub es_jit: *mut JitContext,
     pub es_jit_worker_instr: *mut JitInstrumentation,
 }
-#[derive(Copy, Clone)]
 #[repr(C)]
-pub struct EPQState {
-    pub parentestate: *mut EState,
+pub struct EPQState<'a> {
+    pub parentestate: *mut EState<'a>,
     pub epqParam: libc::c_int,
     pub tuple_table: *mut List,
-    pub relsubs_slot: *mut *mut TupleTableSlot,
+    pub relsubs_slot: *mut *mut TupleTableSlot<'a>,
     pub plan: *mut Plan,
     pub arowMarks: *mut List,
-    pub origslot: *mut TupleTableSlot,
-    pub recheckestate: *mut EState,
+    pub origslot: *mut TupleTableSlot<'a>,
+    pub recheckestate: *mut EState<'a>,
     pub relsubs_rowmark: *mut *mut ExecAuxRowMark,
-    pub relsubs_done: *mut bool_0,
-    pub recheckplanstate: *mut PlanState,
+    pub relsubs_done: &'a mut bool,
+    pub recheckplanstate: *mut PlanState<'a>,
 }
 #[derive(Copy, Clone)]
 #[repr(C)]
@@ -1557,7 +1548,7 @@ pub struct ExecRowMark {
     pub markType: RowMarkType,
     pub strength: LockClauseStrength,
     pub waitPolicy: LockWaitPolicy,
-    pub ermActive: bool_0,
+    pub ermActive: bool,
     pub curCtid: ItemPointerData,
     pub ermExtra: *mut libc::c_void,
 }
@@ -1576,9 +1567,9 @@ pub struct Plan {
     pub total_cost: Cost,
     pub plan_rows: Cardinality,
     pub plan_width: libc::c_int,
-    pub parallel_aware: bool_0,
-    pub parallel_safe: bool_0,
-    pub async_capable: bool_0,
+    pub parallel_aware: bool,
+    pub parallel_safe: bool,
+    pub async_capable: bool,
     pub plan_node_id: libc::c_int,
     pub targetlist: *mut List,
     pub qual: *mut List,
@@ -1593,89 +1584,88 @@ pub struct Plan {
 pub struct ParamExecData {
     pub execPlan: *mut libc::c_void,
     pub value: Datum,
-    pub isnull: bool_0,
+    pub isnull: bool,
 }
-#[derive(Copy, Clone)]
 #[repr(C)]
-pub struct ResultRelInfo {
+pub struct ResultRelInfo<'a> {
     pub type_0: NodeTag,
     pub ri_RangeTableIndex: Index,
     pub ri_RelationDesc: Relation,
     pub ri_NumIndices: libc::c_int,
     pub ri_IndexRelationDescs: RelationPtr,
-    pub ri_IndexRelationInfo: *mut *mut IndexInfo,
+    pub ri_IndexRelationInfo: *mut *mut IndexInfo<'a>,
     pub ri_RowIdAttNo: AttrNumber,
-    pub ri_projectNew: *mut ProjectionInfo,
-    pub ri_newTupleSlot: *mut TupleTableSlot,
-    pub ri_oldTupleSlot: *mut TupleTableSlot,
-    pub ri_projectNewInfoValid: bool_0,
+    pub ri_projectNew: *mut ProjectionInfo<'a>,
+    pub ri_newTupleSlot: *mut TupleTableSlot<'a>,
+    pub ri_oldTupleSlot: *mut TupleTableSlot<'a>,
+    pub ri_projectNewInfoValid: bool,
     pub ri_TrigDesc: *mut TriggerDesc,
     pub ri_TrigFunctions: *mut FmgrInfo,
-    pub ri_TrigWhenExprs: *mut *mut ExprState,
+    pub ri_TrigWhenExprs: *mut *mut ExprState<'a>,
     pub ri_TrigInstrument: *mut Instrumentation,
-    pub ri_ReturningSlot: *mut TupleTableSlot,
-    pub ri_TrigOldSlot: *mut TupleTableSlot,
-    pub ri_TrigNewSlot: *mut TupleTableSlot,
+    pub ri_ReturningSlot: *mut TupleTableSlot<'a>,
+    pub ri_TrigOldSlot: *mut TupleTableSlot<'a>,
+    pub ri_TrigNewSlot: *mut TupleTableSlot<'a>,
     pub ri_FdwRoutine: *mut FdwRoutine,
     pub ri_FdwState: *mut libc::c_void,
-    pub ri_usesFdwDirectModify: bool_0,
+    pub ri_usesFdwDirectModify: bool,
     pub ri_NumSlots: libc::c_int,
     pub ri_NumSlotsInitialized: libc::c_int,
     pub ri_BatchSize: libc::c_int,
-    pub ri_Slots: *mut *mut TupleTableSlot,
-    pub ri_PlanSlots: *mut *mut TupleTableSlot,
+    pub ri_Slots: *mut *mut TupleTableSlot<'a>,
+    pub ri_PlanSlots: *mut *mut TupleTableSlot<'a>,
     pub ri_WithCheckOptions: *mut List,
     pub ri_WithCheckOptionExprs: *mut List,
-    pub ri_ConstraintExprs: *mut *mut ExprState,
-    pub ri_GeneratedExprs: *mut *mut ExprState,
+    pub ri_ConstraintExprs: *mut *mut ExprState<'a>,
+    pub ri_GeneratedExprs: *mut *mut ExprState<'a>,
     pub ri_NumGeneratedNeeded: libc::c_int,
     pub ri_returningList: *mut List,
-    pub ri_projectReturning: *mut ProjectionInfo,
+    pub ri_projectReturning: *mut ProjectionInfo<'a>,
     pub ri_onConflictArbiterIndexes: *mut List,
-    pub ri_onConflict: *mut OnConflictSetState,
-    pub ri_PartitionCheckExpr: *mut ExprState,
-    pub ri_RootResultRelInfo: *mut ResultRelInfo,
-    pub ri_RootToPartitionMap: *mut TupleConversionMap,
-    pub ri_PartitionTupleSlot: *mut TupleTableSlot,
-    pub ri_ChildToRootMap: *mut TupleConversionMap,
-    pub ri_ChildToRootMapValid: bool_0,
+    pub ri_onConflict: *mut OnConflictSetState<'a>,
+    pub ri_PartitionCheckExpr: *mut ExprState<'a>,
+    pub ri_RootResultRelInfo: *mut ResultRelInfo<'a>,
+    pub ri_RootToPartitionMap: *mut TupleConversionMap<'a>,
+    pub ri_PartitionTupleSlot: *mut TupleTableSlot<'a>,
+    pub ri_ChildToRootMap: *mut TupleConversionMap<'a>,
+    pub ri_ChildToRootMapValid: bool,
     pub ri_CopyMultiInsertBuffer: *mut CopyMultiInsertBuffer,
 }
 #[derive(Copy, Clone)]
 #[repr(C)]
-pub struct OnConflictSetState {
+pub struct OnConflictSetState<'a> {
     pub type_0: NodeTag,
-    pub oc_Existing: *mut TupleTableSlot,
-    pub oc_ProjSlot: *mut TupleTableSlot,
-    pub oc_ProjInfo: *mut ProjectionInfo,
-    pub oc_WhereClause: *mut ExprState,
+    pub oc_Existing: *mut TupleTableSlot<'a>,
+    pub oc_ProjSlot: *mut TupleTableSlot<'a>,
+    pub oc_ProjInfo: *mut ProjectionInfo<'a>,
+    pub oc_WhereClause: *mut ExprState<'a>,
 }
 #[derive(Copy, Clone)]
 #[repr(C)]
 pub struct TriggerDesc {
     pub triggers: *mut Trigger,
     pub numtriggers: libc::c_int,
-    pub trig_insert_before_row: bool_0,
-    pub trig_insert_after_row: bool_0,
-    pub trig_insert_instead_row: bool_0,
-    pub trig_insert_before_statement: bool_0,
-    pub trig_insert_after_statement: bool_0,
-    pub trig_update_before_row: bool_0,
-    pub trig_update_after_row: bool_0,
-    pub trig_update_instead_row: bool_0,
-    pub trig_update_before_statement: bool_0,
-    pub trig_update_after_statement: bool_0,
-    pub trig_delete_before_row: bool_0,
-    pub trig_delete_after_row: bool_0,
-    pub trig_delete_instead_row: bool_0,
-    pub trig_delete_before_statement: bool_0,
-    pub trig_delete_after_statement: bool_0,
-    pub trig_truncate_before_statement: bool_0,
-    pub trig_truncate_after_statement: bool_0,
-    pub trig_insert_new_table: bool_0,
-    pub trig_update_old_table: bool_0,
-    pub trig_update_new_table: bool_0,
-    pub trig_delete_old_table: bool_0,
+    pub trig_insert_before_row: bool,
+    pub trig_insert_after_row: bool,
+    pub trig_insert_instead_row: bool,
+    pub trig_insert_before_statement: bool,
+    pub trig_insert_after_statement: bool,
+    pub trig_update_before_row: bool,
+    pub trig_update_after_row: bool,
+    pub trig_update_instead_row: bool,
+    pub trig_update_before_statement: bool,
+    pub trig_update_after_statement: bool,
+    pub trig_delete_before_row: bool,
+    pub trig_delete_after_row: bool,
+    pub trig_delete_instead_row: bool,
+    pub trig_delete_before_statement: bool,
+    pub trig_delete_after_statement: bool,
+    pub trig_truncate_before_statement: bool,
+    pub trig_truncate_after_statement: bool,
+    pub trig_insert_new_table: bool,
+    pub trig_update_old_table: bool,
+    pub trig_update_new_table: bool,
+    pub trig_delete_old_table: bool,
 }
 #[derive(Copy, Clone)]
 #[repr(C)]
@@ -1685,13 +1675,13 @@ pub struct Trigger {
     pub tgfoid: Oid,
     pub tgtype: int16,
     pub tgenabled: libc::c_char,
-    pub tgisinternal: bool_0,
-    pub tgisclone: bool_0,
+    pub tgisinternal: bool,
+    pub tgisclone: bool,
     pub tgconstrrelid: Oid,
     pub tgconstrindid: Oid,
     pub tgconstraint: Oid,
-    pub tgdeferrable: bool_0,
-    pub tginitdeferred: bool_0,
+    pub tgdeferrable: bool,
+    pub tginitdeferred: bool,
     pub tgnargs: int16,
     pub tgnattr: int16,
     pub tgattr: *mut int16,
@@ -1702,7 +1692,7 @@ pub struct Trigger {
 }
 #[derive(Copy, Clone)]
 #[repr(C)]
-pub struct IndexInfo {
+pub struct IndexInfo<'a> {
     pub type_0: NodeTag,
     pub ii_NumIndexAttrs: libc::c_int,
     pub ii_NumIndexKeyAttrs: libc::c_int,
@@ -1710,7 +1700,7 @@ pub struct IndexInfo {
     pub ii_Expressions: *mut List,
     pub ii_ExpressionsState: *mut List,
     pub ii_Predicate: *mut List,
-    pub ii_PredicateState: *mut ExprState,
+    pub ii_PredicateState: *mut ExprState<'a>,
     pub ii_ExclusionOps: *mut Oid,
     pub ii_ExclusionProcs: *mut Oid,
     pub ii_ExclusionStrats: *mut uint16,
@@ -1718,13 +1708,13 @@ pub struct IndexInfo {
     pub ii_UniqueProcs: *mut Oid,
     pub ii_UniqueStrats: *mut uint16,
     pub ii_OpclassOptions: *mut Datum,
-    pub ii_Unique: bool_0,
-    pub ii_NullsNotDistinct: bool_0,
-    pub ii_ReadyForInserts: bool_0,
-    pub ii_CheckedUnchanged: bool_0,
-    pub ii_IndexUnchanged: bool_0,
-    pub ii_Concurrent: bool_0,
-    pub ii_BrokenHotChain: bool_0,
+    pub ii_Unique: bool,
+    pub ii_NullsNotDistinct: bool,
+    pub ii_ReadyForInserts: bool,
+    pub ii_CheckedUnchanged: bool,
+    pub ii_IndexUnchanged: bool,
+    pub ii_Concurrent: bool,
+    pub ii_BrokenHotChain: bool,
     pub ii_ParallelWorkers: libc::c_int,
     pub ii_Am: Oid,
     pub ii_AmCache: *mut libc::c_void,
@@ -1732,12 +1722,12 @@ pub struct IndexInfo {
 }
 #[derive(Copy, Clone)]
 #[repr(C)]
-pub struct JunkFilter {
+pub struct JunkFilter<'a> {
     pub type_0: NodeTag,
     pub jf_targetList: *mut List,
     pub jf_cleanTupType: TupleDesc,
     pub jf_cleanMap: *mut AttrNumber,
-    pub jf_resultSlot: *mut TupleTableSlot,
+    pub jf_resultSlot: *mut TupleTableSlot<'a>,
 }
 #[derive(Copy, Clone)]
 #[repr(C)]
@@ -1745,12 +1735,12 @@ pub struct PlannedStmt {
     pub type_0: NodeTag,
     pub commandType: CmdType,
     pub queryId: uint64,
-    pub hasReturning: bool_0,
-    pub hasModifyingCTE: bool_0,
-    pub canSetTag: bool_0,
-    pub transientPlan: bool_0,
-    pub dependsOnRole: bool_0,
-    pub parallelModeNeeded: bool_0,
+    pub hasReturning: bool,
+    pub hasModifyingCTE: bool,
+    pub canSetTag: bool,
+    pub transientPlan: bool,
+    pub dependsOnRole: bool,
+    pub parallelModeNeeded: bool,
     pub jitFlags: libc::c_int,
     pub planTree: *mut Plan,
     pub rtable: *mut List,
@@ -1777,9 +1767,9 @@ pub struct SnapshotData {
     pub xcnt: uint32,
     pub subxip: *mut TransactionId,
     pub subxcnt: int32,
-    pub suboverflowed: bool_0,
-    pub takenDuringRecovery: bool_0,
-    pub copied: bool_0,
+    pub suboverflowed: bool,
+    pub takenDuringRecovery: bool,
+    pub copied: bool,
     pub curcid: CommandId,
     pub speculativeToken: uint32,
     pub vistest: *mut GlobalVisState,
@@ -1804,7 +1794,7 @@ pub const NoMovementScanDirection: ScanDirection = 0;
 pub const BackwardScanDirection: ScanDirection = -1;
 pub type ExecProcNodeMtd = Option<unsafe extern "C" fn(*mut PlanState) -> *mut TupleTableSlot>;
 pub type ExprStateEvalFunc =
-    Option<unsafe extern "C" fn(*mut ExprState, *mut ExprContext, *mut bool_0) -> Datum>;
+    Option<unsafe extern "C" fn(*mut ExprState, *mut ExprContext, &mut bool) -> Datum>;
 pub type ExprDoneCond = libc::c_uint;
 pub const ExprEndResult: ExprDoneCond = 2;
 pub const ExprMultipleResult: ExprDoneCond = 1;
@@ -1816,9 +1806,9 @@ pub const SFRM_Materialize: SetFunctionReturnMode = 2;
 pub const SFRM_ValuePerCall: SetFunctionReturnMode = 1;
 #[derive(Copy, Clone)]
 #[repr(C)]
-pub struct ReturnSetInfo {
+pub struct ReturnSetInfo<'a> {
     pub type_0: NodeTag,
-    pub econtext: *mut ExprContext,
+    pub econtext: *mut ExprContext<'a>,
     pub expectedDesc: TupleDesc,
     pub allowedModes: libc::c_int,
     pub returnMode: SetFunctionReturnMode,
@@ -1893,7 +1883,7 @@ pub struct tzEntry {
     pub abbrev: *mut libc::c_char,
     pub zone: *mut libc::c_char,
     pub offset: libc::c_int,
-    pub is_dst: bool_0,
+    pub is_dst: bool,
     pub lineno: libc::c_int,
     pub filename: *const libc::c_char,
 }
@@ -3698,9 +3688,9 @@ unsafe extern "C" fn AppendSeconds(
     mut sec: libc::c_int,
     mut fsec: fsec_t,
     mut precision: libc::c_int,
-    mut fillzeros: bool_0,
+    mut fillzeros: bool,
 ) -> *mut libc::c_char {
-    if fillzeros != 0 {
+    if fillzeros {
         cp = pg_ultostr_zeropad(
             cp,
             (if sec >= 0 as libc::c_int { sec } else { -sec }) as uint32,
@@ -3720,7 +3710,7 @@ unsafe extern "C" fn AppendSeconds(
         };
         let mut end: *mut libc::c_char =
             &mut *cp.offset((precision + 1 as libc::c_int) as isize) as *mut libc::c_char;
-        let mut gotnonzero: bool_0 = 0 as libc::c_int as bool_0;
+        let mut gotnonzero = false;
         let fresh0 = cp;
         cp = cp.offset(1);
         *fresh0 = '.' as i32 as libc::c_char;
@@ -3735,9 +3725,9 @@ unsafe extern "C" fn AppendSeconds(
             value /= 10 as libc::c_int;
             remainder = oldval - value * 10 as libc::c_int;
             if remainder != 0 {
-                gotnonzero = 1 as libc::c_int as bool_0;
+                gotnonzero = true;
             }
-            if gotnonzero != 0 {
+            if gotnonzero {
                 *cp.offset(precision as isize) = ('0' as i32 + remainder) as libc::c_char;
             } else {
                 end = &mut *cp.offset(precision as isize) as *mut libc::c_char;
@@ -3763,13 +3753,7 @@ unsafe extern "C" fn AppendTimestampSeconds(
     mut tm: *mut pg_tm,
     mut fsec: fsec_t,
 ) -> *mut libc::c_char {
-    return AppendSeconds(
-        cp,
-        (*tm).tm_sec,
-        fsec,
-        6 as libc::c_int,
-        1 as libc::c_int as bool_0,
-    );
+    return AppendSeconds(cp, (*tm).tm_sec, fsec, 6 as libc::c_int, true);
 }
 unsafe extern "C" fn AdjustFractSeconds(
     mut frac: libc::c_double,
@@ -4021,10 +4005,10 @@ pub unsafe extern "C" fn DecodeDateTime(
     let mut val: libc::c_int = 0;
     let mut dterr: libc::c_int = 0;
     let mut mer: libc::c_int = 2 as libc::c_int;
-    let mut haveTextMonth: bool_0 = 0 as libc::c_int as bool_0;
-    let mut isjulian: bool_0 = 0 as libc::c_int as bool_0;
-    let mut is2digits: bool_0 = 0 as libc::c_int as bool_0;
-    let mut bc: bool_0 = 0 as libc::c_int as bool_0;
+    let mut haveTextMonth = false;
+    let mut isjulian = false;
+    let mut is2digits = false;
+    let mut bc = false;
     let mut namedTz: *mut pg_tz = 0 as *mut pg_tz;
     let mut abbrevTz: *mut pg_tz = 0 as *mut pg_tz;
     let mut valtz: *mut pg_tz = 0 as *mut pg_tz;
@@ -4079,7 +4063,7 @@ pub unsafe extern "C" fn DecodeDateTime(
                         &mut (*tm).tm_mon,
                         &mut (*tm).tm_mday,
                     );
-                    isjulian = 1 as libc::c_int as bool_0;
+                    isjulian = true;
                     dterr = DecodeTimezone(cp, tzp);
                     if dterr != 0 {
                         return dterr;
@@ -4226,7 +4210,7 @@ pub unsafe extern "C" fn DecodeDateTime(
                 if dterr != 0 {
                     return dterr;
                 }
-                if time_overflows((*tm).tm_hour, (*tm).tm_min, (*tm).tm_sec, *fsec) != 0 {
+                if time_overflows((*tm).tm_hour, (*tm).tm_min, (*tm).tm_sec, *fsec) {
                     return -(2 as libc::c_int);
                 }
                 current_block_236 = 13797367574128857302;
@@ -4324,7 +4308,7 @@ pub unsafe extern "C" fn DecodeDateTime(
                                 &mut (*tm).tm_mon,
                                 &mut (*tm).tm_mday,
                             );
-                            isjulian = 1 as libc::c_int as bool_0;
+                            isjulian = true;
                             if *cp_1 as libc::c_int == '.' as i32 {
                                 let mut time: libc::c_double = 0.;
                                 *__errno_location() = 0 as libc::c_int;
@@ -4502,7 +4486,7 @@ pub unsafe extern "C" fn DecodeDateTime(
                         RealFieldType::Month => {
                             // already have a (numeric) month? then see if we can substitute...
                             if fmask.contains(RealFieldType::Month)
-                                && haveTextMonth == 0
+                                && !haveTextMonth
                                 && !fmask.contains(RealFieldType::Day)
                                 && (*tm).tm_mon >= 1 as libc::c_int
                                 && (*tm).tm_mon <= 31 as libc::c_int
@@ -4510,7 +4494,7 @@ pub unsafe extern "C" fn DecodeDateTime(
                                 (*tm).tm_mday = (*tm).tm_mon;
                                 tmask = FieldMask::from(RealFieldType::Day);
                             }
-                            haveTextMonth = 1 as libc::c_int as bool_0;
+                            haveTextMonth = true;
                             (*tm).tm_mon = val;
                         }
                         RealFieldType::DtzMod => {
@@ -4552,7 +4536,7 @@ pub unsafe extern "C" fn DecodeDateTime(
                             mer = val;
                         }
                         RealFieldType::Adbc => {
-                            bc = (val == 1 as libc::c_int) as libc::c_int as bool_0;
+                            bc = val == 1;
                         }
                         RealFieldType::Dow => {
                             (*tm).tm_wday = val;
@@ -4783,10 +4767,10 @@ pub unsafe extern "C" fn DetermineTimeZoneAbbrevOffset(
     let mut t: pg_time_t = 0;
     let mut zone_offset: libc::c_int = 0;
     let mut abbr_offset: libc::c_int = 0;
-    let mut abbr_isdst: libc::c_int = 0;
+    let mut abbr_isdst = false;
     zone_offset = DetermineTimeZoneOffsetInternal(tm, tzp, &mut t);
-    if DetermineTimeZoneAbbrevOffsetInternal(t, abbr, tzp, &mut abbr_offset, &mut abbr_isdst) != 0 {
-        (*tm).tm_isdst = abbr_isdst;
+    if DetermineTimeZoneAbbrevOffsetInternal(t, abbr, tzp, &mut abbr_offset, &mut abbr_isdst) {
+        (*tm).tm_isdst = abbr_isdst as i32;
         return abbr_offset;
     }
     return zone_offset;
@@ -4796,7 +4780,7 @@ pub unsafe extern "C" fn DetermineTimeZoneAbbrevOffsetTS(
     mut ts: TimestampTz,
     mut abbr: *const libc::c_char,
     mut tzp: *mut pg_tz,
-    mut isdst: *mut libc::c_int,
+    mut isdst: &mut bool,
 ) -> libc::c_int {
     let mut t: pg_time_t = timestamptz_to_time_t(ts);
     let mut zone_offset: libc::c_int = 0;
@@ -4816,7 +4800,7 @@ pub unsafe extern "C" fn DetermineTimeZoneAbbrevOffsetTS(
         tm_zone: 0 as *const libc::c_char,
     };
     let mut fsec: fsec_t = 0;
-    if DetermineTimeZoneAbbrevOffsetInternal(t, abbr, tzp, &mut abbr_offset, isdst) != 0 {
+    if DetermineTimeZoneAbbrevOffsetInternal(t, abbr, tzp, &mut abbr_offset, isdst) {
         return abbr_offset;
     }
     if timestamp2tm(
@@ -4858,7 +4842,7 @@ pub unsafe extern "C" fn DetermineTimeZoneAbbrevOffsetTS(
         }
     }
     zone_offset = DetermineTimeZoneOffset(&mut tm, tzp);
-    *isdst = tm.tm_isdst;
+    *isdst = tm.tm_isdst != 0;
     return zone_offset;
 }
 unsafe extern "C" fn DetermineTimeZoneAbbrevOffsetInternal(
@@ -4866,8 +4850,8 @@ unsafe extern "C" fn DetermineTimeZoneAbbrevOffsetInternal(
     mut abbr: *const libc::c_char,
     mut tzp: *mut pg_tz,
     mut offset: *mut libc::c_int,
-    mut isdst: *mut libc::c_int,
-) -> bool_0 {
+    mut isdst: &mut bool,
+) -> bool {
     let mut upabbr: [libc::c_char; 256] = [0; 256];
     let mut p: *mut libc::c_uchar = 0 as *mut libc::c_uchar;
     let mut gmtoff: libc::c_long = 0;
@@ -4881,11 +4865,11 @@ unsafe extern "C" fn DetermineTimeZoneAbbrevOffsetInternal(
         *p = pg_toupper(*p);
         p = p.offset(1);
     }
-    if pg_interpret_timezone_abbrev(upabbr.as_mut_ptr(), &mut t, &mut gmtoff, isdst, tzp) != 0 {
+    if pg_interpret_timezone_abbrev(upabbr.as_mut_ptr(), &mut t, &mut gmtoff, isdst, tzp) {
         *offset = -gmtoff as libc::c_int;
-        return 1 as libc::c_int as bool_0;
+        return true;
     }
-    return 0 as libc::c_int as bool_0;
+    return false;
 }
 
 // Interpret parsed string as time fields only.
@@ -4915,9 +4899,9 @@ pub unsafe extern "C" fn DecodeTimeOnly(
     let mut i: libc::c_int = 0;
     let mut val: libc::c_int = 0;
     let mut dterr: libc::c_int = 0;
-    let mut isjulian: bool_0 = 0 as libc::c_int as bool_0;
-    let mut is2digits: bool_0 = 0 as libc::c_int as bool_0;
-    let mut bc: bool_0 = 0 as libc::c_int as bool_0;
+    let mut isjulian: bool = false;
+    let mut is2digits: bool = false;
+    let mut bc: bool = false;
     let mut mer: libc::c_int = 2 as libc::c_int;
     let mut namedTz: *mut pg_tz = 0 as *mut pg_tz;
     let mut abbrevTz: *mut pg_tz = 0 as *mut pg_tz;
@@ -5148,7 +5132,7 @@ pub unsafe extern "C" fn DecodeTimeOnly(
                                 &mut (*tm).tm_mon,
                                 &mut (*tm).tm_mday,
                             );
-                            isjulian = 1 as libc::c_int as bool_0;
+                            isjulian = true;
                             if *cp_0 as libc::c_int == '.' as i32 {
                                 let mut time: libc::c_double = 0.;
                                 *__errno_location() = 0 as libc::c_int;
@@ -5248,7 +5232,7 @@ pub unsafe extern "C" fn DecodeTimeOnly(
                         dterr = DecodeNumber(
                             flen,
                             *field.offset(i as isize),
-                            0 as libc::c_int as bool_0,
+                            false,
                             fmask | *FIELD_MASK_DATE,
                             &mut tmask,
                             tm,
@@ -5329,7 +5313,7 @@ pub unsafe extern "C" fn DecodeTimeOnly(
                             mer = val;
                         }
                         RealFieldType::Adbc => {
-                            bc = (val == 1 as libc::c_int) as libc::c_int as bool_0;
+                            bc = val == 1;
                         }
                         RealFieldType::Units => {
                             tmask = FieldMask::none();
@@ -5398,7 +5382,7 @@ pub unsafe extern "C" fn DecodeTimeOnly(
     }
 
     // check for time overflow
-    if time_overflows((*tm).tm_hour, (*tm).tm_min, (*tm).tm_sec, *fsec) != 0 {
+    if time_overflows((*tm).tm_hour, (*tm).tm_min, (*tm).tm_sec, *fsec) {
         return -(2 as libc::c_int);
     }
     if !fmask.contains(*FIELD_MASK_TIME) {
@@ -5413,7 +5397,7 @@ pub unsafe extern "C" fn DecodeTimeOnly(
             return -(1 as libc::c_int);
         }
         // if non-DST zone, we do not need to know the date
-        if pg_get_timezone_offset(namedTz, &mut gmtoff) != 0 {
+        if pg_get_timezone_offset(namedTz, &mut gmtoff) {
             *tzp = -(gmtoff as libc::c_int);
         } else {
             // a date has to be specified
@@ -5502,7 +5486,7 @@ unsafe extern "C" fn DecodeDate(
     mut str: *mut libc::c_char,
     mut fmask: FieldMask,
     mut tmask: &mut FieldMask,
-    mut is2digits: *mut bool_0,
+    mut is2digits: &mut bool,
     mut tm: *mut pg_tm,
 ) -> libc::c_int {
     let mut fsec: fsec_t = 0;
@@ -5510,7 +5494,7 @@ unsafe extern "C" fn DecodeDate(
     let mut i: libc::c_int = 0;
     let mut len: libc::c_int = 0;
     let mut dterr: libc::c_int = 0;
-    let mut haveTextMonth: bool_0 = 0 as libc::c_int as bool_0;
+    let mut haveTextMonth: bool = false;
     let mut type_0 = RealFieldType::Reserved;
     let mut val: libc::c_int = 0;
     let mut dmask = FieldMask::none();
@@ -5573,7 +5557,7 @@ unsafe extern "C" fn DecodeDate(
                 match type_0 {
                     RealFieldType::Month => {
                         (*tm).tm_mon = val;
-                        haveTextMonth = 1 as libc::c_int as bool_0;
+                        haveTextMonth = true;
                     }
                     typ => {
                         eprintln!("unexpected field type: {:?}", typ);
@@ -5630,19 +5614,19 @@ unsafe extern "C" fn DecodeDate(
 #[no_mangle]
 pub unsafe extern "C" fn ValidateDate(
     mut fmask: FieldMask,
-    mut isjulian: bool_0,
-    mut is2digits: bool_0,
-    mut bc: bool_0,
+    mut isjulian: bool,
+    mut is2digits: bool,
+    mut bc: bool,
     mut tm: *mut pg_tm,
 ) -> libc::c_int {
     if fmask.contains(RealFieldType::Year) {
-        if !(isjulian != 0) {
-            if bc != 0 {
+        if !isjulian {
+            if bc {
                 if (*tm).tm_year <= 0 as libc::c_int {
                     return -(2 as libc::c_int);
                 }
                 (*tm).tm_year = -((*tm).tm_year - 1 as libc::c_int);
-            } else if is2digits != 0 {
+            } else if is2digits {
                 if (*tm).tm_year < 0 as libc::c_int {
                     return -(2 as libc::c_int);
                 }
@@ -5780,12 +5764,12 @@ unsafe extern "C" fn DecodeTime(
 unsafe extern "C" fn DecodeNumber(
     mut flen: libc::c_int,
     mut str: *mut libc::c_char,
-    mut haveTextMonth: bool_0,
+    mut haveTextMonth: bool,
     mut fmask: FieldMask,
     mut tmask: &mut FieldMask,
     mut tm: *mut pg_tm,
     mut fsec: *mut fsec_t,
-    mut is2digits: *mut bool_0,
+    mut is2digits: &mut bool,
 ) -> libc::c_int {
     let mut val: libc::c_int = 0;
     let mut cp: *mut libc::c_char = 0 as *mut libc::c_char;
@@ -5853,7 +5837,7 @@ unsafe extern "C" fn DecodeNumber(
             (*tm).tm_mon = val;
         }
         2 => {
-            if haveTextMonth != 0 {
+            if haveTextMonth {
                 if flen >= 3 as libc::c_int || DateOrder == 0 as libc::c_int {
                     *tmask = FieldMask::from(RealFieldType::Year);
                     (*tm).tm_year = val;
@@ -5867,7 +5851,7 @@ unsafe extern "C" fn DecodeNumber(
             }
         }
         6 => {
-            if haveTextMonth != 0 {
+            if haveTextMonth {
                 // Need to accept DD-MON-YYYY even in YMD mode
                 if flen >= 3 as libc::c_int && *is2digits as libc::c_int != 0 {
                     // Guess that first numeric field is day was wrong
@@ -5875,7 +5859,7 @@ unsafe extern "C" fn DecodeNumber(
                     *tmask = FieldMask::from(RealFieldType::Day);
                     (*tm).tm_mday = (*tm).tm_year;
                     (*tm).tm_year = val;
-                    *is2digits = 0 as libc::c_int as bool_0;
+                    *is2digits = false;
                 } else {
                     *tmask = FieldMask::from(RealFieldType::Day);
                     (*tm).tm_mday = val;
@@ -5906,7 +5890,7 @@ unsafe extern "C" fn DecodeNumber(
     }
     // When processing a year field, mark it for adjustment if it's only one or two digits.
     if *tmask == FieldMask::from(RealFieldType::Year) {
-        *is2digits = (flen <= 2 as libc::c_int) as libc::c_int as bool_0;
+        *is2digits = flen <= 2;
     }
     return 0 as libc::c_int;
 }
@@ -5917,7 +5901,7 @@ unsafe extern "C" fn DecodeNumberField(
     mut tmask: &mut FieldMask,
     mut tm: *mut pg_tm,
     mut fsec: *mut fsec_t,
-    mut is2digits: *mut bool_0,
+    mut is2digits: &mut bool,
 ) -> libc::c_int {
     let mut cp: *mut libc::c_char = 0 as *mut libc::c_char;
     cp = strchr(str, '.' as i32);
@@ -5941,7 +5925,7 @@ unsafe extern "C" fn DecodeNumberField(
             *str.offset((len - 4 as libc::c_int) as isize) = '\0' as i32 as libc::c_char;
             (*tm).tm_year = atoi(str);
             if len - 4 as libc::c_int == 2 as libc::c_int {
-                *is2digits = 1 as libc::c_int as bool_0;
+                *is2digits = true;
             }
             return 2 as libc::c_int;
         }
@@ -6131,7 +6115,7 @@ pub unsafe extern "C" fn DecodeInterval(
     mut tm: *mut pg_tm,
     mut fsec: *mut fsec_t,
 ) -> libc::c_int {
-    let mut is_before: bool_0 = 0 as libc::c_int as bool_0;
+    let mut is_before = false;
     let mut cp: *mut libc::c_char = 0 as *mut libc::c_char;
     let mut fmask = FieldMask::none();
     let mut tmask = FieldMask::none();
@@ -6203,7 +6187,7 @@ pub unsafe extern "C" fn DecodeInterval(
                             type_0 = val;
                         }
                         19 => {
-                            is_before = 1 as libc::c_int as bool_0;
+                            is_before = true;
                             type_0 = val;
                         }
                         0 => {
@@ -6412,19 +6396,19 @@ pub unsafe extern "C" fn DecodeInterval(
     if IntervalStyle == 2 as libc::c_int
         && **field.offset(0 as libc::c_int as isize) as libc::c_int == '-' as i32
     {
-        let mut more_signs: bool_0 = 0 as libc::c_int as bool_0;
+        let mut more_signs = false;
         i = 1 as libc::c_int;
         while i < nf {
             if **field.offset(i as isize) as libc::c_int == '-' as i32
                 || **field.offset(i as isize) as libc::c_int == '+' as i32
             {
-                more_signs = 1 as libc::c_int as bool_0;
+                more_signs = true;
                 break;
             } else {
                 i += 1;
             }
         }
-        if more_signs == 0 {
+        if !more_signs {
             if *fsec > 0 as libc::c_int {
                 *fsec = -*fsec;
             }
@@ -6448,7 +6432,7 @@ pub unsafe extern "C" fn DecodeInterval(
             }
         }
     }
-    if is_before != 0 {
+    if is_before {
         *fsec = -*fsec;
         (*tm).tm_sec = -(*tm).tm_sec;
         (*tm).tm_min = -(*tm).tm_min;
@@ -6508,8 +6492,8 @@ pub unsafe extern "C" fn DecodeISO8601Interval(
     mut tm: *mut pg_tm,
     mut fsec: *mut fsec_t,
 ) -> libc::c_int {
-    let mut datepart: bool_0 = 1 as libc::c_int as bool_0;
-    let mut havefield: bool_0 = 0 as libc::c_int as bool_0;
+    let mut datepart = true;
+    let mut havefield = false;
     *dtype = 17 as libc::c_int;
     ClearPgTm(tm, fsec);
     if strlen(str) < 2 as libc::c_int as libc::c_ulong
@@ -6526,8 +6510,8 @@ pub unsafe extern "C" fn DecodeISO8601Interval(
         let mut unit: libc::c_char = 0;
         let mut dterr: libc::c_int = 0;
         if *str as libc::c_int == 'T' as i32 {
-            datepart = 0 as libc::c_int as bool_0;
-            havefield = 0 as libc::c_int as bool_0;
+            datepart = false;
+            havefield = false;
             str = str.offset(1);
         } else {
             fieldstart = str;
@@ -6538,7 +6522,7 @@ pub unsafe extern "C" fn DecodeISO8601Interval(
             let fresh43 = str;
             str = str.offset(1);
             unit = *fresh43;
-            if datepart != 0 {
+            if datepart {
                 match unit as libc::c_int {
                     89 => {
                         (*tm).tm_year += val;
@@ -6563,7 +6547,7 @@ pub unsafe extern "C" fn DecodeISO8601Interval(
                         current_block_100 = 5722677567366458307;
                     }
                     84 | 0 => {
-                        if ISO8601IntegerWidth(fieldstart) == 8 as libc::c_int && havefield == 0 {
+                        if ISO8601IntegerWidth(fieldstart) == 8 as libc::c_int && !havefield {
                             (*tm).tm_year += val / 10000 as libc::c_int;
                             (*tm).tm_mon += val / 100 as libc::c_int % 100 as libc::c_int;
                             (*tm).tm_mday += val % 100 as libc::c_int;
@@ -6571,8 +6555,8 @@ pub unsafe extern "C" fn DecodeISO8601Interval(
                             if unit as libc::c_int == '\0' as i32 {
                                 return 0 as libc::c_int;
                             }
-                            datepart = 0 as libc::c_int as bool_0;
-                            havefield = 0 as libc::c_int as bool_0;
+                            datepart = false;
+                            havefield = false;
                             continue;
                         } else {
                             current_block_100 = 4994089973047350430;
@@ -6586,7 +6570,7 @@ pub unsafe extern "C" fn DecodeISO8601Interval(
                 match current_block_100 {
                     5722677567366458307 => {}
                     _ => {
-                        if havefield != 0 {
+                        if havefield {
                             return -(1 as libc::c_int);
                         }
                         (*tm).tm_year += val;
@@ -6597,8 +6581,8 @@ pub unsafe extern "C" fn DecodeISO8601Interval(
                             return 0 as libc::c_int;
                         }
                         if unit as libc::c_int == 'T' as i32 {
-                            datepart = 0 as libc::c_int as bool_0;
-                            havefield = 0 as libc::c_int as bool_0;
+                            datepart = false;
+                            havefield = false;
                             continue;
                         } else {
                             dterr = ParseISO8601Number(str, &mut str, &mut val, &mut fval);
@@ -6611,8 +6595,8 @@ pub unsafe extern "C" fn DecodeISO8601Interval(
                                 return 0 as libc::c_int;
                             }
                             if *str as libc::c_int == 'T' as i32 {
-                                datepart = 0 as libc::c_int as bool_0;
-                                havefield = 0 as libc::c_int as bool_0;
+                                datepart = false;
+                                havefield = false;
                                 continue;
                             } else {
                                 if *str as libc::c_int != '-' as i32 {
@@ -6629,8 +6613,8 @@ pub unsafe extern "C" fn DecodeISO8601Interval(
                                     return 0 as libc::c_int;
                                 }
                                 if *str as libc::c_int == 'T' as i32 {
-                                    datepart = 0 as libc::c_int as bool_0;
-                                    havefield = 0 as libc::c_int as bool_0;
+                                    datepart = false;
+                                    havefield = false;
                                     continue;
                                 } else {
                                     return -(1 as libc::c_int);
@@ -6658,7 +6642,7 @@ pub unsafe extern "C" fn DecodeISO8601Interval(
                         current_block_97 = 9879896046554623444;
                     }
                     0 => {
-                        if ISO8601IntegerWidth(fieldstart) == 6 as libc::c_int && havefield == 0 {
+                        if ISO8601IntegerWidth(fieldstart) == 6 as libc::c_int && !havefield {
                             (*tm).tm_hour += val / 10000 as libc::c_int;
                             (*tm).tm_min += val / 100 as libc::c_int % 100 as libc::c_int;
                             (*tm).tm_sec += val % 100 as libc::c_int;
@@ -6675,7 +6659,7 @@ pub unsafe extern "C" fn DecodeISO8601Interval(
                 match current_block_97 {
                     9879896046554623444 => {}
                     _ => {
-                        if havefield != 0 {
+                        if havefield {
                             return -(1 as libc::c_int);
                         }
                         (*tm).tm_hour += val;
@@ -6709,7 +6693,7 @@ pub unsafe extern "C" fn DecodeISO8601Interval(
                     }
                 }
             }
-            havefield = 1 as libc::c_int as bool_0;
+            havefield = true;
         }
     }
     return 0 as libc::c_int;
@@ -7117,7 +7101,7 @@ pub unsafe extern "C" fn EncodeDateOnly(
 pub unsafe extern "C" fn EncodeTimeOnly(
     mut tm: *mut pg_tm,
     mut fsec: fsec_t,
-    mut print_tz: bool_0,
+    mut print_tz: bool,
     mut tz: libc::c_int,
     mut style: libc::c_int,
     mut str: *mut libc::c_char,
@@ -7130,14 +7114,8 @@ pub unsafe extern "C" fn EncodeTimeOnly(
     let fresh59 = str;
     str = str.offset(1);
     *fresh59 = ':' as i32 as libc::c_char;
-    str = AppendSeconds(
-        str,
-        (*tm).tm_sec,
-        fsec,
-        6 as libc::c_int,
-        1 as libc::c_int as bool_0,
-    );
-    if print_tz != 0 {
+    str = AppendSeconds(str, (*tm).tm_sec, fsec, 6 as libc::c_int, true);
+    if print_tz {
         str = EncodeTimezone(str, tz, style);
     }
     *str = '\0' as i32 as libc::c_char;
@@ -7146,7 +7124,7 @@ pub unsafe extern "C" fn EncodeTimeOnly(
 pub unsafe extern "C" fn EncodeDateTime(
     mut tm: *mut pg_tm,
     mut fsec: fsec_t,
-    mut print_tz: bool_0,
+    mut print_tz: bool,
     mut tz: libc::c_int,
     mut tzn: *const libc::c_char,
     mut style: libc::c_int,
@@ -7154,7 +7132,7 @@ pub unsafe extern "C" fn EncodeDateTime(
 ) {
     let mut day: libc::c_int = 0;
     if (*tm).tm_isdst < 0 as libc::c_int {
-        print_tz = 0 as libc::c_int as bool_0;
+        print_tz = false;
     }
     match style {
         1 | 4 => {
@@ -7191,7 +7169,7 @@ pub unsafe extern "C" fn EncodeDateTime(
             str = str.offset(1);
             *fresh64 = ':' as i32 as libc::c_char;
             str = AppendTimestampSeconds(str, tm, fsec);
-            if print_tz != 0 {
+            if print_tz {
                 str = EncodeTimezone(str, tz, style);
             }
         }
@@ -7233,7 +7211,7 @@ pub unsafe extern "C" fn EncodeDateTime(
             str = str.offset(1);
             *fresh70 = ':' as i32 as libc::c_char;
             str = AppendTimestampSeconds(str, tm, fsec);
-            if print_tz != 0 {
+            if print_tz {
                 if !tzn.is_null() {
                     pg_sprintf(
                         str,
@@ -7277,7 +7255,7 @@ pub unsafe extern "C" fn EncodeDateTime(
             str = str.offset(1);
             *fresh75 = ':' as i32 as libc::c_char;
             str = AppendTimestampSeconds(str, tm, fsec);
-            if print_tz != 0 {
+            if print_tz {
                 if !tzn.is_null() {
                     pg_sprintf(
                         str,
@@ -7350,7 +7328,7 @@ pub unsafe extern "C" fn EncodeDateTime(
                 }) as uint32,
                 4 as libc::c_int,
             );
-            if print_tz != 0 {
+            if print_tz {
                 if !tzn.is_null() {
                     pg_sprintf(
                         str,
@@ -7398,8 +7376,8 @@ unsafe extern "C" fn AddPostgresIntPart(
     mut cp: *mut libc::c_char,
     mut value: libc::c_int,
     mut units: *const libc::c_char,
-    mut is_zero: *mut bool_0,
-    mut is_before: *mut bool_0,
+    mut is_zero: &mut bool,
+    mut is_before: &mut bool,
 ) -> *mut libc::c_char {
     if value == 0 as libc::c_int {
         return cp;
@@ -7407,7 +7385,7 @@ unsafe extern "C" fn AddPostgresIntPart(
     pg_sprintf(
         cp,
         b"%s%s%d %s%s\0" as *const u8 as *const libc::c_char,
-        if *is_zero == 0 {
+        if !*is_zero {
             b" \0" as *const u8 as *const libc::c_char
         } else {
             b"\0" as *const u8 as *const libc::c_char
@@ -7425,24 +7403,24 @@ unsafe extern "C" fn AddPostgresIntPart(
             b"\0" as *const u8 as *const libc::c_char
         },
     );
-    *is_before = (value < 0 as libc::c_int) as libc::c_int as bool_0;
-    *is_zero = 0 as libc::c_int as bool_0;
+    *is_before = value < 0;
+    *is_zero = false;
     return cp.offset(strlen(cp) as isize);
 }
 unsafe extern "C" fn AddVerboseIntPart(
     mut cp: *mut libc::c_char,
     mut value: libc::c_int,
     mut units: *const libc::c_char,
-    mut is_zero: *mut bool_0,
-    mut is_before: *mut bool_0,
+    mut is_zero: &mut bool,
+    mut is_before: &mut bool,
 ) -> *mut libc::c_char {
     if value == 0 as libc::c_int {
         return cp;
     }
-    if *is_zero != 0 {
-        *is_before = (value < 0 as libc::c_int) as libc::c_int as bool_0;
+    if *is_zero {
+        *is_before = value < 0;
         value = abs(value);
-    } else if *is_before != 0 {
+    } else if *is_before {
         value = -value;
     }
     pg_sprintf(
@@ -7456,7 +7434,7 @@ unsafe extern "C" fn AddVerboseIntPart(
             b"s\0" as *const u8 as *const libc::c_char
         },
     );
-    *is_zero = 0 as libc::c_int as bool_0;
+    *is_zero = false;
     return cp.offset(strlen(cp) as isize);
 }
 #[no_mangle]
@@ -7473,39 +7451,19 @@ pub unsafe extern "C" fn EncodeInterval(
     let mut hour: libc::c_int = (*tm).tm_hour;
     let mut min: libc::c_int = (*tm).tm_min;
     let mut sec: libc::c_int = (*tm).tm_sec;
-    let mut is_before: bool_0 = 0 as libc::c_int as bool_0;
-    let mut is_zero: bool_0 = 1 as libc::c_int as bool_0;
+    let mut is_before: bool = false;
+    let mut is_zero: bool = true;
     match style {
         2 => {
-            let mut has_negative: bool_0 = (year < 0 as libc::c_int
-                || mon < 0 as libc::c_int
-                || mday < 0 as libc::c_int
-                || hour < 0 as libc::c_int
-                || min < 0 as libc::c_int
-                || sec < 0 as libc::c_int
-                || fsec < 0 as libc::c_int)
-                as libc::c_int as bool_0;
-            let mut has_positive: bool_0 = (year > 0 as libc::c_int
-                || mon > 0 as libc::c_int
-                || mday > 0 as libc::c_int
-                || hour > 0 as libc::c_int
-                || min > 0 as libc::c_int
-                || sec > 0 as libc::c_int
-                || fsec > 0 as libc::c_int)
-                as libc::c_int as bool_0;
-            let mut has_year_month: bool_0 =
-                (year != 0 as libc::c_int || mon != 0 as libc::c_int) as libc::c_int as bool_0;
-            let mut has_day_time: bool_0 = (mday != 0 as libc::c_int
-                || hour != 0 as libc::c_int
-                || min != 0 as libc::c_int
-                || sec != 0 as libc::c_int
-                || fsec != 0 as libc::c_int)
-                as libc::c_int as bool_0;
-            let mut has_day: bool_0 = (mday != 0 as libc::c_int) as libc::c_int as bool_0;
-            let mut sql_standard_value: bool_0 = (!(has_negative as libc::c_int != 0
-                && has_positive as libc::c_int != 0)
-                && !(has_year_month as libc::c_int != 0 && has_day_time as libc::c_int != 0))
-                as libc::c_int as bool_0;
+            let mut has_negative =
+                year < 0 || mon < 0 || mday < 0 || hour < 0 || min < 0 || sec < 0 || fsec < 0;
+            let mut has_positive =
+                year > 0 || mon > 0 || mday > 0 || hour > 0 || min > 0 || sec > 0 || fsec > 0;
+            let mut has_year_month = year != 0 || mon != 0;
+            let mut has_day_time = mday != 0 || hour != 0 || min != 0 || sec != 0 || fsec != 0;
+            let mut has_day = mday != 0;
+            let mut sql_standard_value =
+                !(has_negative && has_positive) && !(has_year_month && has_day_time);
             if has_negative as libc::c_int != 0 && sql_standard_value as libc::c_int != 0 {
                 let fresh84 = cp;
                 cp = cp.offset(1);
@@ -7518,9 +7476,9 @@ pub unsafe extern "C" fn EncodeInterval(
                 sec = -sec;
                 fsec = -fsec;
             }
-            if has_negative == 0 && has_positive == 0 {
+            if !has_negative && !has_positive {
                 pg_sprintf(cp, b"0\0" as *const u8 as *const libc::c_char);
-            } else if sql_standard_value == 0 {
+            } else if !sql_standard_value {
                 let mut year_sign: libc::c_char =
                     (if year < 0 as libc::c_int || mon < 0 as libc::c_int {
                         '-' as i32
@@ -7554,16 +7512,16 @@ pub unsafe extern "C" fn EncodeInterval(
                     abs(min),
                 );
                 cp = cp.offset(strlen(cp) as isize);
-                cp = AppendSeconds(cp, sec, fsec, 6 as libc::c_int, 1 as libc::c_int as bool_0);
+                cp = AppendSeconds(cp, sec, fsec, 6 as libc::c_int, true);
                 *cp = '\0' as i32 as libc::c_char;
-            } else if has_year_month != 0 {
+            } else if has_year_month {
                 pg_sprintf(
                     cp,
                     b"%d-%d\0" as *const u8 as *const libc::c_char,
                     year,
                     mon,
                 );
-            } else if has_day != 0 {
+            } else if has_day {
                 pg_sprintf(
                     cp,
                     b"%d %d:%02d:\0" as *const u8 as *const libc::c_char,
@@ -7572,7 +7530,7 @@ pub unsafe extern "C" fn EncodeInterval(
                     min,
                 );
                 cp = cp.offset(strlen(cp) as isize);
-                cp = AppendSeconds(cp, sec, fsec, 6 as libc::c_int, 1 as libc::c_int as bool_0);
+                cp = AppendSeconds(cp, sec, fsec, 6 as libc::c_int, true);
                 *cp = '\0' as i32 as libc::c_char;
             } else {
                 pg_sprintf(
@@ -7582,7 +7540,7 @@ pub unsafe extern "C" fn EncodeInterval(
                     min,
                 );
                 cp = cp.offset(strlen(cp) as isize);
-                cp = AppendSeconds(cp, sec, fsec, 6 as libc::c_int, 1 as libc::c_int as bool_0);
+                cp = AppendSeconds(cp, sec, fsec, 6 as libc::c_int, true);
                 *cp = '\0' as i32 as libc::c_char;
             }
         }
@@ -7620,7 +7578,7 @@ pub unsafe extern "C" fn EncodeInterval(
                         cp = cp.offset(1);
                         *fresh87 = '-' as i32 as libc::c_char;
                     }
-                    cp = AppendSeconds(cp, sec, fsec, 6 as libc::c_int, 0 as libc::c_int as bool_0);
+                    cp = AppendSeconds(cp, sec, fsec, 6 as libc::c_int, false);
                     let fresh88 = cp;
                     cp = cp.offset(1);
                     *fresh88 = 'S' as i32 as libc::c_char;
@@ -7658,11 +7616,7 @@ pub unsafe extern "C" fn EncodeInterval(
                 || sec != 0 as libc::c_int
                 || fsec != 0 as libc::c_int
             {
-                let mut minus: bool_0 = (hour < 0 as libc::c_int
-                    || min < 0 as libc::c_int
-                    || sec < 0 as libc::c_int
-                    || fsec < 0 as libc::c_int)
-                    as libc::c_int as bool_0;
+                let mut minus: bool = hour < 0 || min < 0 || sec < 0 || fsec < 0;
                 pg_sprintf(
                     cp,
                     b"%s%s%02d:%02d:\0" as *const u8 as *const libc::c_char,
@@ -7682,7 +7636,7 @@ pub unsafe extern "C" fn EncodeInterval(
                     abs(min),
                 );
                 cp = cp.offset(strlen(cp) as isize);
-                cp = AppendSeconds(cp, sec, fsec, 6 as libc::c_int, 1 as libc::c_int as bool_0);
+                cp = AppendSeconds(cp, sec, fsec, 6 as libc::c_int, true);
                 *cp = '\0' as i32 as libc::c_char;
             }
         }
@@ -7729,19 +7683,19 @@ pub unsafe extern "C" fn EncodeInterval(
                 cp = cp.offset(1);
                 *fresh90 = ' ' as i32 as libc::c_char;
                 if sec < 0 as libc::c_int || sec == 0 as libc::c_int && fsec < 0 as libc::c_int {
-                    if is_zero != 0 {
-                        is_before = 1 as libc::c_int as bool_0;
-                    } else if is_before == 0 {
+                    if is_zero {
+                        is_before = true;
+                    } else if !is_before {
                         let fresh91 = cp;
                         cp = cp.offset(1);
                         *fresh91 = '-' as i32 as libc::c_char;
                     }
-                } else if is_before != 0 {
+                } else if is_before {
                     let fresh92 = cp;
                     cp = cp.offset(1);
                     *fresh92 = '-' as i32 as libc::c_char;
                 }
-                cp = AppendSeconds(cp, sec, fsec, 6 as libc::c_int, 0 as libc::c_int as bool_0);
+                cp = AppendSeconds(cp, sec, fsec, 6 as libc::c_int, false);
                 pg_sprintf(
                     cp,
                     b" sec%s\0" as *const u8 as *const libc::c_char,
@@ -7751,12 +7705,12 @@ pub unsafe extern "C" fn EncodeInterval(
                         b"\0" as *const u8 as *const libc::c_char
                     },
                 );
-                is_zero = 0 as libc::c_int as bool_0;
+                is_zero = false;
             }
-            if is_zero != 0 {
+            if is_zero {
                 strcat(cp, b" 0\0" as *const u8 as *const libc::c_char);
             }
-            if is_before != 0 {
+            if is_before {
                 strcat(cp, b" ago\0" as *const u8 as *const libc::c_char);
             }
         }
@@ -7766,8 +7720,8 @@ unsafe extern "C" fn CheckDateTokenTable(
     mut tablename: *const libc::c_char,
     mut base: *const datetkn,
     mut nel: libc::c_int,
-) -> bool_0 {
-    let mut ok: bool_0 = 1 as libc::c_int as bool_0;
+) -> bool {
+    let mut ok = true;
     let mut i: libc::c_int = 0;
     i = 0 as libc::c_int;
     while i < nel {
@@ -7799,7 +7753,7 @@ unsafe extern "C" fn CheckDateTokenTable(
             if 0 != 0 && 15 as libc::c_int >= 21 as libc::c_int {
                 unreachable!();
             }
-            ok = 0 as libc::c_int as bool_0;
+            ok = false;
             break;
         } else {
             if i > 0 as libc::c_int
@@ -7835,7 +7789,7 @@ unsafe extern "C" fn CheckDateTokenTable(
                 if 0 != 0 && 15 as libc::c_int >= 21 as libc::c_int {
                     unreachable!();
                 }
-                ok = 0 as libc::c_int as bool_0;
+                ok = false;
             }
             i += 1;
         }
@@ -7843,20 +7797,20 @@ unsafe extern "C" fn CheckDateTokenTable(
     return ok;
 }
 #[no_mangle]
-pub unsafe extern "C" fn CheckDateTokenTables() -> bool_0 {
-    let mut ok: bool_0 = 1 as libc::c_int as bool_0;
-    ok = (ok as libc::c_int
-        & CheckDateTokenTable(
+pub unsafe extern "C" fn CheckDateTokenTables() -> bool {
+    let mut ok = true;
+    ok = ok
+        && CheckDateTokenTable(
             b"datetktbl\0" as *const u8 as *const libc::c_char,
             datetktbl.as_ptr(),
             szdatetktbl,
-        ) as libc::c_int) as bool_0;
-    ok = (ok as libc::c_int
-        & CheckDateTokenTable(
+        );
+    ok = ok
+        && CheckDateTokenTable(
             b"deltatktbl\0" as *const u8 as *const libc::c_char,
             deltatktbl.as_ptr(),
             szdeltatktbl,
-        ) as libc::c_int) as bool_0;
+        );
     return ok;
 }
 #[no_mangle]
@@ -7866,7 +7820,7 @@ pub unsafe extern "C" fn TemporalSimplify(mut max_precis: int32, mut node: *mut 
     let mut typmod: *mut Node = 0 as *mut Node;
     typmod = (*list_nth_cell((*expr).args, 1 as libc::c_int)).ptr_value as *mut Node;
     if (*(typmod as *const Node)).type_0 as libc::c_uint == T_Const as libc::c_int as libc::c_uint
-        && (*(typmod as *mut Const)).constisnull == 0
+        && !(*(typmod as *mut Const)).constisnull
     {
         let mut source: *mut Node =
             (*list_nth_cell((*expr).args, 0 as libc::c_int)).ptr_value as *mut Node;
@@ -8021,11 +7975,11 @@ pub unsafe extern "C" fn pg_timezone_abbrevs(mut fcinfo: FunctionCallInfo) -> Da
     let mut result: Datum = 0;
     let mut tuple: HeapTuple = 0 as *mut HeapTupleData;
     let mut values: [Datum; 3] = [0; 3];
-    let mut nulls: [bool_0; 3] = [0; 3];
+    let mut nulls: [bool; 3] = [false; 3];
     let mut tp: *const datetkn = 0 as *const datetkn;
     let mut buffer: [libc::c_char; 11] = [0; 11];
     let mut gmtoffset: libc::c_int = 0;
-    let mut is_dst: bool_0 = 0;
+    let mut is_dst = false;
     let mut p: *mut libc::c_uchar = 0 as *mut libc::c_uchar;
     let mut tm: pg_tm = pg_tm {
         tm_sec: 0,
@@ -8084,7 +8038,7 @@ pub unsafe extern "C" fn pg_timezone_abbrevs(mut fcinfo: FunctionCallInfo) -> Da
         end_MultiFuncCall(fcinfo, funcctx);
         rsi = (*fcinfo).resultinfo as *mut ReturnSetInfo;
         (*rsi).isDone = ExprEndResult;
-        (*fcinfo).isnull = 1 as libc::c_int as bool_0;
+        (*fcinfo).isnull = true;
         return 0 as libc::c_int as Datum;
     }
     tp = ((*zoneabbrevtbl).abbrevs)
@@ -8093,21 +8047,21 @@ pub unsafe extern "C" fn pg_timezone_abbrevs(mut fcinfo: FunctionCallInfo) -> Da
     match (*tp).type_0 as libc::c_int {
         5 => {
             gmtoffset = (*tp).value;
-            is_dst = 0 as libc::c_int as bool_0;
+            is_dst = false;
         }
         6 => {
             gmtoffset = (*tp).value;
-            is_dst = 1 as libc::c_int as bool_0;
+            is_dst = true;
         }
         7 => {
             let mut tzp: *mut pg_tz = 0 as *mut pg_tz;
             let mut now: TimestampTz = 0;
-            let mut isdst: libc::c_int = 0;
+            let mut isdst = false;
             tzp = FetchDynamicTimeZone(zoneabbrevtbl, tp);
             now = GetCurrentTransactionStartTimestamp();
             gmtoffset =
                 -DetermineTimeZoneAbbrevOffsetTS(now, ((*tp).token).as_ptr(), tzp, &mut isdst);
-            is_dst = isdst as bool_0;
+            is_dst = isdst;
         }
         _ => {
             let mut __errno_location_0: libc::c_int = 0;
@@ -8135,12 +8089,12 @@ pub unsafe extern "C" fn pg_timezone_abbrevs(mut fcinfo: FunctionCallInfo) -> Da
                 unreachable!();
             }
             gmtoffset = 0 as libc::c_int;
-            is_dst = 0 as libc::c_int as bool_0;
+            is_dst = false;
         }
     }
     let mut _vstart: *mut libc::c_void = nulls.as_mut_ptr() as *mut libc::c_void;
     let mut _val: libc::c_int = 0 as libc::c_int;
-    let mut _len: Size = ::core::mem::size_of::<[bool_0; 3]>() as libc::c_ulong;
+    let mut _len: Size = ::core::mem::size_of::<[bool; 3]>() as libc::c_ulong;
     if _vstart as uintptr_t
         & (::core::mem::size_of::<libc::c_long>() as libc::c_ulong)
             .wrapping_sub(1 as libc::c_int as libc::c_ulong)
@@ -8214,7 +8168,7 @@ pub unsafe extern "C" fn pg_timezone_abbrevs(mut fcinfo: FunctionCallInfo) -> Da
     tuple = heap_form_tuple(
         (*funcctx).tuple_desc,
         values.as_mut_ptr(),
-        nulls.as_mut_ptr(),
+        nulls.as_mut_slice(),
     );
     result = HeapTupleHeaderGetDatum((*tuple).t_data);
     let mut rsi_0: *mut ReturnSetInfo = 0 as *mut ReturnSetInfo;
@@ -8226,13 +8180,13 @@ pub unsafe extern "C" fn pg_timezone_abbrevs(mut fcinfo: FunctionCallInfo) -> Da
 #[no_mangle]
 pub unsafe extern "C" fn pg_timezone_names(mut fcinfo: FunctionCallInfo) -> Datum {
     let mut rsinfo: *mut ReturnSetInfo = (*fcinfo).resultinfo as *mut ReturnSetInfo;
-    let mut randomAccess: bool_0 = 0;
+    let mut randomAccess = false;
     let mut tupdesc: TupleDesc = 0 as *mut TupleDescData;
     let mut tupstore: *mut Tuplestorestate = 0 as *mut Tuplestorestate;
     let mut tzenum: *mut pg_tzenum = 0 as *mut pg_tzenum;
     let mut tz: *mut pg_tz = 0 as *mut pg_tz;
     let mut values: [Datum; 4] = [0; 4];
-    let mut nulls: [bool_0; 4] = [0; 4];
+    let mut nulls: [bool; 4] = [false; 4];
     let mut tzoff: libc::c_int = 0;
     let mut tm: pg_tm = pg_tm {
         tm_sec: 0,
@@ -8355,9 +8309,8 @@ pub unsafe extern "C" fn pg_timezone_names(mut fcinfo: FunctionCallInfo) -> Datu
             unreachable!();
         }
     }
-    randomAccess = ((*rsinfo).allowedModes & SFRM_Materialize_Random as libc::c_int
-        != 0 as libc::c_int) as libc::c_int as bool_0;
-    tupstore = tuplestore_begin_heap(randomAccess, 0 as libc::c_int as bool_0, work_mem);
+    randomAccess = (*rsinfo).allowedModes & SFRM_Materialize_Random as libc::c_int != 0;
+    tupstore = tuplestore_begin_heap(randomAccess, false, work_mem);
     (*rsinfo).returnMode = SFRM_Materialize;
     (*rsinfo).setResult = tupstore;
     (*rsinfo).setDesc = tupdesc;
@@ -8384,7 +8337,7 @@ pub unsafe extern "C" fn pg_timezone_names(mut fcinfo: FunctionCallInfo) -> Datu
         }
         let mut _vstart: *mut libc::c_void = nulls.as_mut_ptr() as *mut libc::c_void;
         let mut _val: libc::c_int = 0 as libc::c_int;
-        let mut _len: Size = ::core::mem::size_of::<[bool_0; 4]>() as libc::c_ulong;
+        let mut _len: Size = ::core::mem::size_of::<[bool; 4]>() as libc::c_ulong;
         if _vstart as uintptr_t
             & (::core::mem::size_of::<libc::c_long>() as libc::c_ulong)
                 .wrapping_sub(1 as libc::c_int as libc::c_ulong)
@@ -8449,7 +8402,7 @@ pub unsafe extern "C" fn pg_timezone_names(mut fcinfo: FunctionCallInfo) -> Datu
         } else {
             0 as libc::c_int
         }) as Datum;
-        tuplestore_putvalues(tupstore, tupdesc, values.as_mut_ptr(), nulls.as_mut_ptr());
+        tuplestore_putvalues(tupstore, tupdesc, values.as_mut_ptr(), nulls.as_mut_slice());
     }
     pg_tzenumerate_end(tzenum);
     return 0 as libc::c_int as Datum;
