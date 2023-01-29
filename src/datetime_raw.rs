@@ -337,7 +337,6 @@ pub type fsec_t = int32;
 pub type DateADT = int32;
 type pg_time_t = int64;
 #[derive(Debug, Copy, Clone)]
-#[repr(C)]
 pub struct pg_tm {
     pub tm_sec: libc::c_int,
     pub tm_min: libc::c_int,
@@ -353,33 +352,14 @@ pub struct pg_tm {
 }
 
 #[derive(Copy, Clone)]
-#[repr(C)]
-struct datetkn {
-    token: [libc::c_char; 11],
-    type_0: FieldType,
-    value: int32,
-}
-#[derive(Copy, Clone)]
-#[repr(C)]
 struct TimeZoneAbbrevTable {
     abbrevs: &'static [DateToken],
-    dyn_abbrevs: &'static [DateToken],
+    _dyn_abbrevs: &'static [DateToken],
 }
 #[derive(Copy, Clone)]
-#[repr(C)]
 struct DynamicZoneAbbrev {
-    tz: *mut pg_tz,
-    zone: [libc::c_char; 0],
-}
-#[derive(Copy, Clone)]
-#[repr(C)]
-struct tzEntry {
-    abbrev: *mut libc::c_char,
-    zone: *mut libc::c_char,
-    offset: libc::c_int,
-    is_dst: bool,
-    lineno: libc::c_int,
-    filename: *const libc::c_char,
+    _tz: *mut pg_tz,
+    _zone: [libc::c_char; 0],
 }
 
 static mut day_tab: [[libc::c_int; 13]; 2] = [
