@@ -26,7 +26,7 @@ fn dt2time(
     hour: *mut libc::c_int,
     min: *mut libc::c_int,
     sec: *mut libc::c_int,
-    fsec: *mut fsec_t,
+    fsec: &mut fsec_t,
 ) {
     unsafe {
         let mut time: TimeOffset;
@@ -70,8 +70,8 @@ fn GetCurrentTransactionStartTimestamp() -> TimestampTz {
     11223344
 }
 
-fn pg_localtime(_timep: *const pg_time_t, _tz: *const pg_tz) -> *mut pg_tm {
-    Box::into_raw(Box::new(pg_tm {
+fn pg_localtime(_timep: *const pg_time_t, _tz: *const pg_tz) -> Box<pg_tm> {
+    Box::new(pg_tm {
         tm_sec: 0,
         tm_min: 0,
         tm_hour: 0,
@@ -83,7 +83,7 @@ fn pg_localtime(_timep: *const pg_time_t, _tz: *const pg_tz) -> *mut pg_tm {
         tm_isdst: Some(false),
         tm_gmtoff: 0,
         tm_zone: std::ptr::null(),
-    }))
+    })
 }
 
 fn pg_interpret_timezone_abbrev(
@@ -200,8 +200,8 @@ fn TMODULO(t: &mut i64, q: &mut i64, u: i64) {
 fn timestamp2tm(
     mut dt: Timestamp,
     tzp: *mut libc::c_int,
-    tm: *mut pg_tm,
-    fsec: *mut fsec_t,
+    tm: &mut pg_tm,
+    fsec: &mut fsec_t,
     tzn: *mut *const libc::c_char,
     mut attimezone: *mut pg_tz,
 ) -> libc::c_int {
@@ -876,12 +876,12 @@ unsafe fn j2date(
         .wrapping_add(1 as libc::c_int as libc::c_uint) as libc::c_int;
 }
 
-unsafe fn GetCurrentDateTime(tm: *mut pg_tm) {
+unsafe fn GetCurrentDateTime(tm: &mut pg_tm) {
     let mut fsec: fsec_t = 0;
     GetCurrentTimeUsec(tm, &mut fsec, 0 as *mut libc::c_int);
 }
 
-unsafe fn GetCurrentTimeUsec(tm: *mut pg_tm, fsec: *mut fsec_t, tzp: *mut libc::c_int) {
+unsafe fn GetCurrentTimeUsec(tm: &mut pg_tm, fsec: &mut fsec_t, tzp: *mut libc::c_int) {
     let cur_ts: TimestampTz = GetCurrentTransactionStartTimestamp();
     static mut cache_ts: TimestampTz = 0 as libc::c_int as TimestampTz;
     static mut cache_timezone: *mut pg_tz = 0 as *const pg_tz as *mut pg_tz;
@@ -949,7 +949,7 @@ unsafe fn GetCurrentTimeUsec(tm: *mut pg_tm, fsec: *mut fsec_t, tzp: *mut libc::
         *tzp = cache_tz;
     }
 }
-unsafe fn ParseFractionalSecond(mut cp: *mut libc::c_char, fsec: *mut fsec_t) -> libc::c_int {
+unsafe fn ParseFractionalSecond(mut cp: *mut libc::c_char, fsec: &mut fsec_t) -> libc::c_int {
     *__errno_location() = 0 as libc::c_int;
     let frac = strtod(cp, &mut cp);
     if *cp as libc::c_int != '\0' as i32 || *__errno_location() != 0 as libc::c_int {
@@ -1154,8 +1154,8 @@ pub unsafe fn DecodeDateTime(
     ftype: *mut libc::c_int,
     nf: libc::c_int,
     dtype: &mut TokenFieldType,
-    mut tm: *mut pg_tm,
-    fsec: *mut fsec_t,
+    mut tm: &mut pg_tm,
+    fsec: &mut fsec_t,
     tzp: *mut libc::c_int,
 ) -> libc::c_int {
     let mut fmask = FieldMask::none();
@@ -1806,12 +1806,12 @@ pub unsafe fn DecodeDateTime(
     return 0 as libc::c_int;
 }
 
-unsafe fn DetermineTimeZoneOffset(tm: *mut pg_tm, tzp: *mut pg_tz) -> libc::c_int {
+unsafe fn DetermineTimeZoneOffset(tm: &mut pg_tm, tzp: *mut pg_tz) -> libc::c_int {
     let mut t: pg_time_t = 0;
     return DetermineTimeZoneOffsetInternal(tm, tzp, &mut t);
 }
 unsafe fn DetermineTimeZoneOffsetInternal(
-    mut tm: *mut pg_tm,
+    mut tm: &mut pg_tm,
     tzp: *mut pg_tz,
     tp: *mut pg_time_t,
 ) -> libc::c_int {
@@ -1900,7 +1900,7 @@ unsafe fn DetermineTimeZoneOffsetInternal(
 }
 
 unsafe fn DetermineTimeZoneAbbrevOffset(
-    mut tm: *mut pg_tm,
+    mut tm: &mut pg_tm,
     abbr: *const libc::c_char,
     tzp: *mut pg_tz,
 ) -> libc::c_int {
@@ -1946,7 +1946,7 @@ unsafe fn DecodeDate(
     mut fmask: FieldMask,
     tmask: &mut FieldMask,
     is2digits: &mut bool,
-    mut tm: *mut pg_tm,
+    mut tm: &mut pg_tm,
 ) -> libc::c_int {
     let mut fsec: fsec_t = 0;
     let mut nf: libc::c_int = 0 as libc::c_int;
@@ -2068,7 +2068,7 @@ unsafe fn ValidateDate(
     isjulian: bool,
     is2digits: bool,
     bc: bool,
-    mut tm: *mut pg_tm,
+    mut tm: &mut pg_tm,
 ) -> libc::c_int {
     if fmask.contains(FieldType::Year) {
         if !isjulian {
@@ -2136,8 +2136,8 @@ unsafe fn DecodeTime(
     _fmask: FieldMask,
     range: libc::c_int,
     tmask: &mut FieldMask,
-    mut tm: *mut pg_tm,
-    fsec: *mut fsec_t,
+    mut tm: &mut pg_tm,
+    fsec: &mut fsec_t,
 ) -> libc::c_int {
     let mut cp: *mut libc::c_char = 0 as *mut libc::c_char;
     *tmask = *FIELD_MASK_TIME;
@@ -2217,8 +2217,8 @@ unsafe fn DecodeNumber(
     haveTextMonth: bool,
     fmask: FieldMask,
     tmask: &mut FieldMask,
-    mut tm: *mut pg_tm,
-    fsec: *mut fsec_t,
+    mut tm: &mut pg_tm,
+    fsec: &mut fsec_t,
     is2digits: &mut bool,
 ) -> libc::c_int {
     let mut cp: *mut libc::c_char = 0 as *mut libc::c_char;
@@ -2347,8 +2347,8 @@ unsafe fn DecodeNumberField(
     str: *mut libc::c_char,
     fmask: FieldMask,
     tmask: &mut FieldMask,
-    mut tm: *mut pg_tm,
-    fsec: *mut fsec_t,
+    mut tm: &mut pg_tm,
+    fsec: &mut fsec_t,
     is2digits: &mut bool,
 ) -> libc::c_int {
     let cp = strchr(str, '.' as i32);

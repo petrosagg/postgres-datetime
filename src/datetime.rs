@@ -222,8 +222,8 @@ pub fn decode(
             ftype.as_mut_ptr(),
             nf,
             &mut dtype,
-            &mut tt as *mut _,
-            &mut fsec as *mut _,
+            &mut tt,
+            &mut fsec,
             &mut tzp as *mut _,
         )
     };
