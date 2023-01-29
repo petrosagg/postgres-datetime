@@ -66,13 +66,6 @@ fn errmsg(fmt: *const libc::c_char, _arg: *mut libc::c_void) -> libc::c_int {
     }
     0
 }
-fn errdetail(fmt: *const libc::c_char, _arg: *mut libc::c_void) -> libc::c_int {
-    unsafe {
-        let s = std::ffi::CStr::from_ptr(fmt);
-        println!("{}", s.to_str().unwrap());
-    }
-    0
-}
 fn GetCurrentTransactionStartTimestamp() -> TimestampTz {
     11223344
 }
@@ -316,7 +309,6 @@ extern "C" {
     type pg_tz;
     fn atoi(__nptr: *const libc::c_char) -> libc::c_int;
     fn strtod(_: *const libc::c_char, _: *mut *mut libc::c_char) -> libc::c_double;
-    fn strncmp(_: *const libc::c_char, _: *const libc::c_char, _: libc::c_ulong) -> libc::c_int;
     fn strchr(_: *const libc::c_char, _: libc::c_int) -> *mut libc::c_char;
     fn strlen(_: *const libc::c_char) -> libc::c_ulong;
     fn __errno_location() -> *mut libc::c_int;
@@ -324,10 +316,8 @@ extern "C" {
     fn rint(_: libc::c_double) -> libc::c_double;
 }
 
-type size_t = libc::c_ulong;
 type int32 = libc::c_int;
 type int64 = libc::c_long;
-type Size = size_t;
 type C2RustUnnamed = libc::c_uint;
 const _ISalnum: C2RustUnnamed = 8;
 const _ISpunct: C2RustUnnamed = 4;
@@ -373,9 +363,8 @@ struct datetkn {
 #[derive(Copy, Clone)]
 #[repr(C)]
 struct TimeZoneAbbrevTable {
-    tblsize: Size,
-    numabbrevs: libc::c_int,
-    abbrevs: [datetkn; 0],
+    abbrevs: &'static [DateToken],
+    dyn_abbrevs: &'static [DateToken],
 }
 #[derive(Copy, Clone)]
 #[repr(C)]
@@ -458,7 +447,7 @@ struct DateToken {
 /// O(ln(N)) search algorithm to be used.
 ///
 /// The static table contains no TZ, DTZ, or DYNTZ entries; rather those
-/// are loaded from configuration files and stored in zoneabbrevtbl, whose
+/// are loaded from configuration files and stored in ZONE_ABBREV_TABLE, whose
 /// abbrevs[] field has the same format as the static DATE_TOKEN_TABLE.
 static DATE_TOKEN_TABLE: &'static [DateToken] = &[
     // "-infinity" reserved for "early time"
@@ -841,35 +830,7 @@ static DATE_TOKEN_TABLE: &'static [DateToken] = &[
     },
 ];
 
-static mut zoneabbrevtbl: *mut TimeZoneAbbrevTable =
-    0 as *const TimeZoneAbbrevTable as *mut TimeZoneAbbrevTable;
-static mut abbrevcache: [*const datetkn; 25] = [
-    0 as *const datetkn,
-    0 as *const datetkn,
-    0 as *const datetkn,
-    0 as *const datetkn,
-    0 as *const datetkn,
-    0 as *const datetkn,
-    0 as *const datetkn,
-    0 as *const datetkn,
-    0 as *const datetkn,
-    0 as *const datetkn,
-    0 as *const datetkn,
-    0 as *const datetkn,
-    0 as *const datetkn,
-    0 as *const datetkn,
-    0 as *const datetkn,
-    0 as *const datetkn,
-    0 as *const datetkn,
-    0 as *const datetkn,
-    0 as *const datetkn,
-    0 as *const datetkn,
-    0 as *const datetkn,
-    0 as *const datetkn,
-    0 as *const datetkn,
-    0 as *const datetkn,
-    0 as *const datetkn,
-];
+static ZONE_ABBREV_TABLE: Option<TimeZoneAbbrevTable> = None;
 
 unsafe fn date2j(mut y: libc::c_int, mut m: libc::c_int, d: libc::c_int) -> libc::c_int {
     if m > 2 as libc::c_int {
@@ -1634,9 +1595,9 @@ pub unsafe fn DecodeDateTime(
             }
             1 | 6 => {
                 let mut type_0 =
-                    DecodeTimezoneAbbrev(i, *field.offset(i as isize), &mut val, &mut valtz);
+                    DecodeTimezoneAbbrev(*field.offset(i as isize), &mut val, &mut valtz);
                 if type_0 == FieldType::UnknownField {
-                    type_0 = DecodeSpecial(i, *field.offset(i as isize), &mut val);
+                    type_0 = DecodeSpecial(*field.offset(i as isize), &mut val);
                 }
                 if type_0 == FieldType::IgnoreDtf {
                     current_block_236 = 12209867499936983673;
@@ -2065,7 +2026,7 @@ unsafe fn DecodeDate(
             & _ISalpha as libc::c_int as libc::c_ushort as libc::c_int
             != 0
         {
-            let type_0 = DecodeSpecial(i, field[i as usize], &mut val);
+            let type_0 = DecodeSpecial(field[i as usize], &mut val);
             if type_0 != FieldType::IgnoreDtf {
                 dmask = FieldMask::from(type_0);
                 match type_0 {
@@ -2525,54 +2486,42 @@ unsafe fn DecodeTimezone(str: *mut libc::c_char, tzp: *mut libc::c_int) -> libc:
 }
 
 unsafe fn DecodeTimezoneAbbrev(
-    field: libc::c_int,
     lowtoken: *mut libc::c_char,
     offset: *mut libc::c_int,
     tz: *mut *mut pg_tz,
 ) -> FieldType {
-    let mut tp = abbrevcache[field as usize];
-    if tp.is_null()
-        || strncmp(
-            lowtoken,
-            ((*tp).token).as_ptr(),
-            10 as libc::c_int as libc::c_ulong,
-        ) != 0 as libc::c_int
-    {
-        if !zoneabbrevtbl.is_null() {
-            tp = datebsearch(
-                lowtoken,
-                ((*zoneabbrevtbl).abbrevs).as_mut_ptr(),
-                (*zoneabbrevtbl).numabbrevs,
-            );
-        } else {
-            tp = 0 as *const datetkn;
-        }
-    }
-    if tp.is_null() {
-        *offset = 0 as libc::c_int;
-        *tz = 0 as *mut pg_tz;
-        FieldType::UnknownField
-    } else {
-        abbrevcache[field as usize] = tp;
-        match (*tp).type_0 {
-            FieldType::DynTz => {
+    let lowtoken = std::ffi::CStr::from_ptr(lowtoken).to_str().unwrap();
+    match ZONE_ABBREV_TABLE {
+        Some(table) => match table.abbrevs.binary_search_by(|tk| tk.token.cmp(lowtoken)) {
+            Ok(idx) => {
+                let token = &table.abbrevs[idx];
+                match token.typ {
+                    FieldType::DynTz => {
+                        *offset = 0 as libc::c_int;
+                        *tz = FetchDynamicTimeZone(&table, token);
+                    }
+                    _ => {
+                        *offset = token.value;
+                        *tz = 0 as *mut pg_tz;
+                    }
+                };
+                token.typ
+            }
+            Err(_) => {
                 *offset = 0 as libc::c_int;
-                *tz = FetchDynamicTimeZone(zoneabbrevtbl, tp);
-            }
-            _ => {
-                *offset = (*tp).value;
                 *tz = 0 as *mut pg_tz;
+                FieldType::UnknownField
             }
+        },
+        None => {
+            *offset = 0 as libc::c_int;
+            *tz = 0 as *mut pg_tz;
+            FieldType::UnknownField
         }
-        (*tp).type_0
     }
 }
 
-unsafe fn DecodeSpecial(
-    _field_for_cache: libc::c_int,
-    lowtoken: *mut libc::c_char,
-    val: *mut libc::c_int,
-) -> FieldType {
+unsafe fn DecodeSpecial(lowtoken: *mut libc::c_char, val: *mut libc::c_int) -> FieldType {
     let lowtoken = std::ffi::CStr::from_ptr(lowtoken).to_str().unwrap();
     match DATE_TOKEN_TABLE.binary_search_by(|tk| tk.token.cmp(lowtoken)) {
         Ok(idx) => {
@@ -2587,84 +2536,54 @@ unsafe fn DecodeSpecial(
     }
 }
 
-unsafe fn datebsearch(
-    key: *const libc::c_char,
-    mut base: *const datetkn,
-    nel: libc::c_int,
-) -> *const datetkn {
-    if nel > 0 as libc::c_int {
-        let mut last: *const datetkn = base
-            .offset(nel as isize)
-            .offset(-(1 as libc::c_int as isize));
-        let mut position: *const datetkn;
-        let mut result;
-        while last >= base {
-            position =
-                base.offset((last.offset_from(base) as libc::c_long >> 1 as libc::c_int) as isize);
-            result = *key.offset(0 as libc::c_int as isize) as libc::c_int
-                - (*position).token[0 as libc::c_int as usize] as libc::c_int;
-            if result == 0 as libc::c_int {
-                result = strncmp(
-                    key,
-                    ((*position).token).as_ptr(),
-                    10 as libc::c_int as libc::c_ulong,
-                );
-                if result == 0 as libc::c_int {
-                    return position;
-                }
-            }
-            if result < 0 as libc::c_int {
-                last = position.offset(-(1 as libc::c_int as isize));
-            } else {
-                base = position.offset(1 as libc::c_int as isize);
-            }
-        }
-    }
-    return 0 as *const datetkn;
-}
-
-unsafe fn FetchDynamicTimeZone(tbl: *mut TimeZoneAbbrevTable, tp: *const datetkn) -> *mut pg_tz {
-    let dtza = (tbl as *mut libc::c_char).offset((*tp).value as isize) as *mut DynamicZoneAbbrev;
-    if ((*dtza).tz).is_null() {
-        (*dtza).tz = pg_tzset(((*dtza).zone).as_mut_ptr());
-        if ((*dtza).tz).is_null() {
-            let mut __errno_location_0: libc::c_int = 0;
-            if if 0 != 0 && 21 as libc::c_int >= 21 as libc::c_int {
-                errstart_cold(21 as libc::c_int, 0 as *const libc::c_char) as libc::c_int
-            } else {
-                errstart(21 as libc::c_int, 0 as *const libc::c_char) as libc::c_int
-            } != 0
-            {
-                errcode(
-                    ('F' as i32 - '0' as i32 & 0x3f as libc::c_int)
-                        + (('0' as i32 - '0' as i32 & 0x3f as libc::c_int) << 6 as libc::c_int)
-                        + (('0' as i32 - '0' as i32 & 0x3f as libc::c_int) << 12 as libc::c_int)
-                        + (('0' as i32 - '0' as i32 & 0x3f as libc::c_int) << 18 as libc::c_int)
-                        + (('0' as i32 - '0' as i32 & 0x3f as libc::c_int) << 24 as libc::c_int),
-                );
-                errmsg(
-                    b"time zone \"%s\" not recognized\0" as *const u8 as *const libc::c_char,
-                    ((*dtza).zone).as_mut_ptr() as *mut _,
-                );
-                errdetail(
-                    b"This time zone name appears in the configuration file for time zone abbreviation \"%s\".\0"
-                        as *const u8 as *const libc::c_char,
-                    ((*tp).token).as_ptr() as *mut _,
-                );
-                errfinish(
-                    b"/home/petrosagg/projects/postgres-datetime/src/datetime.c\0" as *const u8
-                        as *const libc::c_char,
-                    4647 as libc::c_int,
-                    (*::core::mem::transmute::<&[u8; 21], &[libc::c_char; 21]>(
-                        b"FetchDynamicTimeZone\0",
-                    ))
-                    .as_ptr(),
-                );
-            }
-            if 0 != 0 && 21 as libc::c_int >= 21 as libc::c_int {
-                unreachable!();
-            }
-        }
-    }
-    return (*dtza).tz;
+unsafe fn FetchDynamicTimeZone(_tbl: &TimeZoneAbbrevTable, _tp: &DateToken) -> *mut pg_tz {
+    // This is unimplemented because the C code was doing pointer weird pointer arithmetic to
+    // relate the value of the token to an offset of a dynamic timezone definition in the zone
+    // table.
+    //
+    // Revisit once the rest of the structure has been cleaned up
+    unimplemented!()
+    // let dtza = (tbl as *mut libc::c_char).offset((*tp).value as isize) as *mut DynamicZoneAbbrev;
+    // if ((*dtza).tz).is_null() {
+    //     (*dtza).tz = pg_tzset(((*dtza).zone).as_mut_ptr());
+    //     if ((*dtza).tz).is_null() {
+    //         let mut __errno_location_0: libc::c_int = 0;
+    //         if if 0 != 0 && 21 as libc::c_int >= 21 as libc::c_int {
+    //             errstart_cold(21 as libc::c_int, 0 as *const libc::c_char) as libc::c_int
+    //         } else {
+    //             errstart(21 as libc::c_int, 0 as *const libc::c_char) as libc::c_int
+    //         } != 0
+    //         {
+    //             errcode(
+    //                 ('F' as i32 - '0' as i32 & 0x3f as libc::c_int)
+    //                     + (('0' as i32 - '0' as i32 & 0x3f as libc::c_int) << 6 as libc::c_int)
+    //                     + (('0' as i32 - '0' as i32 & 0x3f as libc::c_int) << 12 as libc::c_int)
+    //                     + (('0' as i32 - '0' as i32 & 0x3f as libc::c_int) << 18 as libc::c_int)
+    //                     + (('0' as i32 - '0' as i32 & 0x3f as libc::c_int) << 24 as libc::c_int),
+    //             );
+    //             errmsg(
+    //                 b"time zone \"%s\" not recognized\0" as *const u8 as *const libc::c_char,
+    //                 ((*dtza).zone).as_mut_ptr() as *mut _,
+    //             );
+    //             errdetail(
+    //                 b"This time zone name appears in the configuration file for time zone abbreviation \"%s\".\0"
+    //                     as *const u8 as *const libc::c_char,
+    //                 ((*tp).token).as_ptr() as *mut _,
+    //             );
+    //             errfinish(
+    //                 b"/home/petrosagg/projects/postgres-datetime/src/datetime.c\0" as *const u8
+    //                     as *const libc::c_char,
+    //                 4647 as libc::c_int,
+    //                 (*::core::mem::transmute::<&[u8; 21], &[libc::c_char; 21]>(
+    //                     b"FetchDynamicTimeZone\0",
+    //                 ))
+    //                 .as_ptr(),
+    //             );
+    //         }
+    //         if 0 != 0 && 21 as libc::c_int >= 21 as libc::c_int {
+    //             unreachable!();
+    //         }
+    //     }
+    // }
+    // return (*dtza).tz;
 }
