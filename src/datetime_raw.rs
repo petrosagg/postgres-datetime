@@ -1153,7 +1153,7 @@ pub unsafe fn DecodeDateTime(
     field: *mut *mut libc::c_char,
     ftype: *mut libc::c_int,
     nf: libc::c_int,
-    dtype: *mut libc::c_int,
+    dtype: &mut TokenFieldType,
     mut tm: *mut pg_tm,
     fsec: *mut fsec_t,
     tzp: *mut libc::c_int,
@@ -1187,7 +1187,7 @@ pub unsafe fn DecodeDateTime(
 
     // We'll insist on at least all of the date fields, but initialize the
     // remaining fields in case they are not set later...
-    *dtype = 2 as libc::c_int;
+    *dtype = TokenFieldType::Date;
     (*tm).tm_hour = 0 as libc::c_int;
     (*tm).tm_min = 0 as libc::c_int;
     (*tm).tm_sec = 0 as libc::c_int;
@@ -1507,7 +1507,7 @@ pub unsafe fn DecodeDateTime(
                         }
                     }
                     ptype = TokenFieldType::Number;
-                    *dtype = 2 as libc::c_int;
+                    *dtype = TokenFieldType::Date;
                 } else {
                     let flen = strlen(*field.offset(i as isize)) as libc::c_int;
                     let cp_2 = strchr(*field.offset(i as isize), '.' as i32);
@@ -1586,12 +1586,12 @@ pub unsafe fn DecodeDateTime(
                         FieldType::Reserved => match val {
                             12 => {
                                 tmask = *FIELD_MASK_DATE | *FIELD_MASK_TIME | FieldType::Tz;
-                                *dtype = 2 as libc::c_int;
+                                *dtype = TokenFieldType::Date;
                                 GetCurrentTimeUsec(tm, fsec, tzp);
                             }
                             13 => {
                                 tmask = *FIELD_MASK_DATE;
-                                *dtype = 2 as libc::c_int;
+                                *dtype = TokenFieldType::Date;
                                 GetCurrentDateTime(&mut cur_tm);
                                 j2date(
                                     date2j(cur_tm.tm_year, cur_tm.tm_mon, cur_tm.tm_mday)
@@ -1603,7 +1603,7 @@ pub unsafe fn DecodeDateTime(
                             }
                             14 => {
                                 tmask = *FIELD_MASK_DATE;
-                                *dtype = 2 as libc::c_int;
+                                *dtype = TokenFieldType::Date;
                                 GetCurrentDateTime(&mut cur_tm);
                                 (*tm).tm_year = cur_tm.tm_year;
                                 (*tm).tm_mon = cur_tm.tm_mon;
@@ -1611,7 +1611,7 @@ pub unsafe fn DecodeDateTime(
                             }
                             15 => {
                                 tmask = *FIELD_MASK_DATE;
-                                *dtype = 2 as libc::c_int;
+                                *dtype = TokenFieldType::Date;
                                 GetCurrentDateTime(&mut cur_tm);
                                 j2date(
                                     date2j(cur_tm.tm_year, cur_tm.tm_mon, cur_tm.tm_mday)
@@ -1623,7 +1623,7 @@ pub unsafe fn DecodeDateTime(
                             }
                             16 => {
                                 tmask = *FIELD_MASK_TIME | FieldType::Tz;
-                                *dtype = 2 as libc::c_int;
+                                *dtype = TokenFieldType::Date;
                                 (*tm).tm_hour = 0 as libc::c_int;
                                 (*tm).tm_min = 0 as libc::c_int;
                                 (*tm).tm_sec = 0 as libc::c_int;
@@ -1632,7 +1632,7 @@ pub unsafe fn DecodeDateTime(
                                 }
                             }
                             _ => {
-                                *dtype = val;
+                                *dtype = val.try_into().unwrap();
                             }
                         },
                         FieldType::Month => {
@@ -1770,7 +1770,7 @@ pub unsafe fn DecodeDateTime(
         (*tm).tm_hour += 24 as libc::c_int / 2 as libc::c_int;
     }
     // do additional checking for full date specs...
-    if *dtype == 2 as libc::c_int {
+    if *dtype == TokenFieldType::Date {
         if !fmask.contains(*FIELD_MASK_DATE) {
             if fmask.contains(*FIELD_MASK_TIME) {
                 // TODO(petrosagg): this is actually success, as noted in the function doc

@@ -188,7 +188,9 @@ pub static FIELD_MASK_DATE: Lazy<FieldMask> =
 pub static FIELD_MASK_TIME: Lazy<FieldMask> =
     Lazy::new(|| FieldType::Hour | FieldType::Minute | *FIELD_MASK_ALL_SECS);
 
-pub fn decode(fields: Vec<(String, TokenFieldType)>) -> Result<(pg_tm, fsec_t, i32, i32), i32> {
+pub fn decode(
+    fields: Vec<(String, TokenFieldType)>,
+) -> Result<(pg_tm, fsec_t, i32, TokenFieldType), i32> {
     let nf = fields.len() as i32;
     let mut field = vec![];
     let mut ftype = vec![];
@@ -213,13 +215,13 @@ pub fn decode(fields: Vec<(String, TokenFieldType)>) -> Result<(pg_tm, fsec_t, i
         tm_zone: 0 as *const libc::c_char,
     };
     let mut tzp: i32 = 0;
-    let mut dtype: i32 = 0;
+    let mut dtype = TokenFieldType::Number;
     let dterr = unsafe {
         DecodeDateTime(
             field.as_mut_ptr(),
             ftype.as_mut_ptr(),
             nf,
-            &mut dtype as *mut _,
+            &mut dtype,
             &mut tt as *mut _,
             &mut fsec as *mut _,
             &mut tzp as *mut _,
