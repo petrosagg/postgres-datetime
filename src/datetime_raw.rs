@@ -16,10 +16,6 @@ const USECS_PER_SEC: i64 = 1000000;
 const POSTGRES_EPOCH_JDATE: i64 = 2451545; /* == date2j(2000, 1, 1) */
 const UNIX_EPOCH_JDATE: i64 = 2440588; /* == date2j(1970, 1, 1) */
 
-fn pg_toupper(mut ch: libc::c_uchar) -> libc::c_uchar {
-    ch.make_ascii_uppercase();
-    ch
-}
 static DateOrder: i32 = 0;
 fn dt2time(jd: Timestamp, hour: &mut i32, min: &mut i32, sec: &mut i32, fsec: &mut fsec_t) {
     let mut time: TimeOffset;
@@ -1874,7 +1870,7 @@ unsafe fn DetermineTimeZoneAbbrevOffsetInternal(
     );
     let mut p = upabbr.as_mut_ptr() as *mut libc::c_uchar;
     while *p != 0 {
-        *p = pg_toupper(*p);
+        *p = (*p).to_ascii_uppercase();
         p = p.offset(1);
     }
     if pg_interpret_timezone_abbrev(upabbr.as_mut_ptr(), &mut t, &mut gmtoff, isdst, tzp) {
