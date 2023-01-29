@@ -130,23 +130,20 @@ fn strlcpy(dst: *mut libc::c_char, src: *const libc::c_char, siz: u64) -> u64 {
             }
         }
 
-        return (s as isize - src as isize - 1) as u64; /* count does not include NUL */
+        (s as isize - src as isize - 1) as u64 /* count does not include NUL */
     }
 }
 fn strtoint(str: *const libc::c_char, endptr: *mut *mut libc::c_char, base: i32) -> i32 {
     unsafe {
         let val = libc::strtol(str, endptr, base);
-        return val.try_into().unwrap();
+        val.try_into().unwrap()
     }
 }
 fn time_overflows(hour: i32, min: i32, sec: i32, fsec: fsec_t) -> bool {
     /* Range-check the fields individually. */
-    if hour < 0
-        || hour > HOURS_PER_DAY
-        || min < 0
-        || min >= MINS_PER_HOUR
-        || sec < 0
-        || sec > SECS_PER_MINUTE
+    if !(0..=HOURS_PER_DAY).contains(&hour)
+        || !(0..MINS_PER_HOUR).contains(&min)
+        || !(0..=SECS_PER_MINUTE).contains(&sec)
         || fsec < 0
         || fsec as i64 > USECS_PER_SEC
     {
@@ -191,7 +188,7 @@ fn timestamp2tm(
     unsafe {
         let mut date: Timestamp = 0;
         let mut time: Timestamp;
-        let utime: pg_time_t;
+        
 
         /* Use session timezone if caller asks for default */
         if attimezone.is_null() {
@@ -217,23 +214,23 @@ fn timestamp2tm(
 
         j2date(
             date.try_into().unwrap(),
-            &mut (*tm).tm_year,
-            &mut (*tm).tm_mon,
-            &mut (*tm).tm_mday,
+            &mut tm.tm_year,
+            &mut tm.tm_mon,
+            &mut tm.tm_mday,
         );
         dt2time(
             time,
-            &mut (*tm).tm_hour,
-            &mut (*tm).tm_min,
-            &mut (*tm).tm_sec,
+            &mut tm.tm_hour,
+            &mut tm.tm_min,
+            &mut tm.tm_sec,
             fsec,
         );
 
         /* Done if no TZ conversion wanted */
         if tzp.is_null() {
-            (*tm).tm_isdst = None;
-            (*tm).tm_gmtoff = 0;
-            (*tm).tm_zone = std::ptr::null_mut();
+            tm.tm_isdst = None;
+            tm.tm_gmtoff = 0;
+            tm.tm_zone = std::ptr::null_mut();
             if tzn != std::ptr::null_mut() {
                 *tzn = std::ptr::null_mut();
             }
@@ -252,22 +249,22 @@ fn timestamp2tm(
          */
         dt = (dt - *fsec as i64) / USECS_PER_SEC
             + (POSTGRES_EPOCH_JDATE - UNIX_EPOCH_JDATE) * SECS_PER_DAY as i64;
-        utime = dt;
+        let utime: pg_time_t = dt;
         if utime == dt {
             let tx = pg_localtime(&utime, attimezone);
 
-            (*tm).tm_year = (*tx).tm_year + 1900;
-            (*tm).tm_mon = (*tx).tm_mon + 1;
-            (*tm).tm_mday = (*tx).tm_mday;
-            (*tm).tm_hour = (*tx).tm_hour;
-            (*tm).tm_min = (*tx).tm_min;
-            (*tm).tm_sec = (*tx).tm_sec;
-            (*tm).tm_isdst = (*tx).tm_isdst;
-            (*tm).tm_gmtoff = (*tx).tm_gmtoff;
-            (*tm).tm_zone = (*tx).tm_zone;
-            *tzp = (-(*tm).tm_gmtoff).try_into().unwrap();
+            tm.tm_year = tx.tm_year + 1900;
+            tm.tm_mon = tx.tm_mon + 1;
+            tm.tm_mday = tx.tm_mday;
+            tm.tm_hour = tx.tm_hour;
+            tm.tm_min = tx.tm_min;
+            tm.tm_sec = tx.tm_sec;
+            tm.tm_isdst = tx.tm_isdst;
+            tm.tm_gmtoff = tx.tm_gmtoff;
+            tm.tm_zone = tx.tm_zone;
+            *tzp = (-tm.tm_gmtoff).try_into().unwrap();
             if !tzn.is_null() {
-                *tzn = (*tm).tm_zone;
+                *tzn = tm.tm_zone;
             }
         } else {
             /*
@@ -275,15 +272,15 @@ fn timestamp2tm(
              */
             *tzp = 0;
             /* Mark this as *no* time zone available */
-            (*tm).tm_isdst = None;
-            (*tm).tm_gmtoff = 0;
-            (*tm).tm_zone = std::ptr::null_mut();
+            tm.tm_isdst = None;
+            tm.tm_gmtoff = 0;
+            tm.tm_zone = std::ptr::null_mut();
             if !tzn.is_null() {
                 *tzn = std::ptr::null_mut();
             }
         }
 
-        return 0;
+        0
     }
 }
 
@@ -347,24 +344,24 @@ struct DynamicZoneAbbrev {
 
 static mut day_tab: [[i32; 13]; 2] = [
     [
-        31 as i32, 28 as i32, 31 as i32, 30 as i32, 31 as i32, 30 as i32, 31 as i32, 31 as i32,
-        30 as i32, 31 as i32, 30 as i32, 31 as i32, 0 as i32,
+        31_i32, 28_i32, 31_i32, 30_i32, 31_i32, 30_i32, 31_i32, 31_i32,
+        30_i32, 31_i32, 30_i32, 31_i32, 0_i32,
     ],
     [
-        31 as i32, 29 as i32, 31 as i32, 30 as i32, 31 as i32, 30 as i32, 31 as i32, 31 as i32,
-        30 as i32, 31 as i32, 30 as i32, 31 as i32, 0 as i32,
+        31_i32, 29_i32, 31_i32, 30_i32, 31_i32, 30_i32, 31_i32, 31_i32,
+        30_i32, 31_i32, 30_i32, 31_i32, 0_i32,
     ],
 ];
 
-const EPOCH: &'static str = "epoch";
-const EARLY: &'static str = "-infinity";
-const LATE: &'static str = "infinity";
-const NOW: &'static str = "now";
-const TODAY: &'static str = "today";
-const TOMORROW: &'static str = "tomorrow";
-const YESTERDAY: &'static str = "yesterday";
-const DA_D: &'static str = "ad";
-const DB_C: &'static str = "bc";
+const EPOCH: &str = "epoch";
+const EARLY: &str = "-infinity";
+const LATE: &str = "infinity";
+const NOW: &str = "now";
+const TODAY: &str = "today";
+const TOMORROW: &str = "tomorrow";
+const YESTERDAY: &str = "yesterday";
+const DA_D: &str = "ad";
+const DB_C: &str = "bc";
 
 // Fundamental time field definitions for parsing.
 //
@@ -389,7 +386,7 @@ struct DateToken {
 /// The static table contains no TZ, DTZ, or DYNTZ entries; rather those
 /// are loaded from configuration files and stored in ZONE_ABBREV_TABLE, whose
 /// abbrevs[] field has the same format as the static DATE_TOKEN_TABLE.
-static DATE_TOKEN_TABLE: &'static [DateToken] = &[
+static DATE_TOKEN_TABLE: &[DateToken] = &[
     // "-infinity" reserved for "early time"
     DateToken {
         token: EARLY,
@@ -773,72 +770,72 @@ static DATE_TOKEN_TABLE: &'static [DateToken] = &[
 static ZONE_ABBREV_TABLE: Option<TimeZoneAbbrevTable> = None;
 
 unsafe fn date2j(mut y: i32, mut m: i32, d: i32) -> i32 {
-    if m > 2 as i32 {
-        m += 1 as i32;
-        y += 4800 as i32;
+    if m > 2_i32 {
+        m += 1_i32;
+        y += 4800_i32;
     } else {
-        m += 13 as i32;
-        y += 4799 as i32;
+        m += 13_i32;
+        y += 4799_i32;
     }
-    let century = y / 100 as i32;
-    let mut julian = y * 365 as i32 - 32167 as i32;
-    julian += y / 4 as i32 - century + century / 4 as i32;
-    julian += 7834 as i32 * m / 256 as i32 + d;
-    return julian;
+    let century = y / 100_i32;
+    let mut julian = y * 365_i32 - 32167_i32;
+    julian += y / 4_i32 - century + century / 4_i32;
+    julian += 7834_i32 * m / 256_i32 + d;
+    julian
 }
 
 unsafe fn j2date(jd: i32, year: &mut i32, month: &mut i32, day: &mut i32) {
     let mut julian = jd as u32;
-    julian = julian.wrapping_add(32044 as i32 as u32);
-    let mut quad = julian.wrapping_div(146097 as i32 as u32);
+    julian = julian.wrapping_add(32044_i32 as u32);
+    let mut quad = julian.wrapping_div(146097_i32 as u32);
     let extra = julian
-        .wrapping_sub(quad.wrapping_mul(146097 as i32 as u32))
-        .wrapping_mul(4 as i32 as u32)
-        .wrapping_add(3 as i32 as u32);
+        .wrapping_sub(quad.wrapping_mul(146097_i32 as u32))
+        .wrapping_mul(4_i32 as u32)
+        .wrapping_add(3_i32 as u32);
     julian = julian.wrapping_add(
-        (60 as i32 as u32)
-            .wrapping_add(quad.wrapping_mul(3 as i32 as u32))
-            .wrapping_add(extra.wrapping_div(146097 as i32 as u32)),
+        (60_i32 as u32)
+            .wrapping_add(quad.wrapping_mul(3_i32 as u32))
+            .wrapping_add(extra.wrapping_div(146097_i32 as u32)),
     );
-    quad = julian.wrapping_div(1461 as i32 as u32);
-    julian = julian.wrapping_sub(quad.wrapping_mul(1461 as i32 as u32));
+    quad = julian.wrapping_div(1461_i32 as u32);
+    julian = julian.wrapping_sub(quad.wrapping_mul(1461_i32 as u32));
     let mut y = julian
-        .wrapping_mul(4 as i32 as u32)
-        .wrapping_div(1461 as i32 as u32) as i32;
-    julian = (if y != 0 as i32 {
+        .wrapping_mul(4_i32 as u32)
+        .wrapping_div(1461_i32 as u32) as i32;
+    julian = (if y != 0_i32 {
         julian
-            .wrapping_add(305 as i32 as u32)
-            .wrapping_rem(365 as i32 as u32)
+            .wrapping_add(305_i32 as u32)
+            .wrapping_rem(365_i32 as u32)
     } else {
         julian
-            .wrapping_add(306 as i32 as u32)
-            .wrapping_rem(366 as i32 as u32)
+            .wrapping_add(306_i32 as u32)
+            .wrapping_rem(366_i32 as u32)
     })
-    .wrapping_add(123 as i32 as u32);
-    y = (y as u32).wrapping_add(quad.wrapping_mul(4 as i32 as u32)) as i32 as i32;
-    *year = y - 4800 as i32;
+    .wrapping_add(123_i32 as u32);
+    y = (y as u32).wrapping_add(quad.wrapping_mul(4_i32 as u32)) as i32 as i32;
+    *year = y - 4800_i32;
     quad = julian
-        .wrapping_mul(2141 as i32 as u32)
-        .wrapping_div(65536 as i32 as u32);
+        .wrapping_mul(2141_i32 as u32)
+        .wrapping_div(65536_i32 as u32);
     *day = julian.wrapping_sub(
-        (7834 as i32 as u32)
+        (7834_i32 as u32)
             .wrapping_mul(quad)
-            .wrapping_div(256 as i32 as u32),
+            .wrapping_div(256_i32 as u32),
     ) as i32;
     *month = quad
-        .wrapping_add(10 as i32 as u32)
-        .wrapping_rem(12 as i32 as u32)
-        .wrapping_add(1 as i32 as u32) as i32;
+        .wrapping_add(10_i32 as u32)
+        .wrapping_rem(12_i32 as u32)
+        .wrapping_add(1_i32 as u32) as i32;
 }
 
 unsafe fn GetCurrentDateTime(tm: &mut pg_tm) {
     let mut fsec: fsec_t = 0;
-    GetCurrentTimeUsec(tm, &mut fsec, 0 as *mut i32);
+    GetCurrentTimeUsec(tm, &mut fsec, std::ptr::null_mut::<i32>());
 }
 
 unsafe fn GetCurrentTimeUsec(tm: &mut pg_tm, fsec: &mut fsec_t, tzp: *mut i32) {
     let cur_ts: TimestampTz = GetCurrentTransactionStartTimestamp();
-    static mut cache_ts: TimestampTz = 0 as i32 as TimestampTz;
+    static mut cache_ts: TimestampTz = 0_i32 as TimestampTz;
     static mut cache_timezone: *mut pg_tz = 0 as *const pg_tz as *mut pg_tz;
     static mut cache_tm: pg_tm = pg_tm {
         tm_sec: 0,
@@ -856,42 +853,42 @@ unsafe fn GetCurrentTimeUsec(tm: &mut pg_tm, fsec: &mut fsec_t, tzp: *mut i32) {
     static mut cache_fsec: fsec_t = 0;
     static mut cache_tz: i32 = 0;
     if cur_ts != cache_ts || session_timezone != cache_timezone {
-        cache_timezone = 0 as *mut pg_tz;
+        cache_timezone = std::ptr::null_mut::<pg_tz>();
         if timestamp2tm(
             cur_ts,
             &mut cache_tz,
             &mut cache_tm,
             &mut cache_fsec,
-            0 as *mut *const libc::c_char,
+            std::ptr::null_mut::<*const libc::c_char>(),
             session_timezone,
-        ) != 0 as i32
+        ) != 0_i32
         {
             let mut __errno_location_0: i32 = 0;
-            if if 0 != 0 && 21 as i32 >= 21 as i32 {
-                errstart_cold(21 as i32, 0 as *const libc::c_char) as i32
+            if if 0 != 0 && 21_i32 >= 21_i32 {
+                errstart_cold(21_i32, std::ptr::null::<libc::c_char>()) as i32
             } else {
-                errstart(21 as i32, 0 as *const libc::c_char) as i32
+                errstart(21_i32, std::ptr::null::<libc::c_char>()) as i32
             } != 0
             {
                 errcode(
-                    ('2' as i32 - '0' as i32 & 0x3f as i32)
-                        + (('2' as i32 - '0' as i32 & 0x3f as i32) << 6 as i32)
-                        + (('0' as i32 - '0' as i32 & 0x3f as i32) << 12 as i32)
-                        + (('0' as i32 - '0' as i32 & 0x3f as i32) << 18 as i32)
-                        + (('8' as i32 - '0' as i32 & 0x3f as i32) << 24 as i32),
+                    (('2' as i32 - '0' as i32) & 0x3f_i32)
+                        + ((('2' as i32 - '0' as i32) & 0x3f_i32) << 6_i32)
+                        + ((('0' as i32 - '0' as i32) & 0x3f_i32) << 12_i32)
+                        + ((('0' as i32 - '0' as i32) & 0x3f_i32) << 18_i32)
+                        + ((('8' as i32 - '0' as i32) & 0x3f_i32) << 24_i32),
                 );
                 errmsg0(b"timestamp out of range\0" as *const u8 as *const libc::c_char);
                 errfinish(
                     b"/home/petrosagg/projects/postgres-datetime/src/datetime.c\0" as *const u8
                         as *const libc::c_char,
-                    405 as i32,
+                    405_i32,
                     (*::core::mem::transmute::<&[u8; 19], &[libc::c_char; 19]>(
                         b"GetCurrentTimeUsec\0",
                     ))
                     .as_ptr(),
                 );
             }
-            if 0 != 0 && 21 as i32 >= 21 as i32 {
+            if 0 != 0 && 21_i32 >= 21_i32 {
                 unreachable!();
             }
         }
@@ -905,14 +902,14 @@ unsafe fn GetCurrentTimeUsec(tm: &mut pg_tm, fsec: &mut fsec_t, tzp: *mut i32) {
     }
 }
 unsafe fn ParseFractionalSecond(mut cp: *mut libc::c_char, fsec: &mut fsec_t) -> i32 {
-    *__errno_location() = 0 as i32;
+    *__errno_location() = 0_i32;
     let frac = strtod(cp, &mut cp);
-    if *cp as i32 != '\0' as i32 || *__errno_location() != 0 as i32 {
+    if *cp as i32 != '\0' as i32 || *__errno_location() != 0_i32 {
         eprintln!("parse fractional second failed");
-        return -(1 as i32);
+        return -1_i32;
     }
-    *fsec = rint(frac * 1000000 as i32 as libc::c_double) as fsec_t;
-    return 0 as i32;
+    *fsec = rint(frac * 1000000_i32 as libc::c_double) as fsec_t;
+    0_i32
 }
 
 /// Breaks string into tokens based on a date/time context.
@@ -1026,9 +1023,8 @@ pub fn parse_datetime(input: &str) -> Result<Vec<(String, TokenFieldType)>, i32>
                 is_date = true;
             } else if *chars.peek().unwrap() == '+' || chars.peek().unwrap().is_ascii_digit() {
                 // we need search only the core token table, not TZ names
-                if !DATE_TOKEN_TABLE
-                    .binary_search_by(|tk| tk.token.cmp(&&*fdata))
-                    .is_ok()
+                if DATE_TOKEN_TABLE
+                    .binary_search_by(|tk| tk.token.cmp(&*fdata)).is_err()
                 {
                     is_date = true;
                 }
@@ -1117,15 +1113,15 @@ pub unsafe fn DecodeDateTime(
     let mut tmask = FieldMask::none();
     let mut ptype = TokenFieldType::Number; // "prefix type" for ISO y2001m02d04 format
     let mut val: i32 = 0;
-    let mut mer: i32 = 2 as i32;
+    let mut mer: i32 = 2_i32;
     let mut haveTextMonth = false;
     let mut isjulian = false;
     let mut is2digits = false;
     let mut bc = false;
-    let mut namedTz: *mut pg_tz = 0 as *mut pg_tz;
-    let mut abbrevTz: *mut pg_tz = 0 as *mut pg_tz;
-    let mut valtz: *mut pg_tz = 0 as *mut pg_tz;
-    let mut abbrev: *mut libc::c_char = 0 as *mut libc::c_char;
+    let mut namedTz: *mut pg_tz = std::ptr::null_mut::<pg_tz>();
+    let mut abbrevTz: *mut pg_tz = std::ptr::null_mut::<pg_tz>();
+    let mut valtz: *mut pg_tz = std::ptr::null_mut::<pg_tz>();
+    let mut abbrev: *mut libc::c_char = std::ptr::null_mut::<libc::c_char>();
     let mut cur_tm: pg_tm = pg_tm {
         tm_sec: 0,
         tm_min: 0,
@@ -1137,42 +1133,42 @@ pub unsafe fn DecodeDateTime(
         tm_yday: 0,
         tm_isdst: Some(false),
         tm_gmtoff: 0,
-        tm_zone: 0 as *const libc::c_char,
+        tm_zone: std::ptr::null::<libc::c_char>(),
     };
 
     // We'll insist on at least all of the date fields, but initialize the
     // remaining fields in case they are not set later...
     *dtype = TokenFieldType::Date;
-    (*tm).tm_hour = 0 as i32;
-    (*tm).tm_min = 0 as i32;
-    (*tm).tm_sec = 0 as i32;
-    *fsec = 0 as i32;
+    tm.tm_hour = 0_i32;
+    tm.tm_min = 0_i32;
+    tm.tm_sec = 0_i32;
+    *fsec = 0_i32;
 
     // don't know daylight savings time status apriori
-    (*tm).tm_isdst = None;
+    tm.tm_isdst = None;
     if !tzp.is_null() {
-        *tzp = 0 as i32;
+        *tzp = 0_i32;
     }
     let mut current_block_236: u64;
     for i in 0..nf {
         match *ftype.offset(i as isize) {
             2 => {
                 if ptype == TokenFieldType::Julian {
-                    let mut cp: *mut libc::c_char = 0 as *mut libc::c_char;
+                    let mut cp: *mut libc::c_char = std::ptr::null_mut::<libc::c_char>();
                     if tzp.is_null() {
                         eprintln!("tzp is null");
-                        return -(1 as i32);
+                        return -1_i32;
                     }
-                    *__errno_location() = 0 as i32;
-                    let val_0 = strtoint(*field.offset(i as isize), &mut cp, 10 as i32);
-                    if *__errno_location() == 34 as i32 || val_0 < 0 as i32 {
-                        return -(2 as i32);
+                    *__errno_location() = 0_i32;
+                    let val_0 = strtoint(*field.offset(i as isize), &mut cp, 10_i32);
+                    if *__errno_location() == 34_i32 || val_0 < 0_i32 {
+                        return -2_i32;
                     }
                     j2date(
                         val_0,
-                        &mut (*tm).tm_year,
-                        &mut (*tm).tm_mon,
-                        &mut (*tm).tm_mday,
+                        &mut tm.tm_year,
+                        &mut tm.tm_mon,
+                        &mut tm.tm_mday,
                     );
                     isjulian = true;
                     let dterr = DecodeTimezone(cp, tzp);
@@ -1207,7 +1203,7 @@ pub unsafe fn DecodeDateTime(
                         if ptype != TokenFieldType::Number {
                             if ptype != TokenFieldType::Time {
                                 eprintln!("ptype is not Time: {:?}", ptype);
-                                return -(1 as i32);
+                                return -1_i32;
                             }
                             ptype = TokenFieldType::Number;
                         }
@@ -1221,7 +1217,7 @@ pub unsafe fn DecodeDateTime(
                         let cp_0 = strchr(*field.offset(i as isize), '-' as i32);
                         if cp_0.is_null() {
                             eprintln!("couldn't find '-' character");
-                            return -(1 as i32);
+                            return -1_i32;
                         }
                         let dterr = DecodeTimezone(cp_0, tzp);
                         if dterr != 0 {
@@ -1237,7 +1233,7 @@ pub unsafe fn DecodeDateTime(
                             fsec,
                             &mut is2digits,
                         );
-                        if dterr < 0 as i32 {
+                        if dterr < 0_i32 {
                             return dterr;
                         }
                         // modify tmask after returning from DecodeNumberField()
@@ -1246,18 +1242,18 @@ pub unsafe fn DecodeDateTime(
                         namedTz = pg_tzset(*field.offset(i as isize));
                         if namedTz.is_null() {
                             let mut __errno_location_0: i32 = 0;
-                            if if 0 != 0 && 21 as i32 >= 21 as i32 {
-                                errstart_cold(21 as i32, 0 as *const libc::c_char) as i32
+                            if if 0 != 0 && 21_i32 >= 21_i32 {
+                                errstart_cold(21_i32, std::ptr::null::<libc::c_char>()) as i32
                             } else {
-                                errstart(21 as i32, 0 as *const libc::c_char) as i32
+                                errstart(21_i32, std::ptr::null::<libc::c_char>()) as i32
                             } != 0
                             {
                                 errcode(
-                                    ('2' as i32 - '0' as i32 & 0x3f as i32)
-                                        + (('2' as i32 - '0' as i32 & 0x3f as i32) << 6 as i32)
-                                        + (('0' as i32 - '0' as i32 & 0x3f as i32) << 12 as i32)
-                                        + (('2' as i32 - '0' as i32 & 0x3f as i32) << 18 as i32)
-                                        + (('3' as i32 - '0' as i32 & 0x3f as i32) << 24 as i32),
+                                    (('2' as i32 - '0' as i32) & 0x3f_i32)
+                                        + ((('2' as i32 - '0' as i32) & 0x3f_i32) << 6_i32)
+                                        + ((('0' as i32 - '0' as i32) & 0x3f_i32) << 12_i32)
+                                        + ((('2' as i32 - '0' as i32) & 0x3f_i32) << 18_i32)
+                                        + ((('3' as i32 - '0' as i32) & 0x3f_i32) << 24_i32),
                                 );
                                 errmsg(
                                     b"time zone \"%s\" not recognized\0" as *const u8
@@ -1268,14 +1264,14 @@ pub unsafe fn DecodeDateTime(
                                     b"/home/petrosagg/projects/postgres-datetime/src/datetime.c\0"
                                         as *const u8
                                         as *const libc::c_char,
-                                    952 as i32,
+                                    952_i32,
                                     (*::core::mem::transmute::<&[u8; 15], &[libc::c_char; 15]>(
                                         b"DecodeDateTime\0",
                                     ))
                                     .as_ptr(),
                                 );
                             }
-                            if 0 != 0 && 21 as i32 >= 21 as i32 {
+                            if 0 != 0 && 21_i32 >= 21_i32 {
                                 unreachable!();
                             }
                         }
@@ -1300,14 +1296,14 @@ pub unsafe fn DecodeDateTime(
                 if ptype != TokenFieldType::Number {
                     if ptype != TokenFieldType::Time {
                         eprintln!("ptype is not Time: {:?}", ptype);
-                        return -(1 as i32);
+                        return -1_i32;
                     }
                     ptype = TokenFieldType::Number
                 }
                 let dterr = DecodeTime(
                     *field.offset(i as isize),
                     fmask,
-                    0x7fff as i32,
+                    0x7fff_i32,
                     &mut tmask,
                     tm,
                     fsec,
@@ -1315,8 +1311,8 @@ pub unsafe fn DecodeDateTime(
                 if dterr != 0 {
                     return dterr;
                 }
-                if time_overflows((*tm).tm_hour, (*tm).tm_min, (*tm).tm_sec, *fsec) {
-                    return -(2 as i32);
+                if time_overflows(tm.tm_hour, tm.tm_min, tm.tm_sec, *fsec) {
+                    return -2_i32;
                 }
                 current_block_236 = 13797367574128857302;
             }
@@ -1324,7 +1320,7 @@ pub unsafe fn DecodeDateTime(
                 let mut tz: i32 = 0;
                 if tzp.is_null() {
                     eprintln!("tzp is null");
-                    return -(1 as i32);
+                    return -1_i32;
                 }
                 let dterr = DecodeTimezone(*field.offset(i as isize), &mut tz);
                 if dterr != 0 {
@@ -1336,11 +1332,11 @@ pub unsafe fn DecodeDateTime(
             }
             0 => {
                 if ptype != TokenFieldType::Number {
-                    let mut cp_1: *mut libc::c_char = 0 as *mut libc::c_char;
-                    *__errno_location() = 0 as i32;
-                    let val_1 = strtoint(*field.offset(i as isize), &mut cp_1, 10 as i32);
-                    if *__errno_location() == 34 as i32 {
-                        return -(2 as i32);
+                    let mut cp_1: *mut libc::c_char = std::ptr::null_mut::<libc::c_char>();
+                    *__errno_location() = 0_i32;
+                    let val_1 = strtoint(*field.offset(i as isize), &mut cp_1, 10_i32);
+                    if *__errno_location() == 34_i32 {
+                        return -2_i32;
                     }
                     if *cp_1 as i32 == '.' as i32 {
                         match ptype {
@@ -1349,42 +1345,42 @@ pub unsafe fn DecodeDateTime(
                             | TokenFieldType::Second => {}
                             _ => {
                                 eprintln!("ptype is not Julian, Time, or Second: {:?}", ptype);
-                                return -(1 as i32);
+                                return -1_i32;
                             }
                         }
                     } else if *cp_1 as i32 != '\0' as i32 {
                         eprintln!("expected EOF");
-                        return -(1 as i32);
+                        return -1_i32;
                     }
                     match ptype {
                         TokenFieldType::Year => {
-                            (*tm).tm_year = val_1;
+                            tm.tm_year = val_1;
                             tmask = FieldMask::from(FieldType::Year);
                         }
                         TokenFieldType::Month => {
                             // already have a month and hour? then assume minutes
                             if fmask.contains(FieldType::Month | FieldType::Hour) {
-                                (*tm).tm_min = val_1;
+                                tm.tm_min = val_1;
                                 tmask = FieldMask::from(FieldType::Minute);
                             } else {
-                                (*tm).tm_mon = val_1;
+                                tm.tm_mon = val_1;
                                 tmask = FieldMask::from(FieldType::Month);
                             }
                         }
                         TokenFieldType::Day => {
-                            (*tm).tm_mday = val_1;
+                            tm.tm_mday = val_1;
                             tmask = FieldMask::from(FieldType::Day);
                         }
                         TokenFieldType::Hour => {
-                            (*tm).tm_hour = val_1;
+                            tm.tm_hour = val_1;
                             tmask = FieldMask::from(FieldType::Hour);
                         }
                         TokenFieldType::Minute => {
-                            (*tm).tm_min = val_1;
+                            tm.tm_min = val_1;
                             tmask = FieldMask::from(FieldType::Minute);
                         }
                         TokenFieldType::Second => {
-                            (*tm).tm_sec = val_1;
+                            tm.tm_sec = val_1;
                             tmask = FieldMask::from(FieldType::Second);
                             if *cp_1 as i32 == '.' as i32 {
                                 let dterr = ParseFractionalSecond(cp_1, fsec);
@@ -1402,30 +1398,30 @@ pub unsafe fn DecodeDateTime(
                             }
                         }
                         TokenFieldType::Julian => {
-                            if val_1 < 0 as i32 {
-                                return -(2 as i32);
+                            if val_1 < 0_i32 {
+                                return -2_i32;
                             }
                             tmask = *FIELD_MASK_DATE;
                             j2date(
                                 val_1,
-                                &mut (*tm).tm_year,
-                                &mut (*tm).tm_mon,
-                                &mut (*tm).tm_mday,
+                                &mut tm.tm_year,
+                                &mut tm.tm_mon,
+                                &mut tm.tm_mday,
                             );
                             isjulian = true;
                             if *cp_1 as i32 == '.' as i32 {
-                                *__errno_location() = 0 as i32;
+                                *__errno_location() = 0_i32;
                                 let mut time = strtod(cp_1, &mut cp_1);
-                                if *cp_1 as i32 != '\0' as i32 || *__errno_location() != 0 as i32 {
+                                if *cp_1 as i32 != '\0' as i32 || *__errno_location() != 0_i32 {
                                     eprintln!("unclear what happened");
-                                    return -(1 as i32);
+                                    return -1_i32;
                                 }
-                                time *= 86400000000 as i64 as libc::c_double;
+                                time *= 86400000000_i64 as libc::c_double;
                                 dt2time(
                                     time as Timestamp,
-                                    &mut (*tm).tm_hour,
-                                    &mut (*tm).tm_min,
-                                    &mut (*tm).tm_sec,
+                                    &mut tm.tm_hour,
+                                    &mut tm.tm_min,
+                                    &mut tm.tm_sec,
                                     fsec,
                                 );
                                 tmask.set(*FIELD_MASK_TIME);
@@ -1441,17 +1437,17 @@ pub unsafe fn DecodeDateTime(
                                 fsec,
                                 &mut is2digits,
                             );
-                            if dterr < 0 as i32 {
+                            if dterr < 0_i32 {
                                 return dterr;
                             }
                             if tmask != *FIELD_MASK_TIME {
                                 eprintln!("tmask is not FIELD_MASK_TIME");
-                                return -(1 as i32);
+                                return -1_i32;
                             }
                         }
                         typ => {
                             eprintln!("unexpected ptype: {:?}", typ);
-                            return -(1 as i32);
+                            return -1_i32;
                         }
                     }
                     ptype = TokenFieldType::Number;
@@ -1471,7 +1467,7 @@ pub unsafe fn DecodeDateTime(
                             return dterr;
                         }
                     } else if !cp_2.is_null()
-                        && (flen as u64).wrapping_sub(strlen(cp_2)) > 2 as i32 as u64
+                        && (flen as u64).wrapping_sub(strlen(cp_2)) > 2_i32 as u64
                     {
                         let dterr = DecodeNumberField(
                             flen,
@@ -1482,7 +1478,7 @@ pub unsafe fn DecodeDateTime(
                             fsec,
                             &mut is2digits,
                         );
-                        if dterr < 0 as i32 {
+                        if dterr < 0_i32 {
                             return dterr;
                         }
                     } else if flen >= 6
@@ -1498,7 +1494,7 @@ pub unsafe fn DecodeDateTime(
                             fsec,
                             &mut is2digits,
                         );
-                        if dterr < 0 as i32 {
+                        if dterr < 0_i32 {
                             return dterr;
                         }
                     } else {
@@ -1542,19 +1538,19 @@ pub unsafe fn DecodeDateTime(
                                 GetCurrentDateTime(&mut cur_tm);
                                 j2date(
                                     date2j(cur_tm.tm_year, cur_tm.tm_mon, cur_tm.tm_mday)
-                                        - 1 as i32,
-                                    &mut (*tm).tm_year,
-                                    &mut (*tm).tm_mon,
-                                    &mut (*tm).tm_mday,
+                                        - 1_i32,
+                                    &mut tm.tm_year,
+                                    &mut tm.tm_mon,
+                                    &mut tm.tm_mday,
                                 );
                             }
                             14 => {
                                 tmask = *FIELD_MASK_DATE;
                                 *dtype = TokenFieldType::Date;
                                 GetCurrentDateTime(&mut cur_tm);
-                                (*tm).tm_year = cur_tm.tm_year;
-                                (*tm).tm_mon = cur_tm.tm_mon;
-                                (*tm).tm_mday = cur_tm.tm_mday;
+                                tm.tm_year = cur_tm.tm_year;
+                                tm.tm_mon = cur_tm.tm_mon;
+                                tm.tm_mday = cur_tm.tm_mday;
                             }
                             15 => {
                                 tmask = *FIELD_MASK_DATE;
@@ -1562,20 +1558,20 @@ pub unsafe fn DecodeDateTime(
                                 GetCurrentDateTime(&mut cur_tm);
                                 j2date(
                                     date2j(cur_tm.tm_year, cur_tm.tm_mon, cur_tm.tm_mday)
-                                        + 1 as i32,
-                                    &mut (*tm).tm_year,
-                                    &mut (*tm).tm_mon,
-                                    &mut (*tm).tm_mday,
+                                        + 1_i32,
+                                    &mut tm.tm_year,
+                                    &mut tm.tm_mon,
+                                    &mut tm.tm_mday,
                                 );
                             }
                             16 => {
                                 tmask = *FIELD_MASK_TIME | FieldType::Tz;
                                 *dtype = TokenFieldType::Date;
-                                (*tm).tm_hour = 0 as i32;
-                                (*tm).tm_min = 0 as i32;
-                                (*tm).tm_sec = 0 as i32;
+                                tm.tm_hour = 0_i32;
+                                tm.tm_min = 0_i32;
+                                tm.tm_sec = 0_i32;
                                 if !tzp.is_null() {
-                                    *tzp = 0 as i32;
+                                    *tzp = 0_i32;
                                 }
                             }
                             _ => {
@@ -1587,38 +1583,38 @@ pub unsafe fn DecodeDateTime(
                             if fmask.contains(FieldType::Month)
                                 && !haveTextMonth
                                 && !fmask.contains(FieldType::Day)
-                                && (*tm).tm_mon >= 1 as i32
-                                && (*tm).tm_mon <= 31 as i32
+                                && tm.tm_mon >= 1_i32
+                                && tm.tm_mon <= 31_i32
                             {
-                                (*tm).tm_mday = (*tm).tm_mon;
+                                tm.tm_mday = tm.tm_mon;
                                 tmask = FieldMask::from(FieldType::Day);
                             }
                             haveTextMonth = true;
-                            (*tm).tm_mon = val;
+                            tm.tm_mon = val;
                         }
                         FieldType::DtzMod => {
                             tmask.set(FieldType::DTz);
-                            (*tm).tm_isdst = Some(true);
+                            tm.tm_isdst = Some(true);
                             if tzp.is_null() {
                                 eprintln!("tzp is null");
-                                return -(1 as i32);
+                                return -1_i32;
                             }
                             *tzp -= val;
                         }
                         FieldType::DTz => {
                             tmask.set(FieldType::Tz);
-                            (*tm).tm_isdst = Some(true);
+                            tm.tm_isdst = Some(true);
                             if tzp.is_null() {
                                 eprintln!("tzp is null");
-                                return -(1 as i32);
+                                return -1_i32;
                             }
                             *tzp = -val;
                         }
                         FieldType::Tz => {
-                            (*tm).tm_isdst = Some(false);
+                            tm.tm_isdst = Some(false);
                             if tzp.is_null() {
                                 eprintln!("tzp is null");
-                                return -(1 as i32);
+                                return -1_i32;
                             }
                             *tzp = -val;
                         }
@@ -1626,7 +1622,7 @@ pub unsafe fn DecodeDateTime(
                             tmask.set(FieldType::Tz);
                             if tzp.is_null() {
                                 eprintln!("tzp is null");
-                                return -(1 as i32);
+                                return -1_i32;
                             }
                             abbrevTz = valtz;
                             abbrev = *field.offset(i as isize);
@@ -1638,7 +1634,7 @@ pub unsafe fn DecodeDateTime(
                             bc = val == 1;
                         }
                         FieldType::Dow => {
-                            (*tm).tm_wday = val;
+                            tm.tm_wday = val;
                         }
                         FieldType::Units => {
                             tmask = FieldMask::none();
@@ -1652,20 +1648,20 @@ pub unsafe fn DecodeDateTime(
                             // No preceding date? Then quit...
                             if !fmask.contains(*FIELD_MASK_DATE) {
                                 eprintln!("no preceding date");
-                                return -(1 as i32);
+                                return -1_i32;
                             }
 
                             // We will need one of the following fields:
                             //	DTK_NUMBER should be hhmmss.fff
                             //	DTK_TIME should be hh:mm:ss.fff
                             //	DTK_DATE should be hhmmss-zz
-                            if i >= nf - 1 as i32
-                                || *ftype.offset((i + 1 as i32) as isize) != 0 as i32
-                                    && *ftype.offset((i + 1 as i32) as isize) != 3 as i32
-                                    && *ftype.offset((i + 1 as i32) as isize) != 2 as i32
+                            if i >= nf - 1_i32
+                                || *ftype.offset((i + 1_i32) as isize) != 0_i32
+                                    && *ftype.offset((i + 1_i32) as isize) != 3_i32
+                                    && *ftype.offset((i + 1_i32) as isize) != 2_i32
                             {
                                 eprintln!("next field are not the right type");
-                                return -(1 as i32);
+                                return -1_i32;
                             }
                             ptype = val.try_into().unwrap();
                         }
@@ -1675,24 +1671,24 @@ pub unsafe fn DecodeDateTime(
                             namedTz = pg_tzset(*field.offset(i as isize));
                             if namedTz.is_null() {
                                 eprintln!("namedTz is null");
-                                return -(1 as i32);
+                                return -1_i32;
                             }
                             tmask = FieldMask::from(FieldType::Tz);
                         }
                         typ => {
                             eprintln!("unexpected field type: {:?}", typ);
-                            return -(1 as i32);
+                            return -1_i32;
                         }
                     }
                     current_block_236 = 13797367574128857302;
                 }
             }
-            _ => return -(1 as i32),
+            _ => return -1_i32,
         }
         match current_block_236 {
             13797367574128857302 => {
                 if tmask.intersects(fmask) {
-                    return -(1 as i32);
+                    return -1_i32;
                 }
                 fmask |= tmask;
             }
@@ -1705,36 +1701,36 @@ pub unsafe fn DecodeDateTime(
         return dterr;
     }
     // handle AM/PM
-    if mer != 2 as i32 && (*tm).tm_hour > 24 as i32 / 2 as i32 {
-        return -(2 as i32);
+    if mer != 2_i32 && tm.tm_hour > 24_i32 / 2_i32 {
+        return -2_i32;
     }
-    if mer == 0 as i32 && (*tm).tm_hour == 24 as i32 / 2 as i32 {
-        (*tm).tm_hour = 0 as i32;
-    } else if mer == 1 as i32 && (*tm).tm_hour != 24 as i32 / 2 as i32 {
-        (*tm).tm_hour += 24 as i32 / 2 as i32;
+    if mer == 0_i32 && tm.tm_hour == 24_i32 / 2_i32 {
+        tm.tm_hour = 0_i32;
+    } else if mer == 1_i32 && tm.tm_hour != 24_i32 / 2_i32 {
+        tm.tm_hour += 24_i32 / 2_i32;
     }
     // do additional checking for full date specs...
     if *dtype == TokenFieldType::Date {
         if !fmask.contains(*FIELD_MASK_DATE) {
             if fmask.contains(*FIELD_MASK_TIME) {
                 // TODO(petrosagg): this is actually success, as noted in the function doc
-                return 1 as i32;
+                return 1_i32;
             }
-            return -(1 as i32);
+            return -1_i32;
         }
         // If we had a full timezone spec, compute the offset (we could not do
         // it before, because we need the date to resolve DST status).
         if !namedTz.is_null() {
             // daylight savings time modifier disallowed with full TZ
             if fmask.contains(FieldType::DtzMod) {
-                return -(1 as i32);
+                return -1_i32;
             }
             *tzp = DetermineTimeZoneOffset(tm, namedTz);
         }
         // Likewise, if we had a dynamic timezone abbreviation, resolve it now.
         if !abbrevTz.is_null() {
             if fmask.contains(FieldType::DtzMod) {
-                return -(1 as i32);
+                return -1_i32;
             }
             *tzp = DetermineTimeZoneAbbrevOffset(tm, abbrev, abbrevTz);
         }
@@ -1742,17 +1738,17 @@ pub unsafe fn DecodeDateTime(
         if !tzp.is_null() && !fmask.contains(FieldType::Tz) {
             // daylight savings time modifier but no standard timezone? then error
             if fmask.contains(FieldType::DtzMod) {
-                return -(1 as i32);
+                return -1_i32;
             }
             *tzp = DetermineTimeZoneOffset(tm, session_timezone);
         }
     }
-    return 0 as i32;
+    0_i32
 }
 
 unsafe fn DetermineTimeZoneOffset(tm: &mut pg_tm, tzp: *mut pg_tz) -> i32 {
     let mut t: pg_time_t = 0;
-    return DetermineTimeZoneOffsetInternal(tm, tzp, &mut t);
+    DetermineTimeZoneOffsetInternal(tm, tzp, &mut t)
 }
 unsafe fn DetermineTimeZoneOffsetInternal(
     mut tm: &mut pg_tm,
@@ -1764,19 +1760,19 @@ unsafe fn DetermineTimeZoneOffsetInternal(
     let mut after_gmtoff: i64 = 0;
     let mut before_isdst = false;
     let mut after_isdst = false;
-    if ((*tm).tm_year > -(4713 as i32)
-        || (*tm).tm_year == -(4713 as i32) && (*tm).tm_mon >= 11 as i32)
-        && ((*tm).tm_year < 5874898 as i32
-            || (*tm).tm_year == 5874898 as i32 && (*tm).tm_mon < 6 as i32)
+    if (tm.tm_year > -4713_i32
+        || tm.tm_year == -4713_i32 && tm.tm_mon >= 11_i32)
+        && (tm.tm_year < 5874898_i32
+            || tm.tm_year == 5874898_i32 && tm.tm_mon < 6_i32)
     {
-        let date = date2j((*tm).tm_year, (*tm).tm_mon, (*tm).tm_mday) - 2440588 as i32;
-        let day = date as pg_time_t * 86400 as i32 as i64;
-        if !(day / 86400 as i32 as i64 != date as i64) {
-            let sec = (*tm).tm_sec + ((*tm).tm_min + (*tm).tm_hour * 60 as i32) * 60 as i32;
+        let date = date2j(tm.tm_year, tm.tm_mon, tm.tm_mday) - 2440588_i32;
+        let day = date as pg_time_t * 86400_i32 as i64;
+        if day / 86400_i32 as i64 == date as i64 {
+            let sec = tm.tm_sec + (tm.tm_min + tm.tm_hour * 60_i32) * 60_i32;
             let mytime = day + sec as i64;
-            if !(mytime < 0 as i32 as i64 && day > 0 as i32 as i64) {
-                let mut prevtime = mytime - 86400 as i32 as i64;
-                if !(mytime < 0 as i32 as i64 && prevtime > 0 as i32 as i64) {
+            if !(mytime < 0_i32 as i64 && day > 0_i32 as i64) {
+                let mut prevtime = mytime - 86400_i32 as i64;
+                if !(mytime < 0_i32 as i64 && prevtime > 0_i32 as i64) {
                     let res = pg_next_dst_boundary(
                         &mut prevtime,
                         &mut before_gmtoff,
@@ -1786,44 +1782,44 @@ unsafe fn DetermineTimeZoneOffsetInternal(
                         &mut after_isdst,
                         tzp,
                     );
-                    if !(res < 0 as i32) {
-                        if res == 0 as i32 {
-                            (*tm).tm_isdst = Some(before_isdst);
+                    if res >= 0_i32 {
+                        if res == 0_i32 {
+                            tm.tm_isdst = Some(before_isdst);
                             *tp = mytime - before_gmtoff;
                             return -(before_gmtoff as i32);
                         }
                         let beforetime = mytime - before_gmtoff;
-                        if !(before_gmtoff > 0 as i32 as i64
-                            && mytime < 0 as i32 as i64
-                            && beforetime > 0 as i32 as i64
-                            || before_gmtoff <= 0 as i32 as i64
-                                && mytime > 0 as i32 as i64
-                                && beforetime < 0 as i32 as i64)
+                        if !(before_gmtoff > 0_i32 as i64
+                            && mytime < 0_i32 as i64
+                            && beforetime > 0_i32 as i64
+                            || before_gmtoff <= 0_i32 as i64
+                                && mytime > 0_i32 as i64
+                                && beforetime < 0_i32 as i64)
                         {
                             let aftertime = mytime - after_gmtoff;
-                            if !(after_gmtoff > 0 as i32 as i64
-                                && mytime < 0 as i32 as i64
-                                && aftertime > 0 as i32 as i64
-                                || after_gmtoff <= 0 as i32 as i64
-                                    && mytime > 0 as i32 as i64
-                                    && aftertime < 0 as i32 as i64)
+                            if !(after_gmtoff > 0_i32 as i64
+                                && mytime < 0_i32 as i64
+                                && aftertime > 0_i32 as i64
+                                || after_gmtoff <= 0_i32 as i64
+                                    && mytime > 0_i32 as i64
+                                    && aftertime < 0_i32 as i64)
                             {
                                 if beforetime < boundary && aftertime < boundary {
-                                    (*tm).tm_isdst = Some(before_isdst);
+                                    tm.tm_isdst = Some(before_isdst);
                                     *tp = beforetime;
                                     return -(before_gmtoff as i32);
                                 }
                                 if beforetime > boundary && aftertime >= boundary {
-                                    (*tm).tm_isdst = Some(after_isdst);
+                                    tm.tm_isdst = Some(after_isdst);
                                     *tp = aftertime;
                                     return -(after_gmtoff as i32);
                                 }
                                 if beforetime > aftertime {
-                                    (*tm).tm_isdst = Some(before_isdst);
+                                    tm.tm_isdst = Some(before_isdst);
                                     *tp = beforetime;
                                     return -(before_gmtoff as i32);
                                 }
-                                (*tm).tm_isdst = Some(after_isdst);
+                                tm.tm_isdst = Some(after_isdst);
                                 *tp = aftertime;
                                 return -(after_gmtoff as i32);
                             }
@@ -1833,9 +1829,9 @@ unsafe fn DetermineTimeZoneOffsetInternal(
             }
         }
     }
-    (*tm).tm_isdst = Some(false);
-    *tp = 0 as i32 as pg_time_t;
-    return 0 as i32;
+    tm.tm_isdst = Some(false);
+    *tp = 0_i32 as pg_time_t;
+    0_i32
 }
 
 unsafe fn DetermineTimeZoneAbbrevOffset(
@@ -1848,10 +1844,10 @@ unsafe fn DetermineTimeZoneAbbrevOffset(
     let mut abbr_isdst = false;
     let zone_offset = DetermineTimeZoneOffsetInternal(tm, tzp, &mut t);
     if DetermineTimeZoneAbbrevOffsetInternal(t, abbr, tzp, &mut abbr_offset, &mut abbr_isdst) {
-        (*tm).tm_isdst = Some(abbr_isdst);
+        tm.tm_isdst = Some(abbr_isdst);
         return abbr_offset;
     }
-    return zone_offset;
+    zone_offset
 }
 
 unsafe fn DetermineTimeZoneAbbrevOffsetInternal(
@@ -1877,7 +1873,7 @@ unsafe fn DetermineTimeZoneAbbrevOffsetInternal(
         *offset = -gmtoff as i32;
         return true;
     }
-    return false;
+    false
 }
 
 unsafe fn DecodeDate(
@@ -1888,13 +1884,13 @@ unsafe fn DecodeDate(
     mut tm: &mut pg_tm,
 ) -> i32 {
     let mut fsec: fsec_t = 0;
-    let mut nf: i32 = 0 as i32;
+    let mut nf: i32 = 0_i32;
     let mut haveTextMonth: bool = false;
     let mut val: i32 = 0;
     let mut dmask = FieldMask::none();
-    let mut field: [*mut libc::c_char; 25] = [0 as *mut libc::c_char; 25];
+    let mut field: [*mut libc::c_char; 25] = [std::ptr::null_mut::<libc::c_char>(); 25];
     *tmask = FieldMask::none();
-    while *str as i32 != '\0' as i32 && nf < 25 as i32 {
+    while *str as i32 != '\0' as i32 && nf < 25_i32 {
         while *str as i32 != '\0' as i32
             && *(*__ctype_b_loc()).offset(*str as libc::c_uchar as i32 as isize) as i32
                 & _ISalnum as i32 as libc::c_ushort as i32
@@ -1903,7 +1899,7 @@ unsafe fn DecodeDate(
             str = str.offset(1);
         }
         if *str as i32 == '\0' as i32 {
-            return -(1 as i32);
+            return -1_i32;
         }
         field[nf as usize] = str;
         if *(*__ctype_b_loc()).offset(*str as libc::c_uchar as i32 as isize) as i32
@@ -1944,28 +1940,28 @@ unsafe fn DecodeDate(
                 dmask = FieldMask::from(type_0);
                 match type_0 {
                     FieldType::Month => {
-                        (*tm).tm_mon = val;
+                        tm.tm_mon = val;
                         haveTextMonth = true;
                     }
                     typ => {
                         eprintln!("unexpected field type: {:?}", typ);
-                        return -(1 as i32);
+                        return -1_i32;
                     }
                 }
                 if fmask.intersects(dmask) {
-                    return -(1 as i32);
+                    return -1_i32;
                 }
                 fmask |= dmask;
                 *tmask |= dmask;
-                field[i as usize] = 0 as *mut libc::c_char;
+                field[i as usize] = std::ptr::null_mut::<libc::c_char>();
             }
         }
     }
     for i in 0..nf {
         if !(field[i as usize]).is_null() {
             let len = strlen(field[i as usize]) as i32;
-            if len <= 0 as i32 {
-                return -(1 as i32);
+            if len <= 0_i32 {
+                return -1_i32;
             }
             let dterr = DecodeNumber(
                 len,
@@ -1981,18 +1977,18 @@ unsafe fn DecodeDate(
                 return dterr;
             }
             if fmask.intersects(dmask) {
-                return -(1 as i32);
+                return -1_i32;
             }
             fmask |= dmask;
             *tmask |= dmask;
         }
     }
     if fmask & !(FieldType::Doy | FieldType::Tz) != *FIELD_MASK_DATE {
-        return -(1 as i32);
+        return -1_i32;
     }
 
     // validation of the field values must wait until ValidateDate()
-    return 0 as i32;
+    0_i32
 }
 
 /// Check valid year/month/day values, handle BC and DOY cases Return 0 if okay, a DTERR code if not.
@@ -2004,59 +2000,49 @@ unsafe fn ValidateDate(
     bc: bool,
     mut tm: &mut pg_tm,
 ) -> i32 {
-    if fmask.contains(FieldType::Year) {
-        if !isjulian {
-            if bc {
-                if (*tm).tm_year <= 0 as i32 {
-                    return -(2 as i32);
-                }
-                (*tm).tm_year = -((*tm).tm_year - 1 as i32);
-            } else if is2digits {
-                if (*tm).tm_year < 0 as i32 {
-                    return -(2 as i32);
-                }
-                if (*tm).tm_year < 70 as i32 {
-                    (*tm).tm_year += 2000 as i32;
-                } else if (*tm).tm_year < 100 as i32 {
-                    (*tm).tm_year += 1900 as i32;
-                }
-            } else if (*tm).tm_year <= 0 as i32 {
-                return -(2 as i32);
+    if fmask.contains(FieldType::Year) && !isjulian {
+        if bc {
+            if tm.tm_year <= 0_i32 {
+                return -2_i32;
             }
+            tm.tm_year = -(tm.tm_year - 1_i32);
+        } else if is2digits {
+            if tm.tm_year < 0_i32 {
+                return -2_i32;
+            }
+            if tm.tm_year < 70_i32 {
+                tm.tm_year += 2000_i32;
+            } else if tm.tm_year < 100_i32 {
+                tm.tm_year += 1900_i32;
+            }
+        } else if tm.tm_year <= 0_i32 {
+            return -2_i32;
         }
     }
     // now that we have correct year, decode DOY
     if fmask.contains(FieldType::Doy) {
         j2date(
-            date2j((*tm).tm_year, 1 as i32, 1 as i32) + (*tm).tm_yday - 1 as i32,
-            &mut (*tm).tm_year,
-            &mut (*tm).tm_mon,
-            &mut (*tm).tm_mday,
+            date2j(tm.tm_year, 1_i32, 1_i32) + tm.tm_yday - 1_i32,
+            &mut tm.tm_year,
+            &mut tm.tm_mon,
+            &mut tm.tm_mday,
         );
     }
     // check for valid month
-    if fmask.contains(FieldType::Month) {
-        if (*tm).tm_mon < 1 as i32 || (*tm).tm_mon > 12 as i32 {
-            return -(3 as i32);
-        }
+    if fmask.contains(FieldType::Month) && (tm.tm_mon < 1_i32 || tm.tm_mon > 12_i32) {
+        return -3_i32;
     }
     // minimal check for valid day
-    if fmask.contains(FieldType::Day) {
-        if (*tm).tm_mday < 1 as i32 || (*tm).tm_mday > 31 as i32 {
-            return -(3 as i32);
-        }
+    if fmask.contains(FieldType::Day) && (tm.tm_mday < 1_i32 || tm.tm_mday > 31_i32) {
+        return -3_i32;
     }
-    if fmask.contains(*FIELD_MASK_DATE) {
-        if (*tm).tm_mday
-            > day_tab[((*tm).tm_year % 4 as i32 == 0 as i32
-                && ((*tm).tm_year % 100 as i32 != 0 as i32
-                    || (*tm).tm_year % 400 as i32 == 0 as i32)) as i32
-                as usize][((*tm).tm_mon - 1 as i32) as usize]
-        {
-            return -(2 as i32);
-        }
+    if fmask.contains(*FIELD_MASK_DATE) && tm.tm_mday > day_tab[(tm.tm_year % 4_i32 == 0_i32
+                && (tm.tm_year % 100_i32 != 0_i32
+                    || tm.tm_year % 400_i32 == 0_i32)) as i32
+                as usize][(tm.tm_mon - 1_i32) as usize] {
+        return -2_i32;
     }
-    return 0 as i32;
+    0_i32
 }
 
 /// Decode time string which includes delimiters.
@@ -2072,67 +2058,67 @@ unsafe fn DecodeTime(
     mut tm: &mut pg_tm,
     fsec: &mut fsec_t,
 ) -> i32 {
-    let mut cp: *mut libc::c_char = 0 as *mut libc::c_char;
+    let mut cp: *mut libc::c_char = std::ptr::null_mut::<libc::c_char>();
     *tmask = *FIELD_MASK_TIME;
-    *__errno_location() = 0 as i32;
-    (*tm).tm_hour = strtoint(str, &mut cp, 10 as i32);
-    if *__errno_location() == 34 as i32 {
-        return -(2 as i32);
+    *__errno_location() = 0_i32;
+    tm.tm_hour = strtoint(str, &mut cp, 10_i32);
+    if *__errno_location() == 34_i32 {
+        return -2_i32;
     }
     if *cp as i32 != ':' as i32 {
-        return -(1 as i32);
+        return -1_i32;
     }
-    *__errno_location() = 0 as i32;
-    (*tm).tm_min = strtoint(cp.offset(1 as i32 as isize), &mut cp, 10 as i32);
-    if *__errno_location() == 34 as i32 {
-        return -(2 as i32);
+    *__errno_location() = 0_i32;
+    tm.tm_min = strtoint(cp.offset(1_i32 as isize), &mut cp, 10_i32);
+    if *__errno_location() == 34_i32 {
+        return -2_i32;
     }
     if *cp as i32 == '\0' as i32 {
-        (*tm).tm_sec = 0 as i32;
-        *fsec = 0 as i32;
-        if range == (1 as i32) << 11 as i32 | (1 as i32) << 12 as i32 {
-            (*tm).tm_sec = (*tm).tm_min;
-            (*tm).tm_min = (*tm).tm_hour;
-            (*tm).tm_hour = 0 as i32;
+        tm.tm_sec = 0_i32;
+        *fsec = 0_i32;
+        if range == 1_i32 << 11_i32 | 1_i32 << 12_i32 {
+            tm.tm_sec = tm.tm_min;
+            tm.tm_min = tm.tm_hour;
+            tm.tm_hour = 0_i32;
         }
     } else if *cp as i32 == '.' as i32 {
         let dterr = ParseFractionalSecond(cp, fsec);
         if dterr != 0 {
             return dterr;
         }
-        (*tm).tm_sec = (*tm).tm_min;
-        (*tm).tm_min = (*tm).tm_hour;
-        (*tm).tm_hour = 0 as i32;
+        tm.tm_sec = tm.tm_min;
+        tm.tm_min = tm.tm_hour;
+        tm.tm_hour = 0_i32;
     } else if *cp as i32 == ':' as i32 {
-        *__errno_location() = 0 as i32;
-        (*tm).tm_sec = strtoint(cp.offset(1 as i32 as isize), &mut cp, 10 as i32);
-        if *__errno_location() == 34 as i32 {
-            return -(2 as i32);
+        *__errno_location() = 0_i32;
+        tm.tm_sec = strtoint(cp.offset(1_i32 as isize), &mut cp, 10_i32);
+        if *__errno_location() == 34_i32 {
+            return -2_i32;
         }
         if *cp as i32 == '\0' as i32 {
-            *fsec = 0 as i32;
+            *fsec = 0_i32;
         } else if *cp as i32 == '.' as i32 {
             let dterr = ParseFractionalSecond(cp, fsec);
             if dterr != 0 {
                 return dterr;
             }
         } else {
-            return -(1 as i32);
+            return -1_i32;
         }
     } else {
-        return -(1 as i32);
+        return -1_i32;
     }
-    if (*tm).tm_hour < 0 as i32
-        || (*tm).tm_min < 0 as i32
-        || (*tm).tm_min > 60 as i32 - 1 as i32
-        || (*tm).tm_sec < 0 as i32
-        || (*tm).tm_sec > 60 as i32
-        || (*fsec as i64) < 0 as i64
-        || *fsec as i64 > 1000000 as i64
+    if tm.tm_hour < 0_i32
+        || tm.tm_min < 0_i32
+        || tm.tm_min > 60_i32 - 1_i32
+        || tm.tm_sec < 0_i32
+        || tm.tm_sec > 60_i32
+        || (*fsec as i64) < 0_i64
+        || *fsec as i64 > 1000000_i64
     {
-        return -(2 as i32);
+        return -2_i32;
     }
-    return 0 as i32;
+    0_i32
 }
 unsafe fn DecodeNumber(
     flen: i32,
@@ -2144,18 +2130,18 @@ unsafe fn DecodeNumber(
     fsec: &mut fsec_t,
     is2digits: &mut bool,
 ) -> i32 {
-    let mut cp: *mut libc::c_char = 0 as *mut libc::c_char;
+    let mut cp: *mut libc::c_char = std::ptr::null_mut::<libc::c_char>();
     *tmask = FieldMask::none();
-    *__errno_location() = 0 as i32;
-    let val = strtoint(str, &mut cp, 10 as i32);
-    if *__errno_location() == 34 as i32 {
-        return -(2 as i32);
+    *__errno_location() = 0_i32;
+    let val = strtoint(str, &mut cp, 10_i32);
+    if *__errno_location() == 34_i32 {
+        return -2_i32;
     }
     if cp == str {
-        return -(1 as i32);
+        return -1_i32;
     }
     if *cp as i32 == '.' as i32 {
-        if cp.offset_from(str) as i64 > 2 as i32 as i64 {
+        if cp.offset_from(str) as i64 > 2_i32 as i64 {
             let dterr = DecodeNumberField(
                 flen,
                 str,
@@ -2165,105 +2151,104 @@ unsafe fn DecodeNumber(
                 fsec,
                 is2digits,
             );
-            if dterr < 0 as i32 {
+            if dterr < 0_i32 {
                 return dterr;
             }
-            return 0 as i32;
+            return 0_i32;
         }
         let dterr = ParseFractionalSecond(cp, fsec);
         if dterr != 0 {
             return dterr;
         }
     } else if *cp as i32 != '\0' as i32 {
-        return -(1 as i32);
+        return -1_i32;
     }
     /* Special case for day of year */
-    if flen == 3 as i32
+    if flen == 3_i32
         && fmask & *FIELD_MASK_DATE == FieldMask::from(FieldType::Year)
-        && val >= 1 as i32
-        && val <= 366 as i32
+        && (1_i32..=366_i32).contains(&val)
     {
         *tmask = FieldType::Doy | FieldType::Month | FieldType::Day;
-        (*tm).tm_yday = val;
+        tm.tm_yday = val;
         // tm_mon and tm_mday can't actually be set yet ...
-        return 0 as i32;
+        return 0_i32;
     }
     // Switch based on what we have so far
     match *(fmask & *FIELD_MASK_DATE) {
         0 => {
-            if flen >= 3 as i32 || DateOrder == 0 as i32 {
+            if flen >= 3_i32 || DateOrder == 0_i32 {
                 *tmask = FieldMask::from(FieldType::Year);
-                (*tm).tm_year = val;
-            } else if DateOrder == 1 as i32 {
+                tm.tm_year = val;
+            } else if DateOrder == 1_i32 {
                 *tmask = FieldMask::from(FieldType::Day);
-                (*tm).tm_mday = val;
+                tm.tm_mday = val;
             } else {
                 *tmask = FieldMask::from(FieldType::Month);
-                (*tm).tm_mon = val;
+                tm.tm_mon = val;
             }
         }
         4 => {
             // Must be at second field of YY-MM-DD
             *tmask = FieldMask::from(FieldType::Month);
-            (*tm).tm_mon = val;
+            tm.tm_mon = val;
         }
         2 => {
             if haveTextMonth {
-                if flen >= 3 as i32 || DateOrder == 0 as i32 {
+                if flen >= 3_i32 || DateOrder == 0_i32 {
                     *tmask = FieldMask::from(FieldType::Year);
-                    (*tm).tm_year = val;
+                    tm.tm_year = val;
                 } else {
                     *tmask = FieldMask::from(FieldType::Day);
-                    (*tm).tm_mday = val;
+                    tm.tm_mday = val;
                 }
             } else {
                 *tmask = FieldMask::from(FieldType::Day);
-                (*tm).tm_mday = val;
+                tm.tm_mday = val;
             }
         }
         6 => {
             if haveTextMonth {
                 // Need to accept DD-MON-YYYY even in YMD mode
-                if flen >= 3 as i32 && *is2digits as i32 != 0 {
+                if flen >= 3_i32 && *is2digits as i32 != 0 {
                     // Guess that first numeric field is day was wrong
                     // YEAR is already set
                     *tmask = FieldMask::from(FieldType::Day);
-                    (*tm).tm_mday = (*tm).tm_year;
-                    (*tm).tm_year = val;
+                    tm.tm_mday = tm.tm_year;
+                    tm.tm_year = val;
                     *is2digits = false;
                 } else {
                     *tmask = FieldMask::from(FieldType::Day);
-                    (*tm).tm_mday = val;
+                    tm.tm_mday = val;
                 }
             } else {
                 // Must be at third field of YY-MM-DD
                 *tmask = FieldMask::from(FieldType::Day);
-                (*tm).tm_mday = val;
+                tm.tm_mday = val;
             }
         }
         8 => {
             // Must be at second field of DD-MM-YY
             *tmask = FieldMask::from(FieldType::Month);
-            (*tm).tm_mon = val;
+            tm.tm_mon = val;
         }
         10 => {
             *tmask = FieldMask::from(FieldType::Year);
-            (*tm).tm_year = val;
+            tm.tm_year = val;
         }
         14 => {
             let dterr = DecodeNumberField(flen, str, fmask, tmask, tm, fsec, is2digits);
-            if dterr < 0 as i32 {
+            if dterr < 0_i32 {
                 return dterr;
             }
-            return 0 as i32;
+            return 0_i32;
         }
-        _ => return -(1 as i32),
+        _ => return -1_i32,
     }
     // When processing a year field, mark it for adjustment if it's only one or two digits.
     if *tmask == FieldMask::from(FieldType::Year) {
         *is2digits = flen <= 2;
     }
-    return 0 as i32;
+    0_i32
 }
 unsafe fn DecodeNumberField(
     mut len: i32,
@@ -2276,103 +2261,99 @@ unsafe fn DecodeNumberField(
 ) -> i32 {
     let cp = strchr(str, '.' as i32);
     if !cp.is_null() {
-        *__errno_location() = 0 as i32;
-        let frac = strtod(cp, 0 as *mut *mut libc::c_char);
-        if *__errno_location() != 0 as i32 {
-            return -(1 as i32);
+        *__errno_location() = 0_i32;
+        let frac = strtod(cp, std::ptr::null_mut::<*mut libc::c_char>());
+        if *__errno_location() != 0_i32 {
+            return -1_i32;
         }
-        *fsec = rint(frac * 1000000 as i32 as libc::c_double) as fsec_t;
+        *fsec = rint(frac * 1000000_i32 as libc::c_double) as fsec_t;
         *cp = '\0' as i32 as libc::c_char;
         len = strlen(str) as i32;
     // No decimal point and no complete date yet?
-    } else if !fmask.contains(*FIELD_MASK_DATE) {
-        if len >= 6 as i32 {
-            *tmask = *FIELD_MASK_DATE;
-            (*tm).tm_mday = atoi(str.offset((len - 2 as i32) as isize));
-            *str.offset((len - 2 as i32) as isize) = '\0' as i32 as libc::c_char;
-            (*tm).tm_mon = atoi(str.offset((len - 4 as i32) as isize));
-            *str.offset((len - 4 as i32) as isize) = '\0' as i32 as libc::c_char;
-            (*tm).tm_year = atoi(str);
-            if len - 4 as i32 == 2 as i32 {
-                *is2digits = true;
-            }
-            return 2 as i32;
+    } else if !fmask.contains(*FIELD_MASK_DATE) && len >= 6_i32 {
+        *tmask = *FIELD_MASK_DATE;
+        tm.tm_mday = atoi(str.offset((len - 2_i32) as isize));
+        *str.offset((len - 2_i32) as isize) = '\0' as i32 as libc::c_char;
+        tm.tm_mon = atoi(str.offset((len - 4_i32) as isize));
+        *str.offset((len - 4_i32) as isize) = '\0' as i32 as libc::c_char;
+        tm.tm_year = atoi(str);
+        if len - 4_i32 == 2_i32 {
+            *is2digits = true;
         }
+        return 2_i32;
     }
     if !fmask.contains(*FIELD_MASK_TIME) {
         // hhmmss
-        if len == 6 as i32 {
+        if len == 6_i32 {
             *tmask = *FIELD_MASK_TIME;
-            (*tm).tm_sec = atoi(str.offset(4 as i32 as isize));
-            *str.offset(4 as i32 as isize) = '\0' as i32 as libc::c_char;
-            (*tm).tm_min = atoi(str.offset(2 as i32 as isize));
-            *str.offset(2 as i32 as isize) = '\0' as i32 as libc::c_char;
-            (*tm).tm_hour = atoi(str);
-            return 3 as i32;
-        } else {
-            if len == 4 as i32 {
-                *tmask = *FIELD_MASK_TIME;
-                (*tm).tm_sec = 0 as i32;
-                (*tm).tm_min = atoi(str.offset(2 as i32 as isize));
-                *str.offset(2 as i32 as isize) = '\0' as i32 as libc::c_char;
-                (*tm).tm_hour = atoi(str);
-                return 3 as i32;
-            }
+            tm.tm_sec = atoi(str.offset(4_i32 as isize));
+            *str.offset(4_i32 as isize) = '\0' as i32 as libc::c_char;
+            tm.tm_min = atoi(str.offset(2_i32 as isize));
+            *str.offset(2_i32 as isize) = '\0' as i32 as libc::c_char;
+            tm.tm_hour = atoi(str);
+            return 3_i32;
+        } else if len == 4_i32 {
+            *tmask = *FIELD_MASK_TIME;
+            tm.tm_sec = 0_i32;
+            tm.tm_min = atoi(str.offset(2_i32 as isize));
+            *str.offset(2_i32 as isize) = '\0' as i32 as libc::c_char;
+            tm.tm_hour = atoi(str);
+            return 3_i32;
         }
     }
-    return -(1 as i32);
+    -1_i32
 }
 
 unsafe fn DecodeTimezone(str: *mut libc::c_char, tzp: *mut i32) -> i32 {
     let mut tz: i32;
     let min: i32;
-    let mut sec: i32 = 0 as i32;
-    let mut cp: *mut libc::c_char = 0 as *mut libc::c_char;
+    let mut sec: i32 = 0_i32;
+    let mut cp: *mut libc::c_char = std::ptr::null_mut::<libc::c_char>();
     if *str as i32 != '+' as i32 && *str as i32 != '-' as i32 {
-        return -(1 as i32);
+        return -1_i32;
     }
-    *__errno_location() = 0 as i32;
-    let mut hr = strtoint(str.offset(1 as i32 as isize), &mut cp, 10 as i32);
-    if *__errno_location() == 34 as i32 {
-        return -(5 as i32);
+    *__errno_location() = 0_i32;
+    let mut hr = strtoint(str.offset(1_i32 as isize), &mut cp, 10_i32);
+    if *__errno_location() == 34_i32 {
+        return -5_i32;
     }
     if *cp as i32 == ':' as i32 {
-        *__errno_location() = 0 as i32;
-        min = strtoint(cp.offset(1 as i32 as isize), &mut cp, 10 as i32);
-        if *__errno_location() == 34 as i32 {
-            return -(5 as i32);
+        *__errno_location() = 0_i32;
+        min = strtoint(cp.offset(1_i32 as isize), &mut cp, 10_i32);
+        if *__errno_location() == 34_i32 {
+            return -5_i32;
         }
         if *cp as i32 == ':' as i32 {
-            *__errno_location() = 0 as i32;
-            sec = strtoint(cp.offset(1 as i32 as isize), &mut cp, 10 as i32);
-            if *__errno_location() == 34 as i32 {
-                return -(5 as i32);
+            *__errno_location() = 0_i32;
+            sec = strtoint(cp.offset(1_i32 as isize), &mut cp, 10_i32);
+            if *__errno_location() == 34_i32 {
+                return -5_i32;
             }
         }
-    } else if *cp as i32 == '\0' as i32 && strlen(str) > 3 as i32 as u64 {
-        min = hr % 100 as i32;
-        hr = hr / 100 as i32;
+    } else if *cp as i32 == '\0' as i32 && strlen(str) > 3_i32 as u64 {
+        min = hr % 100_i32;
+        hr /= 100_i32;
     } else {
-        min = 0 as i32;
+        min = 0_i32;
     }
-    if hr < 0 as i32 || hr > 15 as i32 {
-        return -(5 as i32);
+    if !(0_i32..=15_i32).contains(&hr) {
+        return -5_i32;
     }
-    if min < 0 as i32 || min >= 60 as i32 {
-        return -(5 as i32);
+    if !(0_i32..60_i32).contains(&min) {
+        return -5_i32;
     }
-    if sec < 0 as i32 || sec >= 60 as i32 {
-        return -(5 as i32);
+    if !(0_i32..60_i32).contains(&sec) {
+        return -5_i32;
     }
-    tz = (hr * 60 as i32 + min) * 60 as i32 + sec;
+    tz = (hr * 60_i32 + min) * 60_i32 + sec;
     if *str as i32 == '-' as i32 {
         tz = -tz;
     }
     *tzp = -tz;
     if *cp as i32 != '\0' as i32 {
-        return -(1 as i32);
+        return -1_i32;
     }
-    return 0 as i32;
+    0_i32
 }
 
 unsafe fn DecodeTimezoneAbbrev(
@@ -2387,25 +2368,25 @@ unsafe fn DecodeTimezoneAbbrev(
                 let token = &table.abbrevs[idx];
                 match token.typ {
                     FieldType::DynTz => {
-                        *offset = 0 as i32;
+                        *offset = 0_i32;
                         *tz = FetchDynamicTimeZone(&table, token);
                     }
                     _ => {
                         *offset = token.value;
-                        *tz = 0 as *mut pg_tz;
+                        *tz = std::ptr::null_mut::<pg_tz>();
                     }
                 };
                 token.typ
             }
             Err(_) => {
-                *offset = 0 as i32;
-                *tz = 0 as *mut pg_tz;
+                *offset = 0_i32;
+                *tz = std::ptr::null_mut::<pg_tz>();
                 FieldType::UnknownField
             }
         },
         None => {
-            *offset = 0 as i32;
-            *tz = 0 as *mut pg_tz;
+            *offset = 0_i32;
+            *tz = std::ptr::null_mut::<pg_tz>();
             FieldType::UnknownField
         }
     }
