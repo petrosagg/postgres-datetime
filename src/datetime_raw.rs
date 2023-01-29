@@ -285,7 +285,7 @@ type TimeOffset = int64;
 pub type fsec_t = int32;
 pub type DateADT = int32;
 type pg_time_t = int64;
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug, Clone)]
 pub struct pg_tm {
     pub tm_sec: i32,
     pub tm_min: i32,
@@ -300,12 +300,12 @@ pub struct pg_tm {
     pub tm_zone: *const libc::c_char,
 }
 
-#[derive(Copy, Clone)]
+#[derive(Clone)]
 struct TimeZoneAbbrevTable {
     abbrevs: &'static [DateToken],
     _dyn_abbrevs: &'static [DateToken],
 }
-#[derive(Copy, Clone)]
+#[derive(Clone)]
 struct DynamicZoneAbbrev {
     _tz: *mut pg_tz,
     _zone: [libc::c_char; 0],
@@ -783,45 +783,22 @@ unsafe fn GetCurrentDateTime(tm: &mut pg_tm) {
 
 unsafe fn GetCurrentTimeUsec(tm: &mut pg_tm, fsec: &mut fsec_t, tzp: *mut i32) {
     let cur_ts: TimestampTz = GetCurrentTransactionStartTimestamp();
-    static mut cache_ts: TimestampTz = 0 as TimestampTz;
-    static mut cache_timezone: *mut pg_tz = 0 as *const pg_tz as *mut pg_tz;
-    static mut cache_tm: pg_tm = pg_tm {
-        tm_sec: 0,
-        tm_min: 0,
-        tm_hour: 0,
-        tm_mday: 0,
-        tm_mon: 0,
-        tm_year: 0,
-        tm_wday: 0,
-        tm_yday: 0,
-        tm_isdst: Some(false),
-        tm_gmtoff: 0,
-        tm_zone: 0 as *const libc::c_char,
-    };
-    static mut cache_fsec: fsec_t = 0;
-    static mut cache_tz: i32 = 0;
-    if cur_ts != cache_ts || session_timezone != cache_timezone {
-        cache_timezone = std::ptr::null_mut::<pg_tz>();
-        if timestamp2tm(
-            cur_ts,
-            &mut cache_tz,
-            &mut cache_tm,
-            &mut cache_fsec,
-            std::ptr::null_mut::<*const libc::c_char>(),
-            session_timezone,
-        ) != 0
-        {
-            // ereport(ERROR,
-            // 		(errcode(ERRCODE_DATETIME_VALUE_OUT_OF_RANGE),
-            // 		 errmsg("timestamp out of range")));
-        }
-        cache_ts = cur_ts;
-        cache_timezone = session_timezone;
+    let mut tzp_local = 0;
+    if timestamp2tm(
+        cur_ts,
+        &mut tzp_local,
+        tm,
+        fsec,
+        std::ptr::null_mut::<*const libc::c_char>(),
+        session_timezone,
+    ) != 0
+    {
+        // ereport(ERROR,
+        // 		(errcode(ERRCODE_DATETIME_VALUE_OUT_OF_RANGE),
+        // 		 errmsg("timestamp out of range")));
     }
-    *tm = cache_tm;
-    *fsec = cache_fsec;
     if !tzp.is_null() {
-        *tzp = cache_tz;
+        *tzp = tzp_local;
     }
 }
 unsafe fn ParseFractionalSecond(mut cp: *mut libc::c_char, fsec: &mut fsec_t) -> i32 {
@@ -2244,7 +2221,7 @@ unsafe fn DecodeTimezoneAbbrev(
     tz: *mut *mut pg_tz,
 ) -> FieldType {
     let lowtoken = std::ffi::CStr::from_ptr(lowtoken).to_str().unwrap();
-    match ZONE_ABBREV_TABLE {
+    match &ZONE_ABBREV_TABLE {
         Some(table) => match table.abbrevs.binary_search_by(|tk| tk.token.cmp(lowtoken)) {
             Ok(idx) => {
                 let token = &table.abbrevs[idx];
