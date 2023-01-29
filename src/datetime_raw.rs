@@ -188,7 +188,6 @@ fn timestamp2tm(
     unsafe {
         let mut date: Timestamp = 0;
         let mut time: Timestamp;
-        
 
         /* Use session timezone if caller asks for default */
         if attimezone.is_null() {
@@ -218,13 +217,7 @@ fn timestamp2tm(
             &mut tm.tm_mon,
             &mut tm.tm_mday,
         );
-        dt2time(
-            time,
-            &mut tm.tm_hour,
-            &mut tm.tm_min,
-            &mut tm.tm_sec,
-            fsec,
-        );
+        dt2time(time, &mut tm.tm_hour, &mut tm.tm_min, &mut tm.tm_sec, fsec);
 
         /* Done if no TZ conversion wanted */
         if tzp.is_null() {
@@ -344,12 +337,12 @@ struct DynamicZoneAbbrev {
 
 static mut day_tab: [[i32; 13]; 2] = [
     [
-        31_i32, 28_i32, 31_i32, 30_i32, 31_i32, 30_i32, 31_i32, 31_i32,
-        30_i32, 31_i32, 30_i32, 31_i32, 0_i32,
+        31_i32, 28_i32, 31_i32, 30_i32, 31_i32, 30_i32, 31_i32, 31_i32, 30_i32, 31_i32, 30_i32,
+        31_i32, 0_i32,
     ],
     [
-        31_i32, 29_i32, 31_i32, 30_i32, 31_i32, 30_i32, 31_i32, 31_i32,
-        30_i32, 31_i32, 30_i32, 31_i32, 0_i32,
+        31_i32, 29_i32, 31_i32, 30_i32, 31_i32, 30_i32, 31_i32, 31_i32, 30_i32, 31_i32, 30_i32,
+        31_i32, 0_i32,
     ],
 ];
 
@@ -1024,7 +1017,8 @@ pub fn parse_datetime(input: &str) -> Result<Vec<(String, TokenFieldType)>, i32>
             } else if *chars.peek().unwrap() == '+' || chars.peek().unwrap().is_ascii_digit() {
                 // we need search only the core token table, not TZ names
                 if DATE_TOKEN_TABLE
-                    .binary_search_by(|tk| tk.token.cmp(&*fdata)).is_err()
+                    .binary_search_by(|tk| tk.token.cmp(&*fdata))
+                    .is_err()
                 {
                     is_date = true;
                 }
@@ -1082,16 +1076,16 @@ pub fn parse_datetime(input: &str) -> Result<Vec<(String, TokenFieldType)>, i32>
 /// (Currently, all callers treat 1 as an error return too.)
 ///
 ///  External format(s):
-///  		"<weekday> <month>-<day>-<year> <hour>:<minute>:<second>"
-///  		"Fri Feb-7-1997 15:23:27"
-///  		"Feb-7-1997 15:23:27"
-///  		"2-7-1997 15:23:27"
-///  		"1997-2-7 15:23:27"
-///  		"1997.038 15:23:27"		(day of year 1-366)
+///          "<weekday> <month>-<day>-<year> <hour>:<minute>:<second>"
+///          "Fri Feb-7-1997 15:23:27"
+///          "Feb-7-1997 15:23:27"
+///          "2-7-1997 15:23:27"
+///          "1997-2-7 15:23:27"
+///          "1997.038 15:23:27"        (day of year 1-366)
 ///  Also supports input in compact time:
-///  		"970207 152327"
-///  		"97038 152327"
-///  		"20011225T040506.789-07"
+///          "970207 152327"
+///          "97038 152327"
+///          "20011225T040506.789-07"
 ///
 /// Use the system-provided functions to get the current time zone
 /// if not specified in the input string.
@@ -1164,12 +1158,7 @@ pub unsafe fn DecodeDateTime(
                     if *__errno_location() == 34_i32 || val_0 < 0_i32 {
                         return -2_i32;
                     }
-                    j2date(
-                        val_0,
-                        &mut tm.tm_year,
-                        &mut tm.tm_mon,
-                        &mut tm.tm_mday,
-                    );
+                    j2date(val_0, &mut tm.tm_year, &mut tm.tm_mon, &mut tm.tm_mday);
                     isjulian = true;
                     let dterr = DecodeTimezone(cp, tzp);
                     if dterr != 0 {
@@ -1402,12 +1391,7 @@ pub unsafe fn DecodeDateTime(
                                 return -2_i32;
                             }
                             tmask = *FIELD_MASK_DATE;
-                            j2date(
-                                val_1,
-                                &mut tm.tm_year,
-                                &mut tm.tm_mon,
-                                &mut tm.tm_mday,
-                            );
+                            j2date(val_1, &mut tm.tm_year, &mut tm.tm_mon, &mut tm.tm_mday);
                             isjulian = true;
                             if *cp_1 as i32 == '.' as i32 {
                                 *__errno_location() = 0_i32;
@@ -1537,8 +1521,7 @@ pub unsafe fn DecodeDateTime(
                                 *dtype = TokenFieldType::Date;
                                 GetCurrentDateTime(&mut cur_tm);
                                 j2date(
-                                    date2j(cur_tm.tm_year, cur_tm.tm_mon, cur_tm.tm_mday)
-                                        - 1_i32,
+                                    date2j(cur_tm.tm_year, cur_tm.tm_mon, cur_tm.tm_mday) - 1_i32,
                                     &mut tm.tm_year,
                                     &mut tm.tm_mon,
                                     &mut tm.tm_mday,
@@ -1557,8 +1540,7 @@ pub unsafe fn DecodeDateTime(
                                 *dtype = TokenFieldType::Date;
                                 GetCurrentDateTime(&mut cur_tm);
                                 j2date(
-                                    date2j(cur_tm.tm_year, cur_tm.tm_mon, cur_tm.tm_mday)
-                                        + 1_i32,
+                                    date2j(cur_tm.tm_year, cur_tm.tm_mon, cur_tm.tm_mday) + 1_i32,
                                     &mut tm.tm_year,
                                     &mut tm.tm_mon,
                                     &mut tm.tm_mday,
@@ -1652,9 +1634,9 @@ pub unsafe fn DecodeDateTime(
                             }
 
                             // We will need one of the following fields:
-                            //	DTK_NUMBER should be hhmmss.fff
-                            //	DTK_TIME should be hh:mm:ss.fff
-                            //	DTK_DATE should be hhmmss-zz
+                            //    DTK_NUMBER should be hhmmss.fff
+                            //    DTK_TIME should be hh:mm:ss.fff
+                            //    DTK_DATE should be hhmmss-zz
                             if i >= nf - 1_i32
                                 || *ftype.offset((i + 1_i32) as isize) != 0_i32
                                     && *ftype.offset((i + 1_i32) as isize) != 3_i32
@@ -1760,10 +1742,8 @@ unsafe fn DetermineTimeZoneOffsetInternal(
     let mut after_gmtoff: i64 = 0;
     let mut before_isdst = false;
     let mut after_isdst = false;
-    if (tm.tm_year > -4713_i32
-        || tm.tm_year == -4713_i32 && tm.tm_mon >= 11_i32)
-        && (tm.tm_year < 5874898_i32
-            || tm.tm_year == 5874898_i32 && tm.tm_mon < 6_i32)
+    if (tm.tm_year > -4713_i32 || tm.tm_year == -4713_i32 && tm.tm_mon >= 11_i32)
+        && (tm.tm_year < 5874898_i32 || tm.tm_year == 5874898_i32 && tm.tm_mon < 6_i32)
     {
         let date = date2j(tm.tm_year, tm.tm_mon, tm.tm_mday) - 2440588_i32;
         let day = date as pg_time_t * 86400_i32 as i64;
@@ -2036,10 +2016,12 @@ unsafe fn ValidateDate(
     if fmask.contains(FieldType::Day) && (tm.tm_mday < 1_i32 || tm.tm_mday > 31_i32) {
         return -3_i32;
     }
-    if fmask.contains(*FIELD_MASK_DATE) && tm.tm_mday > day_tab[(tm.tm_year % 4_i32 == 0_i32
-                && (tm.tm_year % 100_i32 != 0_i32
-                    || tm.tm_year % 400_i32 == 0_i32)) as i32
-                as usize][(tm.tm_mon - 1_i32) as usize] {
+    if fmask.contains(*FIELD_MASK_DATE)
+        && tm.tm_mday
+            > day_tab[(tm.tm_year % 4_i32 == 0_i32
+                && (tm.tm_year % 100_i32 != 0_i32 || tm.tm_year % 400_i32 == 0_i32))
+                as i32 as usize][(tm.tm_mon - 1_i32) as usize]
+    {
         return -2_i32;
     }
     0_i32
