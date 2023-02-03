@@ -155,7 +155,7 @@ fn TMODULO(t: &mut i64, q: &mut i64, u: i64) {
 
 fn timestamp2tm(
     mut dt: Timestamp,
-    tzp: *mut i32,
+    tzp: Option<&mut i32>,
     tm: &mut pg_tm,
     fsec: &mut fsec_t,
     tzn: *mut *const libc::c_char,
@@ -196,60 +196,62 @@ fn timestamp2tm(
         dt2time(time, &mut tm.tm_hour, &mut tm.tm_min, &mut tm.tm_sec, fsec);
 
         /* Done if no TZ conversion wanted */
-        if tzp.is_null() {
-            tm.tm_isdst = None;
-            tm.tm_gmtoff = 0;
-            tm.tm_zone = std::ptr::null_mut();
-            if !tzn.is_null() {
-                *tzn = std::ptr::null_mut();
+        match tzp {
+            None => {
+                tm.tm_isdst = None;
+                tm.tm_gmtoff = 0;
+                tm.tm_zone = std::ptr::null_mut();
+                if !tzn.is_null() {
+                    *tzn = std::ptr::null_mut();
+                }
+                return 0;
             }
-            return 0;
+            Some(tzp) => {
+                /*
+                 * If the time falls within the range of pg_time_t, use pg_localtime() to
+                 * rotate to the local time zone.
+                 *
+                 * First, convert to an integral timestamp, avoiding possibly
+                 * platform-specific roundoff-in-wrong-direction errors, and adjust to
+                 * Unix epoch.  Then see if we can convert to pg_time_t without loss. This
+                 * coding avoids hardwiring any assumptions about the width of pg_time_t,
+                 * so it should behave sanely on machines without int64.
+                 */
+                dt = (dt - *fsec as i64) / USECS_PER_SEC
+                    + (POSTGRES_EPOCH_JDATE - UNIX_EPOCH_JDATE) * SECS_PER_DAY as i64;
+                let utime: pg_time_t = dt;
+                if utime == dt {
+                    let tx = pg_localtime(&utime, attimezone);
+
+                    tm.tm_year = tx.tm_year + 1900;
+                    tm.tm_mon = tx.tm_mon + 1;
+                    tm.tm_mday = tx.tm_mday;
+                    tm.tm_hour = tx.tm_hour;
+                    tm.tm_min = tx.tm_min;
+                    tm.tm_sec = tx.tm_sec;
+                    tm.tm_isdst = tx.tm_isdst;
+                    tm.tm_gmtoff = tx.tm_gmtoff;
+                    tm.tm_zone = tx.tm_zone;
+                    *tzp = (-tm.tm_gmtoff).try_into().unwrap();
+                    if !tzn.is_null() {
+                        *tzn = tm.tm_zone;
+                    }
+                } else {
+                    /*
+                     * When out of range of pg_time_t, treat as GMT
+                     */
+                    *tzp = 0;
+                    /* Mark this as *no* time zone available */
+                    tm.tm_isdst = None;
+                    tm.tm_gmtoff = 0;
+                    tm.tm_zone = std::ptr::null_mut();
+                    if !tzn.is_null() {
+                        *tzn = std::ptr::null_mut();
+                    }
+                }
+                0
+            }
         }
-
-        /*
-         * If the time falls within the range of pg_time_t, use pg_localtime() to
-         * rotate to the local time zone.
-         *
-         * First, convert to an integral timestamp, avoiding possibly
-         * platform-specific roundoff-in-wrong-direction errors, and adjust to
-         * Unix epoch.  Then see if we can convert to pg_time_t without loss. This
-         * coding avoids hardwiring any assumptions about the width of pg_time_t,
-         * so it should behave sanely on machines without int64.
-         */
-        dt = (dt - *fsec as i64) / USECS_PER_SEC
-            + (POSTGRES_EPOCH_JDATE - UNIX_EPOCH_JDATE) * SECS_PER_DAY as i64;
-        let utime: pg_time_t = dt;
-        if utime == dt {
-            let tx = pg_localtime(&utime, attimezone);
-
-            tm.tm_year = tx.tm_year + 1900;
-            tm.tm_mon = tx.tm_mon + 1;
-            tm.tm_mday = tx.tm_mday;
-            tm.tm_hour = tx.tm_hour;
-            tm.tm_min = tx.tm_min;
-            tm.tm_sec = tx.tm_sec;
-            tm.tm_isdst = tx.tm_isdst;
-            tm.tm_gmtoff = tx.tm_gmtoff;
-            tm.tm_zone = tx.tm_zone;
-            *tzp = (-tm.tm_gmtoff).try_into().unwrap();
-            if !tzn.is_null() {
-                *tzn = tm.tm_zone;
-            }
-        } else {
-            /*
-             * When out of range of pg_time_t, treat as GMT
-             */
-            *tzp = 0;
-            /* Mark this as *no* time zone available */
-            tm.tm_isdst = None;
-            tm.tm_gmtoff = 0;
-            tm.tm_zone = std::ptr::null_mut();
-            if !tzn.is_null() {
-                *tzn = std::ptr::null_mut();
-            }
-        }
-
-        0
     }
 }
 
@@ -778,15 +780,15 @@ unsafe fn j2date(jd: i32, year: &mut i32, month: &mut i32, day: &mut i32) {
 
 unsafe fn GetCurrentDateTime(tm: &mut pg_tm) {
     let mut fsec: fsec_t = 0;
-    GetCurrentTimeUsec(tm, &mut fsec, std::ptr::null_mut::<i32>());
+    GetCurrentTimeUsec(tm, &mut fsec, None);
 }
 
-unsafe fn GetCurrentTimeUsec(tm: &mut pg_tm, fsec: &mut fsec_t, tzp: *mut i32) {
+unsafe fn GetCurrentTimeUsec(tm: &mut pg_tm, fsec: &mut fsec_t, tzp: Option<&mut i32>) {
     let cur_ts: TimestampTz = GetCurrentTransactionStartTimestamp();
     let mut tzp_local = 0;
     if timestamp2tm(
         cur_ts,
-        &mut tzp_local,
+        Some(&mut tzp_local),
         tm,
         fsec,
         std::ptr::null_mut::<*const libc::c_char>(),
@@ -797,7 +799,7 @@ unsafe fn GetCurrentTimeUsec(tm: &mut pg_tm, fsec: &mut fsec_t, tzp: *mut i32) {
         // 		(errcode(ERRCODE_DATETIME_VALUE_OUT_OF_RANGE),
         // 		 errmsg("timestamp out of range")));
     }
-    if !tzp.is_null() {
+    if let Some(tzp) = tzp {
         *tzp = tzp_local;
     }
 }
@@ -1008,7 +1010,7 @@ pub unsafe fn DecodeDateTime(
     dtype: &mut TokenFieldType,
     mut tm: &mut pg_tm,
     fsec: &mut fsec_t,
-    tzp: *mut i32,
+    mut tzp: Option<&mut i32>,
 ) -> i32 {
     let mut fmask = FieldMask::none();
     let mut tmask = FieldMask::none();
@@ -1047,8 +1049,8 @@ pub unsafe fn DecodeDateTime(
 
     // don't know daylight savings time status apriori
     tm.tm_isdst = None;
-    if !tzp.is_null() {
-        *tzp = 0;
+    if let Some(tzp) = tzp.as_mut() {
+        **tzp = 0;
     }
     let mut current_block_236: u64;
     for i in 0..nf {
@@ -1056,10 +1058,13 @@ pub unsafe fn DecodeDateTime(
             2 => {
                 if ptype == TokenFieldType::Julian {
                     let mut cp: *mut libc::c_char = std::ptr::null_mut::<libc::c_char>();
-                    if tzp.is_null() {
-                        eprintln!("tzp is null");
-                        return -1;
-                    }
+                    let tzp = match tzp.as_mut() {
+                        Some(tzp) => tzp,
+                        None => {
+                            eprintln!("tzp is null");
+                            return -1;
+                        }
+                    };
                     *__errno_location() = 0;
                     let val_0 = strtoint(*field.offset(i as isize), &mut cp, 10);
                     if *__errno_location() == 34 || val_0 < 0 {
@@ -1085,10 +1090,13 @@ pub unsafe fn DecodeDateTime(
                     || fmask.contains(FieldType::Month | FieldType::Day)
                 {
                     // No time zone accepted? Then quit...
-                    if tzp.is_null() {
-                        eprintln!("tzp is null");
-                        return -1;
-                    }
+                    let tzp = match tzp.as_mut() {
+                        Some(tzp) => tzp,
+                        None => {
+                            eprintln!("tzp is null");
+                            return -1;
+                        }
+                    };
                     if *(*__ctype_b_loc())
                         .offset(**field.offset(i as isize) as libc::c_uchar as i32 as isize)
                         as i32
@@ -1185,15 +1193,18 @@ pub unsafe fn DecodeDateTime(
             }
             4 => {
                 let mut tz: i32 = 0;
-                if tzp.is_null() {
-                    eprintln!("tzp is null");
-                    return -1;
-                }
+                let tzp = match tzp.as_mut() {
+                    Some(tzp) => tzp,
+                    None => {
+                        eprintln!("tzp is null");
+                        return -1;
+                    }
+                };
                 let dterr = DecodeTimezone(*field.offset(i as isize), &mut tz);
                 if dterr != 0 {
                     return dterr;
                 }
-                *tzp = tz;
+                **tzp = tz;
                 tmask = FieldMask::from(FieldType::Tz);
                 current_block_236 = 13797367574128857302;
             }
@@ -1258,6 +1269,13 @@ pub unsafe fn DecodeDateTime(
                             }
                         }
                         TokenFieldType::Tz => {
+                            let tzp = match tzp.as_mut() {
+                                Some(tzp) => tzp,
+                                None => {
+                                    eprintln!("tzp is null");
+                                    return -1;
+                                }
+                            };
                             tmask = FieldMask::from(FieldType::Tz);
                             let dterr = DecodeTimezone(*field.offset(i as isize), tzp);
                             if dterr != 0 {
@@ -1401,6 +1419,10 @@ pub unsafe fn DecodeDateTime(
                             12 => {
                                 tmask = *FIELD_MASK_DATE | *FIELD_MASK_TIME | FieldType::Tz;
                                 *dtype = TokenFieldType::Date;
+                                let tzp = match tzp {
+                                    Some(ref mut tzp) => Some(&mut **tzp),
+                                    None => None,
+                                };
                                 GetCurrentTimeUsec(tm, fsec, tzp);
                             }
                             13 => {
@@ -1439,8 +1461,8 @@ pub unsafe fn DecodeDateTime(
                                 tm.tm_hour = 0;
                                 tm.tm_min = 0;
                                 tm.tm_sec = 0;
-                                if !tzp.is_null() {
-                                    *tzp = 0;
+                                if let Some(tzp) = tzp.as_mut() {
+                                    **tzp = 0;
                                 }
                             }
                             _ => {
@@ -1464,33 +1486,38 @@ pub unsafe fn DecodeDateTime(
                         FieldType::DtzMod => {
                             tmask.set(FieldType::DTz);
                             tm.tm_isdst = Some(true);
-                            if tzp.is_null() {
-                                eprintln!("tzp is null");
-                                return -1;
-                            }
-                            *tzp -= val;
+                            let tzp = match tzp.as_mut() {
+                                Some(tzp) => tzp,
+                                None => {
+                                    return -1;
+                                }
+                            };
+                            **tzp -= val;
                         }
                         FieldType::DTz => {
                             tmask.set(FieldType::Tz);
                             tm.tm_isdst = Some(true);
-                            if tzp.is_null() {
-                                eprintln!("tzp is null");
-                                return -1;
-                            }
-                            *tzp = -val;
+                            let tzp = match tzp.as_mut() {
+                                Some(tzp) => tzp,
+                                None => {
+                                    return -1;
+                                }
+                            };
+                            **tzp = -val;
                         }
                         FieldType::Tz => {
                             tm.tm_isdst = Some(false);
-                            if tzp.is_null() {
-                                eprintln!("tzp is null");
-                                return -1;
-                            }
-                            *tzp = -val;
+                            let tzp = match tzp.as_mut() {
+                                Some(tzp) => tzp,
+                                None => {
+                                    return -1;
+                                }
+                            };
+                            **tzp = -val;
                         }
                         FieldType::DynTz => {
                             tmask.set(FieldType::Tz);
-                            if tzp.is_null() {
-                                eprintln!("tzp is null");
+                            if tzp.is_none() {
                                 return -1;
                             }
                             abbrevTz = valtz;
@@ -1591,22 +1618,36 @@ pub unsafe fn DecodeDateTime(
             if fmask.contains(FieldType::DtzMod) {
                 return -1;
             }
-            *tzp = DetermineTimeZoneOffset(tm, namedTz);
+            let tzp = match tzp.as_mut() {
+                Some(tzp) => tzp,
+                None => {
+                    return -1;
+                }
+            };
+            **tzp = DetermineTimeZoneOffset(tm, namedTz);
         }
         // Likewise, if we had a dynamic timezone abbreviation, resolve it now.
         if !abbrevTz.is_null() {
             if fmask.contains(FieldType::DtzMod) {
                 return -1;
             }
-            *tzp = DetermineTimeZoneAbbrevOffset(tm, abbrev, abbrevTz);
+            let tzp = match tzp.as_mut() {
+                Some(tzp) => tzp,
+                None => {
+                    return -1;
+                }
+            };
+            **tzp = DetermineTimeZoneAbbrevOffset(tm, abbrev, abbrevTz);
         }
         // timezone not specified? then use session timezone
-        if !tzp.is_null() && !fmask.contains(FieldType::Tz) {
-            // daylight savings time modifier but no standard timezone? then error
-            if fmask.contains(FieldType::DtzMod) {
-                return -1;
+        if let Some(tzp) = tzp {
+            if !fmask.contains(FieldType::Tz) {
+                // daylight savings time modifier but no standard timezone? then error
+                if fmask.contains(FieldType::DtzMod) {
+                    return -1;
+                }
+                *tzp = DetermineTimeZoneOffset(tm, session_timezone);
             }
-            *tzp = DetermineTimeZoneOffset(tm, session_timezone);
         }
     }
     0
@@ -2163,7 +2204,7 @@ unsafe fn DecodeNumberField(
     -1
 }
 
-unsafe fn DecodeTimezone(str: *mut libc::c_char, tzp: *mut i32) -> i32 {
+unsafe fn DecodeTimezone(str: *mut libc::c_char, tzp: &mut i32) -> i32 {
     let mut tz: i32;
     let min: i32;
     let mut sec: i32 = 0;

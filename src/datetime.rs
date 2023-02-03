@@ -224,7 +224,7 @@ pub fn decode(
             &mut dtype,
             &mut tt,
             &mut fsec,
-            &mut tzp as *mut _,
+            Some(&mut tzp),
         )
     };
     if dterr != 0 {
