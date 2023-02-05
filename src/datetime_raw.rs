@@ -1,3 +1,5 @@
+use std::str::FromStr;
+
 use ::libc;
 
 use crate::datetime::{
@@ -258,7 +260,6 @@ fn timestamp2tm(
 extern "C" {
     #![allow(improper_ctypes)]
     type pg_tz;
-    fn atoi(__nptr: *const libc::c_char) -> i32;
     fn strtod(_: *const libc::c_char, _: *mut *mut libc::c_char) -> libc::c_double;
     fn strchr(_: *const libc::c_char, _: i32) -> *mut libc::c_char;
     fn strlen(_: *const libc::c_char) -> u64;
@@ -2151,53 +2152,70 @@ unsafe fn DecodeNumber(
     0
 }
 unsafe fn DecodeNumberField(
-    mut len: i32,
+    len: i32,
     str: *mut libc::c_char,
+    fmask: FieldMask,
+    tmask: &mut FieldMask,
+    tm: &mut pg_tm,
+    fsec: &mut fsec_t,
+    is2digits: &mut bool,
+) -> i32 {
+    let str = std::slice::from_raw_parts(str as *const u8, len as usize);
+    let str = std::str::from_utf8(str).unwrap();
+    DecodeNumberField_rust(str, fmask, tmask, tm, fsec, is2digits)
+}
+
+fn DecodeNumberField_rust(
+    mut str: &str,
     fmask: FieldMask,
     tmask: &mut FieldMask,
     mut tm: &mut pg_tm,
     fsec: &mut fsec_t,
     is2digits: &mut bool,
 ) -> i32 {
-    let cp = strchr(str, '.' as i32);
-    if !cp.is_null() {
-        *__errno_location() = 0;
-        let frac = strtod(cp, std::ptr::null_mut::<*mut libc::c_char>());
-        if *__errno_location() != 0 {
-            return -1;
+    match str.find('.') {
+        // Have a decimal point? Then this is a date or something with a seconds field...
+        Some(idx) => {
+            // Can we use ParseFractionalSecond here?  Not clear whether trailing
+            // junk should be rejected ...
+            let frac = match f64::from_str(&str[idx..]) {
+                Ok(frac) => frac,
+                Err(_) => return -1,
+            };
+            *fsec = (frac * 1_000_000.0) as fsec_t;
+            // Now truncate off the fraction for further processing
+            str = &str[..idx];
         }
-        *fsec = rint(frac * 1000000 as libc::c_double) as fsec_t;
-        *cp = '\0' as i32 as libc::c_char;
-        len = strlen(str) as i32;
-    // No decimal point and no complete date yet?
-    } else if !fmask.contains(*FIELD_MASK_DATE) && len >= 6 {
-        *tmask = *FIELD_MASK_DATE;
-        tm.tm_mday = atoi(str.offset((len - 2) as isize));
-        *str.offset((len - 2) as isize) = '\0' as i32 as libc::c_char;
-        tm.tm_mon = atoi(str.offset((len - 4) as isize));
-        *str.offset((len - 4) as isize) = '\0' as i32 as libc::c_char;
-        tm.tm_year = atoi(str);
-        if len - 4 == 2 {
-            *is2digits = true;
+        // No decimal point and no complete date yet?
+        None => {
+            // Start from end and consider first 2 as Day, next 2 as Month, and the rest as Year.
+            if !fmask.contains(*FIELD_MASK_DATE) && str.len() >= 6 {
+                *tmask = *FIELD_MASK_DATE;
+                tm.tm_mday = i32::from_str(&str[str.len() - 2..]).unwrap();
+                tm.tm_mon = i32::from_str(&str[str.len() - 4..str.len() - 2]).unwrap();
+                tm.tm_year = i32::from_str(&str[..str.len() - 4]).unwrap();
+                if str.len() - 4 == 2 {
+                    *is2digits = true;
+                }
+                return 2;
+            }
         }
-        return 2;
     }
+    // not all time fields are specified?
     if !fmask.contains(*FIELD_MASK_TIME) {
         // hhmmss
-        if len == 6 {
+        if str.len() == 6 {
             *tmask = *FIELD_MASK_TIME;
-            tm.tm_sec = atoi(str.offset(4));
-            *str.offset(4) = '\0' as i32 as libc::c_char;
-            tm.tm_min = atoi(str.offset(2));
-            *str.offset(2) = '\0' as i32 as libc::c_char;
-            tm.tm_hour = atoi(str);
+            tm.tm_sec = i32::from_str(&str[4..]).unwrap();
+            tm.tm_min = i32::from_str(&str[2..4]).unwrap();
+            tm.tm_hour = i32::from_str(&str[0..2]).unwrap();
             return 3;
-        } else if len == 4 {
+        // hhmm?
+        } else if str.len() == 4 {
             *tmask = *FIELD_MASK_TIME;
             tm.tm_sec = 0;
-            tm.tm_min = atoi(str.offset(2));
-            *str.offset(2) = '\0' as i32 as libc::c_char;
-            tm.tm_hour = atoi(str);
+            tm.tm_min = i32::from_str(&str[2..]).unwrap();
+            tm.tm_hour = i32::from_str(&str[0..2]).unwrap();
             return 3;
         }
     }
