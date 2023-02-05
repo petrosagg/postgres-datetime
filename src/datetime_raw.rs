@@ -2312,6 +2312,10 @@ unsafe fn DecodeTimezoneAbbrev(
 
 unsafe fn DecodeSpecial(lowtoken: *mut libc::c_char, val: &mut i32) -> FieldType {
     let lowtoken = std::ffi::CStr::from_ptr(lowtoken).to_str().unwrap();
+    DecodeSpecial_rust(lowtoken, val)
+}
+
+fn DecodeSpecial_rust(lowtoken: &str, val: &mut i32) -> FieldType {
     match DATE_TOKEN_TABLE.binary_search_by(|tk| tk.token.cmp(lowtoken)) {
         Ok(idx) => {
             let token = &DATE_TOKEN_TABLE[idx];
