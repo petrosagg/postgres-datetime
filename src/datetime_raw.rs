@@ -272,7 +272,6 @@ extern "C" {
     fn strlen(_: *const libc::c_char) -> u64;
     fn __errno_location() -> *mut i32;
     fn __ctype_b_loc() -> *mut *const libc::c_ushort;
-    fn rint(_: libc::c_double) -> libc::c_double;
 }
 
 type int32 = i32;
@@ -811,14 +810,17 @@ unsafe fn GetCurrentTimeUsec(tm: &mut pg_tm, fsec: &mut fsec_t, tzp: Option<&mut
         *tzp = tzp_local;
     }
 }
-unsafe fn ParseFractionalSecond(mut cp: *mut libc::c_char, fsec: &mut fsec_t) -> i32 {
-    *__errno_location() = 0;
-    let frac = strtod(cp, &mut cp);
-    if *cp as i32 != '\0' as i32 || *__errno_location() != 0 {
-        eprintln!("parse fractional second failed");
-        return -1;
-    }
-    *fsec = rint(frac * 1000000 as libc::c_double) as fsec_t;
+unsafe fn ParseFractionalSecond(cp: *mut libc::c_char, fsec: &mut fsec_t) -> i32 {
+    let cp = std::ffi::CStr::from_ptr(cp).to_str().unwrap();
+    ParseFractionalSecond_rust(cp, fsec)
+}
+
+fn ParseFractionalSecond_rust(cp: &str, fsec: &mut fsec_t) -> i32 {
+    let frac = match f64::from_str(cp) {
+        Ok(frac) => frac,
+        Err(_) => return -1,
+    };
+    *fsec = (frac * 1_000_000.0) as fsec_t;
     0
 }
 
@@ -2034,45 +2036,51 @@ unsafe fn DecodeNumber(
     haveTextMonth: bool,
     fmask: FieldMask,
     tmask: &mut FieldMask,
+    tm: &mut pg_tm,
+    fsec: &mut fsec_t,
+    is2digits: &mut bool,
+) -> i32 {
+    let str = std::slice::from_raw_parts(str as *const u8, flen as usize);
+    let str = std::str::from_utf8(str).unwrap();
+    DecodeNumber_rust(str, haveTextMonth, fmask, tmask, tm, fsec, is2digits)
+}
+
+fn DecodeNumber_rust(
+    str: &str,
+    haveTextMonth: bool,
+    fmask: FieldMask,
+    tmask: &mut FieldMask,
     mut tm: &mut pg_tm,
     fsec: &mut fsec_t,
     is2digits: &mut bool,
 ) -> i32 {
-    let mut cp: *mut libc::c_char = std::ptr::null_mut::<libc::c_char>();
+    let mut cp = str;
     *tmask = FieldMask::none();
-    *__errno_location() = 0;
-    let val = strtoint(str, &mut cp, 10);
-    if *__errno_location() == 34 {
-        return -2;
-    }
+    let val = match strtoint_rust(str, &mut cp) {
+        Ok(val) => val,
+        Err(_) => return -2,
+    };
     if cp == str {
         return -1;
     }
-    if *cp as i32 == '.' as i32 {
-        if cp.offset_from(str) as i64 > 2 {
-            let dterr = DecodeNumberField(
-                flen,
-                str,
-                fmask | *FIELD_MASK_DATE,
-                tmask,
-                tm,
-                fsec,
-                is2digits,
-            );
+    if cp.starts_with('.') {
+        if str.len() - cp.len() > 2 {
+            let dterr =
+                DecodeNumberField_rust(str, fmask | *FIELD_MASK_DATE, tmask, tm, fsec, is2digits);
             if dterr < 0 {
                 return dterr;
             }
             return 0;
         }
-        let dterr = ParseFractionalSecond(cp, fsec);
+        let dterr = ParseFractionalSecond_rust(cp, fsec);
         if dterr != 0 {
             return dterr;
         }
-    } else if *cp as i32 != '\0' as i32 {
+    } else if !cp.is_empty() {
         return -1;
     }
     /* Special case for day of year */
-    if flen == 3
+    if str.len() == 3
         && fmask & *FIELD_MASK_DATE == FieldMask::from(FieldType::Year)
         && (1..=366).contains(&val)
     {
@@ -2084,7 +2092,7 @@ unsafe fn DecodeNumber(
     // Switch based on what we have so far
     match *(fmask & *FIELD_MASK_DATE) {
         0 => {
-            if flen >= 3 || DateOrder == 0 {
+            if str.len() >= 3 || DateOrder == 0 {
                 *tmask = FieldMask::from(FieldType::Year);
                 tm.tm_year = val;
             } else if DateOrder == 1 {
@@ -2102,7 +2110,7 @@ unsafe fn DecodeNumber(
         }
         2 => {
             if haveTextMonth {
-                if flen >= 3 || DateOrder == 0 {
+                if str.len() >= 3 || DateOrder == 0 {
                     *tmask = FieldMask::from(FieldType::Year);
                     tm.tm_year = val;
                 } else {
@@ -2117,7 +2125,7 @@ unsafe fn DecodeNumber(
         6 => {
             if haveTextMonth {
                 // Need to accept DD-MON-YYYY even in YMD mode
-                if flen >= 3 && *is2digits as i32 != 0 {
+                if str.len() >= 3 && *is2digits as i32 != 0 {
                     // Guess that first numeric field is day was wrong
                     // YEAR is already set
                     *tmask = FieldMask::from(FieldType::Day);
@@ -2144,7 +2152,7 @@ unsafe fn DecodeNumber(
             tm.tm_year = val;
         }
         14 => {
-            let dterr = DecodeNumberField(flen, str, fmask, tmask, tm, fsec, is2digits);
+            let dterr = DecodeNumberField_rust(str, fmask, tmask, tm, fsec, is2digits);
             if dterr < 0 {
                 return dterr;
             }
@@ -2154,10 +2162,11 @@ unsafe fn DecodeNumber(
     }
     // When processing a year field, mark it for adjustment if it's only one or two digits.
     if *tmask == FieldMask::from(FieldType::Year) {
-        *is2digits = flen <= 2;
+        *is2digits = str.len() <= 2;
     }
     0
 }
+
 unsafe fn DecodeNumberField(
     len: i32,
     str: *mut libc::c_char,
