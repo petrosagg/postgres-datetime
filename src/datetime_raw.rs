@@ -118,10 +118,10 @@ fn strtoint(str: *const libc::c_char, endptr: *mut *mut libc::c_char, base: i32)
     }
 }
 
-fn strtoint_rust<'a>(s: &'a str, end: &mut &'a str) -> i32 {
+fn strtoint_rust<'a>(s: &'a str, end: &mut &'a str) -> Result<i32, ()> {
     let idx = s.find(|c: char| !c.is_ascii_digit()).unwrap_or(s.len());
     *end = &s[idx..];
-    i32::from_str(&s[..idx]).unwrap()
+    i32::from_str(&s[..idx]).or(Err(()))
 }
 
 fn time_overflows(hour: i32, min: i32, sec: i32, fsec: fsec_t) -> bool {
@@ -2230,32 +2230,34 @@ fn DecodeNumberField_rust(
 }
 
 unsafe fn DecodeTimezone(str: *mut libc::c_char, tzp: &mut i32) -> i32 {
+    let str = std::ffi::CStr::from_ptr(str).to_str().unwrap();
+    DecodeTimezone_rust(str, tzp)
+}
+
+fn DecodeTimezone_rust(str: &str, tzp: &mut i32) -> i32 {
     let mut tz: i32;
     let min: i32;
     let mut sec: i32 = 0;
-    let mut cp: *mut libc::c_char = std::ptr::null_mut::<libc::c_char>();
-    if *str as i32 != '+' as i32 && *str as i32 != '-' as i32 {
+    let mut cp = str;
+    if !str.starts_with('+') && !str.starts_with('-') {
         return -1;
     }
-    *__errno_location() = 0;
-    let mut hr = strtoint(str.offset(1), &mut cp, 10);
-    if *__errno_location() == 34 {
-        return -5;
-    }
-    if *cp as i32 == ':' as i32 {
-        *__errno_location() = 0;
-        min = strtoint(cp.offset(1), &mut cp, 10);
-        if *__errno_location() == 34 {
-            return -5;
+    let mut hr = match strtoint_rust(&str[1..], &mut cp) {
+        Ok(hr) => hr,
+        Err(_) => return -5,
+    };
+    if cp.starts_with(':') {
+        min = match strtoint_rust(&cp[1..], &mut cp) {
+            Ok(min) => min,
+            Err(_) => return -5,
+        };
+        if cp.starts_with(':') {
+            sec = match strtoint_rust(&cp[1..], &mut cp) {
+                Ok(sec) => sec,
+                Err(_) => return -5,
+            };
         }
-        if *cp as i32 == ':' as i32 {
-            *__errno_location() = 0;
-            sec = strtoint(cp.offset(1), &mut cp, 10);
-            if *__errno_location() == 34 {
-                return -5;
-            }
-        }
-    } else if *cp as i32 == '\0' as i32 && strlen(str) > 3 {
+    } else if cp.is_empty() && str.len() > 3 {
         min = hr % 100;
         hr /= 100;
     } else {
@@ -2271,11 +2273,11 @@ unsafe fn DecodeTimezone(str: *mut libc::c_char, tzp: &mut i32) -> i32 {
         return -5;
     }
     tz = (hr * 60 + min) * 60 + sec;
-    if *str as i32 == '-' as i32 {
+    if str.starts_with('-') {
         tz = -tz;
     }
     *tzp = -tz;
-    if *cp as i32 != '\0' as i32 {
+    if !cp.is_empty() {
         return -1;
     }
     0
