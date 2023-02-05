@@ -191,12 +191,12 @@ pub static FIELD_MASK_TIME: Lazy<FieldMask> =
 pub fn decode(
     fields: Vec<(String, TokenFieldType)>,
 ) -> Result<(pg_tm, fsec_t, i32, TokenFieldType), i32> {
-    let nf = fields.len() as i32;
+    let nf = fields.len();
     let mut field = vec![];
     let mut ftype = vec![];
-    for (data, typ) in fields {
-        field.push(CString::new(data).unwrap().into_raw());
-        ftype.push(typ as i32);
+    for (data, typ) in fields.iter() {
+        field.push(&**data);
+        ftype.push(*typ as i32);
     }
 
     let _date: DateADT = 0;
@@ -216,17 +216,15 @@ pub fn decode(
     };
     let mut tzp: i32 = 0;
     let mut dtype = TokenFieldType::Number;
-    let dterr = unsafe {
-        DecodeDateTime(
-            field.as_mut_ptr(),
-            ftype.as_mut_ptr(),
-            nf,
-            &mut dtype,
-            &mut tt,
-            &mut fsec,
-            Some(&mut tzp),
-        )
-    };
+    let dterr = DecodeDateTime(
+        &field,
+        &ftype,
+        nf,
+        &mut dtype,
+        &mut tt,
+        &mut fsec,
+        Some(&mut tzp),
+    );
     if dterr != 0 {
         return Err(dterr);
     }
