@@ -56,14 +56,15 @@ fn pg_localtime(_timep: *const pg_time_t, _tz: &pg_tz) -> Box<pg_tm> {
 }
 
 fn pg_interpret_timezone_abbrev(
-    _abbrev: *const libc::c_char,
-    _timep: *const pg_time_t,
-    _gmtoff: *mut i64,
+    _abbrev: &str,
+    _timep: &pg_time_t,
+    _gmtoff: &mut i64,
     _isdst: &mut bool,
     _tz: &pg_tz,
 ) -> bool {
     unimplemented!()
 }
+
 fn pg_next_dst_boundary(
     _timep: *const pg_time_t,
     _before_gmtoff: *mut i64,
@@ -86,41 +87,6 @@ fn pg_tzset_rust(_tzname: &str) -> Option<&'static pg_tz> {
 
 static session_timezone: Lazy<pg_tz> = Lazy::new(|| Default::default());
 
-fn strlcpy(dst: *mut libc::c_char, src: *const libc::c_char, siz: u64) -> u64 {
-    unsafe {
-        let mut d: *mut libc::c_char = dst;
-        let mut s: *const libc::c_char = src;
-        let mut n: u64 = siz;
-
-        /* Copy as many bytes as will fit */
-        if n != 0 {
-            loop {
-                n -= 1;
-                if n == 0 {
-                    break;
-                }
-                *d = *s;
-                s = s.offset(1);
-                d = d.offset(1);
-                if *s == 0 {
-                    break;
-                }
-            }
-        }
-
-        /* Not enough room in dst, add NUL and traverse rest of src */
-        if n == 0 {
-            if siz != 0 {
-                *d = 0; /* NUL-terminate dst */
-            }
-            while *s != 0 {
-                s = s.offset(1);
-            }
-        }
-
-        (s as isize - src as isize - 1) as u64 /* count does not include NUL */
-    }
-}
 fn strtoint(str: *const libc::c_char, endptr: *mut *mut libc::c_char, base: i32) -> i32 {
     unsafe {
         let val = libc::strtol(str, endptr, base);
@@ -1044,7 +1010,7 @@ pub unsafe fn DecodeDateTime(
     let mut namedTz: Option<&pg_tz> = None;
     let mut abbrevTz: Option<&pg_tz> = None;
     let mut valtz: Option<&pg_tz> = None;
-    let mut abbrev: *mut libc::c_char = std::ptr::null_mut::<libc::c_char>();
+    let mut abbrev: Option<&str> = None;
     let mut cur_tm: pg_tm = pg_tm {
         tm_sec: 0,
         tm_min: 0,
@@ -1541,7 +1507,9 @@ pub unsafe fn DecodeDateTime(
                                 return -1;
                             }
                             abbrevTz = valtz;
-                            abbrev = *field.offset(i as isize);
+                            let a = *field.offset(i as isize);
+                            let a = std::ffi::CStr::from_ptr(a).to_str().unwrap();
+                            abbrev = Some(a);
                         }
                         FieldType::AmPm => {
                             mer = val;
@@ -1657,7 +1625,7 @@ pub unsafe fn DecodeDateTime(
                     return -1;
                 }
             };
-            **tzp = DetermineTimeZoneAbbrevOffset(tm, abbrev, abbrevTz);
+            **tzp = DetermineTimeZoneAbbrevOffset(tm, abbrev.unwrap(), abbrevTz);
         }
         // timezone not specified? then use session timezone
         if let Some(tzp) = tzp {
@@ -1748,11 +1716,7 @@ fn DetermineTimeZoneOffsetInternal(mut tm: &mut pg_tm, tzp: &pg_tz, tp: &mut pg_
     0
 }
 
-unsafe fn DetermineTimeZoneAbbrevOffset(
-    mut tm: &mut pg_tm,
-    abbr: *const libc::c_char,
-    tzp: &pg_tz,
-) -> i32 {
+fn DetermineTimeZoneAbbrevOffset(mut tm: &mut pg_tm, abbr: &str, tzp: &pg_tz) -> i32 {
     let mut t: pg_time_t = 0;
     let mut abbr_offset: i32 = 0;
     let mut abbr_isdst = false;
@@ -1764,26 +1728,17 @@ unsafe fn DetermineTimeZoneAbbrevOffset(
     zone_offset
 }
 
-unsafe fn DetermineTimeZoneAbbrevOffsetInternal(
+fn DetermineTimeZoneAbbrevOffsetInternal(
     t: pg_time_t,
-    abbr: *const libc::c_char,
+    abbr: &str,
     tzp: &pg_tz,
     offset: &mut i32,
     isdst: &mut bool,
 ) -> bool {
-    let mut upabbr: [libc::c_char; 256] = [0; 256];
+    // TODO: the original code re-used stack space to store the temporary uppercased abbreviation
+    let upabbr = abbr.to_uppercase();
     let mut gmtoff: i64 = 0;
-    strlcpy(
-        upabbr.as_mut_ptr(),
-        abbr,
-        ::core::mem::size_of::<[libc::c_char; 256]>() as u64,
-    );
-    let mut p = upabbr.as_mut_ptr() as *mut libc::c_uchar;
-    while *p != 0 {
-        *p = (*p).to_ascii_uppercase();
-        p = p.offset(1);
-    }
-    if pg_interpret_timezone_abbrev(upabbr.as_mut_ptr(), &t, &mut gmtoff, isdst, tzp) {
+    if pg_interpret_timezone_abbrev(&upabbr, &t, &mut gmtoff, isdst, tzp) {
         *offset = -gmtoff as i32;
         return true;
     }
