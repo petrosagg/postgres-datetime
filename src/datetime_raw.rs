@@ -1784,65 +1784,60 @@ unsafe fn DetermineTimeZoneAbbrevOffsetInternal(
 }
 
 unsafe fn DecodeDate(
-    mut str: *mut libc::c_char,
+    str: *mut libc::c_char,
+    fmask: FieldMask,
+    tmask: &mut FieldMask,
+    is2digits: &mut bool,
+    tm: &mut pg_tm,
+) -> i32 {
+    let str = std::ffi::CStr::from_ptr(str).to_str().unwrap();
+    DecodeDate_rust(str, fmask, tmask, is2digits, tm)
+}
+
+fn DecodeDate_rust(
+    mut str: &str,
     mut fmask: FieldMask,
     tmask: &mut FieldMask,
     is2digits: &mut bool,
     mut tm: &mut pg_tm,
 ) -> i32 {
     let mut fsec: fsec_t = 0;
-    let mut nf: i32 = 0;
+    let mut nf: usize = 0;
     let mut haveTextMonth: bool = false;
     let mut val: i32 = 0;
     let mut dmask = FieldMask::none();
-    let mut field: [*mut libc::c_char; 25] = [std::ptr::null_mut::<libc::c_char>(); 25];
+    let mut fields: [Option<&str>; 25] = [None; 25];
     *tmask = FieldMask::none();
-    while *str as i32 != '\0' as i32 && nf < 25 {
-        while *str as i32 != '\0' as i32
-            && *(*__ctype_b_loc()).offset(*str as libc::c_uchar as i32 as isize) as i32
-                & _ISalnum as i32 as libc::c_ushort as i32
-                == 0
-        {
-            str = str.offset(1);
+    while !str.is_empty() && nf < 25 {
+        while !str.is_empty() && !str.starts_with(|c: char| c.is_ascii_alphanumeric()) {
+            str = &str[1..];
         }
-        if *str as i32 == '\0' as i32 {
+        if str.is_empty() {
             return -1;
         }
-        field[nf as usize] = str;
-        if *(*__ctype_b_loc()).offset(*str as libc::c_uchar as i32 as isize) as i32
-            & _ISdigit as i32 as libc::c_ushort as i32
-            != 0
-        {
-            while *(*__ctype_b_loc()).offset(*str as libc::c_uchar as i32 as isize) as i32
-                & _ISdigit as i32 as libc::c_ushort as i32
-                != 0
-            {
-                str = str.offset(1);
+        fields[nf] = Some(str);
+        if str.starts_with(|c: char| c.is_ascii_digit()) {
+            while str.starts_with(|c: char| c.is_ascii_digit()) {
+                str = &str[1..];
             }
-        } else if *(*__ctype_b_loc()).offset(*str as libc::c_uchar as i32 as isize) as i32
-            & _ISalpha as i32 as libc::c_ushort as i32
-            != 0
-        {
-            while *(*__ctype_b_loc()).offset(*str as libc::c_uchar as i32 as isize) as i32
-                & _ISalpha as i32 as libc::c_ushort as i32
-                != 0
-            {
-                str = str.offset(1);
+        } else if str.starts_with(|c: char| c.is_ascii_alphabetic()) {
+            while str.starts_with(|c: char| c.is_ascii_alphabetic()) {
+                str = &str[1..];
             }
         }
-        if *str as i32 != '\0' as i32 {
-            let fresh42 = str;
-            str = str.offset(1);
-            *fresh42 = '\0' as i32 as libc::c_char;
+        if !str.is_empty() {
+            let field = fields[nf].unwrap();
+            fields[nf] = Some(&field[0..field.len() - str.len()]);
+            str = &str[1..];
         }
         nf += 1;
     }
     for i in 0..nf {
-        if *(*__ctype_b_loc()).offset(*field[i as usize] as libc::c_uchar as i32 as isize) as i32
-            & _ISalpha as i32 as libc::c_ushort as i32
-            != 0
+        if fields[i]
+            .unwrap()
+            .starts_with(|c: char| c.is_ascii_alphabetic())
         {
-            let type_0 = DecodeSpecial(field[i as usize], &mut val);
+            let type_0 = DecodeSpecial_rust(fields[i].unwrap(), &mut val);
             if type_0 != FieldType::IgnoreDtf {
                 dmask = FieldMask::from(type_0);
                 match type_0 {
@@ -1860,19 +1855,18 @@ unsafe fn DecodeDate(
                 }
                 fmask |= dmask;
                 *tmask |= dmask;
-                field[i as usize] = std::ptr::null_mut::<libc::c_char>();
+                fields[i] = None;
             }
         }
     }
     for i in 0..nf {
-        if !(field[i as usize]).is_null() {
-            let len = strlen(field[i as usize]) as i32;
+        if let Some(field) = fields[i] {
+            let len = field.len() as i32;
             if len <= 0 {
                 return -1;
             }
-            let dterr = DecodeNumber(
-                len,
-                field[i as usize],
+            let dterr = DecodeNumber_rust(
+                field,
                 haveTextMonth,
                 fmask,
                 &mut dmask,
