@@ -1957,25 +1957,34 @@ unsafe fn DecodeTime(
     _fmask: FieldMask,
     range: i32,
     tmask: &mut FieldMask,
+    tm: &mut pg_tm,
+    fsec: &mut fsec_t,
+) -> i32 {
+    let str = std::ffi::CStr::from_ptr(str).to_str().unwrap();
+    DecodeTime_rust(str, range, tmask, tm, fsec)
+}
+
+fn DecodeTime_rust(
+    str: &str,
+    range: i32,
+    tmask: &mut FieldMask,
     mut tm: &mut pg_tm,
     fsec: &mut fsec_t,
 ) -> i32 {
-    let mut cp: *mut libc::c_char = std::ptr::null_mut::<libc::c_char>();
+    let mut cp = str;
     *tmask = *FIELD_MASK_TIME;
-    *__errno_location() = 0;
-    tm.tm_hour = strtoint(str, &mut cp, 10);
-    if *__errno_location() == 34 {
-        return -2;
-    }
-    if *cp as i32 != ':' as i32 {
+    tm.tm_hour = match strtoint_rust(str, &mut cp) {
+        Ok(val) => val,
+        Err(_) => return -2,
+    };
+    if !cp.starts_with(':') {
         return -1;
     }
-    *__errno_location() = 0;
-    tm.tm_min = strtoint(cp.offset(1), &mut cp, 10);
-    if *__errno_location() == 34 {
-        return -2;
-    }
-    if *cp as i32 == '\0' as i32 {
+    tm.tm_min = match strtoint_rust(&cp[1..], &mut cp) {
+        Ok(val) => val,
+        Err(_) => return -2,
+    };
+    if cp.is_empty() {
         tm.tm_sec = 0;
         *fsec = 0;
         if range == 1 << 11 | 1 << 12 {
@@ -1983,24 +1992,23 @@ unsafe fn DecodeTime(
             tm.tm_min = tm.tm_hour;
             tm.tm_hour = 0;
         }
-    } else if *cp as i32 == '.' as i32 {
-        let dterr = ParseFractionalSecond(cp, fsec);
+    } else if cp.starts_with('.') {
+        let dterr = ParseFractionalSecond_rust(cp, fsec);
         if dterr != 0 {
             return dterr;
         }
         tm.tm_sec = tm.tm_min;
         tm.tm_min = tm.tm_hour;
         tm.tm_hour = 0;
-    } else if *cp as i32 == ':' as i32 {
-        *__errno_location() = 0;
-        tm.tm_sec = strtoint(cp.offset(1), &mut cp, 10);
-        if *__errno_location() == 34 {
-            return -2;
-        }
-        if *cp as i32 == '\0' as i32 {
+    } else if cp.starts_with(':') {
+        tm.tm_sec = match strtoint_rust(&cp[1..], &mut cp) {
+            Ok(val) => val,
+            Err(_) => return -2,
+        };
+        if cp.is_empty() {
             *fsec = 0;
-        } else if *cp as i32 == '.' as i32 {
-            let dterr = ParseFractionalSecond(cp, fsec);
+        } else if cp.starts_with('.') {
+            let dterr = ParseFractionalSecond_rust(cp, fsec);
             if dterr != 0 {
                 return dterr;
             }
