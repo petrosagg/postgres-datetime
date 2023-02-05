@@ -51,7 +51,7 @@ fn pg_localtime(_timep: *const pg_time_t, _tz: &pg_tz) -> Box<pg_tm> {
         tm_yday: 0,
         tm_isdst: Some(false),
         tm_gmtoff: 0,
-        tm_zone: std::ptr::null(),
+        tm_zone: None,
     })
 }
 
@@ -143,99 +143,97 @@ fn timestamp2tm(
     tzp: Option<&mut i32>,
     tm: &mut pg_tm,
     fsec: &mut fsec_t,
-    tzn: *mut *const libc::c_char,
+    tzn: Option<&mut Option<String>>,
     mut attimezone: Option<&pg_tz>,
 ) -> i32 {
-    unsafe {
-        let mut date: Timestamp = 0;
-        let mut time: Timestamp;
+    let mut date: Timestamp = 0;
+    let mut time: Timestamp;
 
-        /* Use session timezone if caller asks for default */
-        if attimezone.is_none() {
-            attimezone = Some(&session_timezone);
+    /* Use session timezone if caller asks for default */
+    if attimezone.is_none() {
+        attimezone = Some(&session_timezone);
+    }
+
+    time = dt;
+    TMODULO(&mut time, &mut date, USECS_PER_DAY);
+
+    if time < 0 {
+        time += USECS_PER_DAY;
+        date -= 1;
+    }
+
+    /* add offset to go from J2000 back to standard Julian date */
+    date += POSTGRES_EPOCH_JDATE;
+
+    /* Julian day routine does not work for negative Julian days */
+    if date < 0 || date > libc::INT_MAX.into() {
+        eprintln!("Julian day routine does not work for negative Julian days");
+        return -1;
+    }
+
+    j2date(
+        date.try_into().unwrap(),
+        &mut tm.tm_year,
+        &mut tm.tm_mon,
+        &mut tm.tm_mday,
+    );
+    dt2time(time, &mut tm.tm_hour, &mut tm.tm_min, &mut tm.tm_sec, fsec);
+
+    /* Done if no TZ conversion wanted */
+    match tzp {
+        None => {
+            tm.tm_isdst = None;
+            tm.tm_gmtoff = 0;
+            tm.tm_zone = None;
+            if let Some(tzn) = tzn {
+                *tzn = None;
+            }
+            return 0;
         }
+        Some(tzp) => {
+            /*
+             * If the time falls within the range of pg_time_t, use pg_localtime() to
+             * rotate to the local time zone.
+             *
+             * First, convert to an integral timestamp, avoiding possibly
+             * platform-specific roundoff-in-wrong-direction errors, and adjust to
+             * Unix epoch.  Then see if we can convert to pg_time_t without loss. This
+             * coding avoids hardwiring any assumptions about the width of pg_time_t,
+             * so it should behave sanely on machines without int64.
+             */
+            dt = (dt - *fsec as i64) / USECS_PER_SEC
+                + (POSTGRES_EPOCH_JDATE - UNIX_EPOCH_JDATE) * SECS_PER_DAY as i64;
+            let utime: pg_time_t = dt;
+            if utime == dt {
+                let tx = pg_localtime(&utime, attimezone.unwrap());
 
-        time = dt;
-        TMODULO(&mut time, &mut date, USECS_PER_DAY);
-
-        if time < 0 {
-            time += USECS_PER_DAY;
-            date -= 1;
-        }
-
-        /* add offset to go from J2000 back to standard Julian date */
-        date += POSTGRES_EPOCH_JDATE;
-
-        /* Julian day routine does not work for negative Julian days */
-        if date < 0 || date > libc::INT_MAX.into() {
-            eprintln!("Julian day routine does not work for negative Julian days");
-            return -1;
-        }
-
-        j2date(
-            date.try_into().unwrap(),
-            &mut tm.tm_year,
-            &mut tm.tm_mon,
-            &mut tm.tm_mday,
-        );
-        dt2time(time, &mut tm.tm_hour, &mut tm.tm_min, &mut tm.tm_sec, fsec);
-
-        /* Done if no TZ conversion wanted */
-        match tzp {
-            None => {
+                tm.tm_year = tx.tm_year + 1900;
+                tm.tm_mon = tx.tm_mon + 1;
+                tm.tm_mday = tx.tm_mday;
+                tm.tm_hour = tx.tm_hour;
+                tm.tm_min = tx.tm_min;
+                tm.tm_sec = tx.tm_sec;
+                tm.tm_isdst = tx.tm_isdst;
+                tm.tm_gmtoff = tx.tm_gmtoff;
+                tm.tm_zone = tx.tm_zone;
+                *tzp = (-tm.tm_gmtoff).try_into().unwrap();
+                if let Some(tzn) = tzn {
+                    *tzn = tm.tm_zone.clone();
+                }
+            } else {
+                /*
+                 * When out of range of pg_time_t, treat as GMT
+                 */
+                *tzp = 0;
+                /* Mark this as *no* time zone available */
                 tm.tm_isdst = None;
                 tm.tm_gmtoff = 0;
-                tm.tm_zone = std::ptr::null_mut();
-                if !tzn.is_null() {
-                    *tzn = std::ptr::null_mut();
+                tm.tm_zone = None;
+                if let Some(tzn) = tzn {
+                    *tzn = None;
                 }
-                return 0;
             }
-            Some(tzp) => {
-                /*
-                 * If the time falls within the range of pg_time_t, use pg_localtime() to
-                 * rotate to the local time zone.
-                 *
-                 * First, convert to an integral timestamp, avoiding possibly
-                 * platform-specific roundoff-in-wrong-direction errors, and adjust to
-                 * Unix epoch.  Then see if we can convert to pg_time_t without loss. This
-                 * coding avoids hardwiring any assumptions about the width of pg_time_t,
-                 * so it should behave sanely on machines without int64.
-                 */
-                dt = (dt - *fsec as i64) / USECS_PER_SEC
-                    + (POSTGRES_EPOCH_JDATE - UNIX_EPOCH_JDATE) * SECS_PER_DAY as i64;
-                let utime: pg_time_t = dt;
-                if utime == dt {
-                    let tx = pg_localtime(&utime, attimezone.unwrap());
-
-                    tm.tm_year = tx.tm_year + 1900;
-                    tm.tm_mon = tx.tm_mon + 1;
-                    tm.tm_mday = tx.tm_mday;
-                    tm.tm_hour = tx.tm_hour;
-                    tm.tm_min = tx.tm_min;
-                    tm.tm_sec = tx.tm_sec;
-                    tm.tm_isdst = tx.tm_isdst;
-                    tm.tm_gmtoff = tx.tm_gmtoff;
-                    tm.tm_zone = tx.tm_zone;
-                    *tzp = (-tm.tm_gmtoff).try_into().unwrap();
-                    if !tzn.is_null() {
-                        *tzn = tm.tm_zone;
-                    }
-                } else {
-                    /*
-                     * When out of range of pg_time_t, treat as GMT
-                     */
-                    *tzp = 0;
-                    /* Mark this as *no* time zone available */
-                    tm.tm_isdst = None;
-                    tm.tm_gmtoff = 0;
-                    tm.tm_zone = std::ptr::null_mut();
-                    if !tzn.is_null() {
-                        *tzn = std::ptr::null_mut();
-                    }
-                }
-                0
-            }
+            0
         }
     }
 }
@@ -281,7 +279,7 @@ pub struct pg_tm {
     pub tm_yday: i32,
     pub tm_isdst: Option<bool>,
     pub tm_gmtoff: i64,
-    pub tm_zone: *const libc::c_char,
+    pub tm_zone: Option<String>,
 }
 
 #[derive(Clone)]
@@ -773,7 +771,7 @@ unsafe fn GetCurrentTimeUsec(tm: &mut pg_tm, fsec: &mut fsec_t, tzp: Option<&mut
         Some(&mut tzp_local),
         tm,
         fsec,
-        std::ptr::null_mut::<*const libc::c_char>(),
+        None,
         Some(&session_timezone),
     ) != 0
     {
@@ -1022,7 +1020,7 @@ pub unsafe fn DecodeDateTime(
         tm_yday: 0,
         tm_isdst: Some(false),
         tm_gmtoff: 0,
-        tm_zone: std::ptr::null::<libc::c_char>(),
+        tm_zone: None,
     };
 
     // We'll insist on at least all of the date fields, but initialize the

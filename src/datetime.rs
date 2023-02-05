@@ -212,7 +212,7 @@ pub fn decode(
         tm_yday: 0,
         tm_isdst: Some(false),
         tm_gmtoff: 0,
-        tm_zone: std::ptr::null::<libc::c_char>(),
+        tm_zone: None,
     };
     let mut tzp: i32 = 0;
     let mut dtype = TokenFieldType::Number;
