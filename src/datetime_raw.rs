@@ -71,9 +71,15 @@ fn pg_next_dst_boundary(
 ) -> i32 {
     0
 }
+
 fn pg_tzset(_tzname: *const libc::c_char) -> *mut pg_tz {
     std::ptr::null_mut()
 }
+
+fn pg_tzset_rust(_tzname: &str) -> Option<&'static pg_tz> {
+    None
+}
+
 static mut session_timezone: *mut pg_tz = 0 as *mut _;
 
 fn strlcpy(dst: *mut libc::c_char, src: *const libc::c_char, siz: u64) -> u64 {
@@ -320,7 +326,7 @@ struct DynamicZoneAbbrev {
     _zone: [libc::c_char; 0],
 }
 
-static mut day_tab: [[i32; 13]; 2] = [
+static day_tab: [[i32; 13]; 2] = [
     [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31, 0],
     [31, 29, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31, 0],
 ];
@@ -741,7 +747,7 @@ static DATE_TOKEN_TABLE: &[DateToken] = &[
 
 static ZONE_ABBREV_TABLE: Option<TimeZoneAbbrevTable> = None;
 
-unsafe fn date2j(mut y: i32, mut m: i32, d: i32) -> i32 {
+fn date2j(mut y: i32, mut m: i32, d: i32) -> i32 {
     if m > 2 {
         m += 1;
         y += 4800;
@@ -756,7 +762,7 @@ unsafe fn date2j(mut y: i32, mut m: i32, d: i32) -> i32 {
     julian
 }
 
-unsafe fn j2date(jd: i32, year: &mut i32, month: &mut i32, day: &mut i32) {
+fn j2date(jd: i32, year: &mut i32, month: &mut i32, day: &mut i32) {
     let mut julian = jd as u32;
     julian = julian.wrapping_add(32044);
     let mut quad = julian.wrapping_div(146097);
@@ -810,6 +816,7 @@ unsafe fn GetCurrentTimeUsec(tm: &mut pg_tm, fsec: &mut fsec_t, tzp: Option<&mut
         *tzp = tzp_local;
     }
 }
+
 unsafe fn ParseFractionalSecond(cp: *mut libc::c_char, fsec: &mut fsec_t) -> i32 {
     let cp = std::ffi::CStr::from_ptr(cp).to_str().unwrap();
     ParseFractionalSecond_rust(cp, fsec)
@@ -1894,7 +1901,7 @@ fn DecodeDate_rust(
 
 /// Check valid year/month/day values, handle BC and DOY cases Return 0 if okay, a DTERR code if not.
 
-unsafe fn ValidateDate(
+fn ValidateDate(
     fmask: FieldMask,
     isjulian: bool,
     is2digits: bool,
@@ -1939,8 +1946,9 @@ unsafe fn ValidateDate(
     }
     if fmask.contains(*FIELD_MASK_DATE)
         && tm.tm_mday
-            > day_tab[(tm.tm_year % 4 == 0 && (tm.tm_year % 100 != 0 || tm.tm_year % 400 == 0))
-                as i32 as usize][(tm.tm_mon - 1) as usize]
+            > day_tab
+                [(tm.tm_year % 4 == 0 && (tm.tm_year % 100 != 0 || tm.tm_year % 400 == 0)) as usize]
+                [(tm.tm_mon - 1) as usize]
     {
         return -2;
     }
