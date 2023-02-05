@@ -1928,8 +1928,13 @@ fn DecodeNumber(
         return 0;
     }
     // Switch based on what we have so far
-    match *(fmask & *FIELD_MASK_DATE) {
-        0 => {
+    match fmask & *FIELD_MASK_DATE {
+        mask if mask == FieldMask::none() => {
+            // Nothing so far; make a decision about what we think the input
+            // is.  There used to be lots of heuristics here, but the
+            // consensus now is to be paranoid.  It *must* be either
+            // YYYY-MM-DD (with a more-than-two-digit year field), or the
+            // field order defined by DateOrder.
             if str.len() >= 3 || DateOrder == 0 {
                 *tmask = FieldMask::from(FieldType::Year);
                 tm.tm_year = val;
@@ -1941,13 +1946,18 @@ fn DecodeNumber(
                 tm.tm_mon = val;
             }
         }
-        4 => {
+        mask if mask == FieldType::Year.into() => {
             // Must be at second field of YY-MM-DD
             *tmask = FieldMask::from(FieldType::Month);
             tm.tm_mon = val;
         }
-        2 => {
+        mask if mask == FieldType::Month.into() => {
             if haveTextMonth {
+                // We are at the first numeric field of a date that included a
+                // textual month name.  We want to support the variants
+                // MON-DD-YYYY, DD-MON-YYYY, and YYYY-MON-DD as unambiguous
+                // inputs.  We will also accept MON-DD-YY or DD-MON-YY in
+                // either DMY or MDY modes, as well as YY-MON-DD in YMD mode.
                 if str.len() >= 3 || DateOrder == 0 {
                     *tmask = FieldMask::from(FieldType::Year);
                     tm.tm_year = val;
@@ -1956,11 +1966,12 @@ fn DecodeNumber(
                     tm.tm_mday = val;
                 }
             } else {
+                // Must be at second field of MM-DD-YY
                 *tmask = FieldMask::from(FieldType::Day);
                 tm.tm_mday = val;
             }
         }
-        6 => {
+        mask if mask == FieldType::Year | FieldType::Month => {
             if haveTextMonth {
                 // Need to accept DD-MON-YYYY even in YMD mode
                 if str.len() >= 3 && *is2digits as i32 != 0 {
@@ -1980,22 +1991,25 @@ fn DecodeNumber(
                 tm.tm_mday = val;
             }
         }
-        8 => {
+        mask if mask == FieldType::Day.into() => {
             // Must be at second field of DD-MM-YY
             *tmask = FieldMask::from(FieldType::Month);
             tm.tm_mon = val;
         }
-        10 => {
+        mask if mask == FieldType::Month | FieldType::Day => {
+            // Must be at third field of DD-MM-YY or MM-DD-YY
             *tmask = FieldMask::from(FieldType::Year);
             tm.tm_year = val;
         }
-        14 => {
+        mask if mask == FieldType::Year | FieldType::Month | FieldType::Day => {
+            // we have all the date, so it must be a time field
             let dterr = DecodeNumberField(str, fmask, tmask, tm, fsec, is2digits);
             if dterr < 0 {
                 return dterr;
             }
             return 0;
         }
+        // Anything else is bogus input
         _ => return -1,
     }
     // When processing a year field, mark it for adjustment if it's only one or two digits.
