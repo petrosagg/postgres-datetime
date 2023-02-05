@@ -3,6 +3,8 @@
 use crate::datetime_raw::pg_time_t;
 
 /// Time type information
+// TODO: remove the Copy impl
+#[derive(Default, Clone, Copy)]
 struct TimeTypeInfo {
     /// UT offset in seconds
     utoff: i32,
@@ -17,6 +19,8 @@ struct TimeTypeInfo {
 }
 
 /// Leap second information
+// TODO: remove the Copy impl
+#[derive(Default, Clone, Copy)]
 struct LeapSecondInfo {
     /// transition time
     trans: pg_time_t,
@@ -72,8 +76,42 @@ struct State {
     defaulttype: usize,
 }
 
+impl Default for State {
+    fn default() -> Self {
+        Self {
+            leapcnt: 0,
+            timecnt: 0,
+            typecnt: 0,
+            charcnt: 0,
+            goback: false,
+            goahead: false,
+            ats: [0; TZ_MAX_TIMES],
+            types: [0; TZ_MAX_TIMES],
+            ttis: [TimeTypeInfo::default(); TZ_MAX_TYPES],
+            chars: [0; BIGGEST(
+                BIGGEST(TZ_MAX_CHARS + 1, 4 /* sizeof gmt */),
+                2 * (TZ_STRLEN_MAX + 1),
+            )],
+            lsis: [LeapSecondInfo::default(); TZ_MAX_LEAPS],
+            /// The time type to use for early times or if no transitions. It is always
+            /// zero for recent tzdb releases. It might be nonzero for data from tzdb
+            /// 2018e or earlier.
+            defaulttype: 0,
+        }
+    }
+}
+
 pub(crate) struct pg_tz {
     /// TZname contains the canonically-cased name of the timezone
     TZname: [u8; TZ_STRLEN_MAX + 1],
     state: State,
+}
+
+impl Default for pg_tz {
+    fn default() -> Self {
+        Self {
+            TZname: [0; TZ_STRLEN_MAX + 1],
+            state: State::default(),
+        }
+    }
 }

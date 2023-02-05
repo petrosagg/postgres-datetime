@@ -1,6 +1,7 @@
 use std::str::FromStr;
 
 use ::libc;
+use once_cell::sync::Lazy;
 
 use crate::datetime::{
     FieldMask, FieldType, TokenFieldType, FIELD_MASK_ALL_SECS, FIELD_MASK_DATE, FIELD_MASK_TIME,
@@ -38,7 +39,7 @@ fn GetCurrentTransactionStartTimestamp() -> TimestampTz {
     11223344
 }
 
-fn pg_localtime(_timep: *const pg_time_t, _tz: *const pg_tz) -> Box<pg_tm> {
+fn pg_localtime(_timep: *const pg_time_t, _tz: &pg_tz) -> Box<pg_tm> {
     Box::new(pg_tm {
         tm_sec: 0,
         tm_min: 0,
@@ -59,7 +60,7 @@ fn pg_interpret_timezone_abbrev(
     _timep: *const pg_time_t,
     _gmtoff: *mut i64,
     _isdst: &mut bool,
-    _tz: *const pg_tz,
+    _tz: &pg_tz,
 ) -> bool {
     unimplemented!()
 }
@@ -70,20 +71,20 @@ fn pg_next_dst_boundary(
     _boundary: *mut pg_time_t,
     _after_gmtoff: *mut i64,
     _after_isdst: &mut bool,
-    _tz: *const pg_tz,
+    _tz: &pg_tz,
 ) -> i32 {
     0
 }
 
-fn pg_tzset(_tzname: *const libc::c_char) -> *mut pg_tz {
-    std::ptr::null_mut()
+fn pg_tzset(_tzname: *const libc::c_char) -> Option<&'static pg_tz> {
+    None
 }
 
 fn pg_tzset_rust(_tzname: &str) -> Option<&'static pg_tz> {
     None
 }
 
-static mut session_timezone: *mut pg_tz = 0 as *mut _;
+static session_timezone: Lazy<pg_tz> = Lazy::new(|| Default::default());
 
 fn strlcpy(dst: *mut libc::c_char, src: *const libc::c_char, siz: u64) -> u64 {
     unsafe {
@@ -177,15 +178,15 @@ fn timestamp2tm(
     tm: &mut pg_tm,
     fsec: &mut fsec_t,
     tzn: *mut *const libc::c_char,
-    mut attimezone: *mut pg_tz,
+    mut attimezone: Option<&pg_tz>,
 ) -> i32 {
     unsafe {
         let mut date: Timestamp = 0;
         let mut time: Timestamp;
 
         /* Use session timezone if caller asks for default */
-        if attimezone.is_null() {
-            attimezone = session_timezone;
+        if attimezone.is_none() {
+            attimezone = Some(&session_timezone);
         }
 
         time = dt;
@@ -239,7 +240,7 @@ fn timestamp2tm(
                     + (POSTGRES_EPOCH_JDATE - UNIX_EPOCH_JDATE) * SECS_PER_DAY as i64;
                 let utime: pg_time_t = dt;
                 if utime == dt {
-                    let tx = pg_localtime(&utime, attimezone);
+                    let tx = pg_localtime(&utime, attimezone.unwrap());
 
                     tm.tm_year = tx.tm_year + 1900;
                     tm.tm_mon = tx.tm_mon + 1;
@@ -807,7 +808,7 @@ unsafe fn GetCurrentTimeUsec(tm: &mut pg_tm, fsec: &mut fsec_t, tzp: Option<&mut
         tm,
         fsec,
         std::ptr::null_mut::<*const libc::c_char>(),
-        session_timezone,
+        Some(&session_timezone),
     ) != 0
     {
         // ereport(ERROR,
@@ -1040,9 +1041,9 @@ pub unsafe fn DecodeDateTime(
     let mut isjulian = false;
     let mut is2digits = false;
     let mut bc = false;
-    let mut namedTz: *mut pg_tz = std::ptr::null_mut::<pg_tz>();
-    let mut abbrevTz: *mut pg_tz = std::ptr::null_mut::<pg_tz>();
-    let mut valtz: *mut pg_tz = std::ptr::null_mut::<pg_tz>();
+    let mut namedTz: Option<&pg_tz> = None;
+    let mut abbrevTz: Option<&pg_tz> = None;
+    let mut valtz: Option<&pg_tz> = None;
     let mut abbrev: *mut libc::c_char = std::ptr::null_mut::<libc::c_char>();
     let mut cur_tm: pg_tm = pg_tm {
         tm_sec: 0,
@@ -1163,7 +1164,7 @@ pub unsafe fn DecodeDateTime(
                         tmask.set(FieldType::Tz);
                     } else {
                         namedTz = pg_tzset(*field.offset(i as isize));
-                        if namedTz.is_null() {
+                        if namedTz.is_none() {
                             // ereport(ERROR,
                             // 		(errcode(ERRCODE_INVALID_PARAMETER_VALUE),
                             // 		 errmsg("time zone \"%s\" not recognized",
@@ -1584,7 +1585,7 @@ pub unsafe fn DecodeDateTime(
                             // Before giving up and declaring error, check to see
                             // if it is an all-alpha timezone name.
                             namedTz = pg_tzset(*field.offset(i as isize));
-                            if namedTz.is_null() {
+                            if namedTz.is_none() {
                                 eprintln!("namedTz is null");
                                 return -1;
                             }
@@ -1632,7 +1633,7 @@ pub unsafe fn DecodeDateTime(
         }
         // If we had a full timezone spec, compute the offset (we could not do
         // it before, because we need the date to resolve DST status).
-        if !namedTz.is_null() {
+        if let Some(namedTz) = namedTz {
             // daylight savings time modifier disallowed with full TZ
             if fmask.contains(FieldType::DtzMod) {
                 return -1;
@@ -1646,7 +1647,7 @@ pub unsafe fn DecodeDateTime(
             **tzp = DetermineTimeZoneOffset(tm, namedTz);
         }
         // Likewise, if we had a dynamic timezone abbreviation, resolve it now.
-        if !abbrevTz.is_null() {
+        if let Some(abbrevTz) = abbrevTz {
             if fmask.contains(FieldType::DtzMod) {
                 return -1;
             }
@@ -1665,22 +1666,19 @@ pub unsafe fn DecodeDateTime(
                 if fmask.contains(FieldType::DtzMod) {
                     return -1;
                 }
-                *tzp = DetermineTimeZoneOffset(tm, session_timezone);
+                *tzp = DetermineTimeZoneOffset(tm, &session_timezone);
             }
         }
     }
     0
 }
 
-unsafe fn DetermineTimeZoneOffset(tm: &mut pg_tm, tzp: *mut pg_tz) -> i32 {
+fn DetermineTimeZoneOffset(tm: &mut pg_tm, tzp: &pg_tz) -> i32 {
     let mut t: pg_time_t = 0;
     DetermineTimeZoneOffsetInternal(tm, tzp, &mut t)
 }
-unsafe fn DetermineTimeZoneOffsetInternal(
-    mut tm: &mut pg_tm,
-    tzp: *mut pg_tz,
-    tp: *mut pg_time_t,
-) -> i32 {
+
+fn DetermineTimeZoneOffsetInternal(mut tm: &mut pg_tm, tzp: &pg_tz, tp: &mut pg_time_t) -> i32 {
     let mut boundary: pg_time_t = 0;
     let mut before_gmtoff: i64 = 0;
     let mut after_gmtoff: i64 = 0;
@@ -1753,7 +1751,7 @@ unsafe fn DetermineTimeZoneOffsetInternal(
 unsafe fn DetermineTimeZoneAbbrevOffset(
     mut tm: &mut pg_tm,
     abbr: *const libc::c_char,
-    tzp: *mut pg_tz,
+    tzp: &pg_tz,
 ) -> i32 {
     let mut t: pg_time_t = 0;
     let mut abbr_offset: i32 = 0;
@@ -1769,7 +1767,7 @@ unsafe fn DetermineTimeZoneAbbrevOffset(
 unsafe fn DetermineTimeZoneAbbrevOffsetInternal(
     t: pg_time_t,
     abbr: *const libc::c_char,
-    tzp: *mut pg_tz,
+    tzp: &pg_tz,
     offset: &mut i32,
     isdst: &mut bool,
 ) -> bool {
@@ -2307,14 +2305,14 @@ fn DecodeTimezone_rust(str: &str, tzp: &mut i32) -> i32 {
 unsafe fn DecodeTimezoneAbbrev(
     lowtoken: *mut libc::c_char,
     offset: &mut i32,
-    tz: *mut *mut pg_tz,
+    tz: &mut Option<&pg_tz>,
 ) -> FieldType {
     let lowtoken = std::ffi::CStr::from_ptr(lowtoken).to_str().unwrap();
     let mut local_tz = None;
     let ret = DecodeTimezoneAbbrev_rust(lowtoken, offset, &mut local_tz);
     match local_tz {
-        Some(t) => *tz = t as *const _ as *mut _,
-        None => *tz = std::ptr::null_mut(),
+        Some(t) => *tz = Some(t),
+        None => *tz = None,
     };
     ret
 }
