@@ -6,6 +6,8 @@ use crate::datetime::{
     FieldMask, FieldType, TokenFieldType, FIELD_MASK_ALL_SECS, FIELD_MASK_DATE, FIELD_MASK_TIME,
 };
 
+use crate::tz::pg_tz;
+
 const HOURS_PER_DAY: i32 = 24;
 const MINS_PER_HOUR: i32 = 60;
 const SECS_PER_DAY: i32 = 86400;
@@ -272,7 +274,6 @@ fn timestamp2tm(
 
 extern "C" {
     #![allow(improper_ctypes)]
-    type pg_tz;
     fn strtod(_: *const libc::c_char, _: *mut *mut libc::c_char) -> libc::c_double;
     fn strchr(_: *const libc::c_char, _: i32) -> *mut libc::c_char;
     fn strlen(_: *const libc::c_char) -> u64;
@@ -299,7 +300,7 @@ type TimestampTz = int64;
 type TimeOffset = int64;
 pub type fsec_t = int32;
 pub type DateADT = int32;
-type pg_time_t = int64;
+pub(crate) type pg_time_t = int64;
 #[derive(Debug, Clone)]
 pub struct pg_tm {
     pub tm_sec: i32,
