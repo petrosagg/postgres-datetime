@@ -117,6 +117,13 @@ fn strtoint(str: *const libc::c_char, endptr: *mut *mut libc::c_char, base: i32)
         val.try_into().unwrap()
     }
 }
+
+fn strtoint_rust<'a>(s: &'a str, end: &mut &'a str) -> i32 {
+    let idx = s.find(|c: char| !c.is_ascii_digit()).unwrap_or(s.len());
+    *end = &s[idx..];
+    i32::from_str(&s[..idx]).unwrap()
+}
+
 fn time_overflows(hour: i32, min: i32, sec: i32, fsec: fsec_t) -> bool {
     /* Range-check the fields individually. */
     if !(0..=HOURS_PER_DAY).contains(&hour)
