@@ -1,6 +1,6 @@
 use std::str::FromStr;
 
-use ::libc;
+use libc;
 use once_cell::sync::Lazy;
 
 use crate::datetime::{
@@ -77,22 +77,11 @@ fn pg_next_dst_boundary(
     0
 }
 
-fn pg_tzset(_tzname: *const libc::c_char) -> Option<&'static pg_tz> {
-    None
-}
-
 fn pg_tzset_rust(_tzname: &str) -> Option<&'static pg_tz> {
     None
 }
 
 static session_timezone: Lazy<pg_tz> = Lazy::new(|| Default::default());
-
-fn strtoint(str: *const libc::c_char, endptr: *mut *mut libc::c_char, base: i32) -> i32 {
-    unsafe {
-        let val = libc::strtol(str, endptr, base);
-        val.try_into().unwrap()
-    }
-}
 
 fn strtoint_rust<'a>(s: &'a str, end: &mut &'a str) -> Result<i32, ()> {
     let idx = s.find(|c: char| !c.is_ascii_digit()).unwrap_or(s.len());
@@ -128,8 +117,8 @@ fn time_overflows(hour: i32, min: i32, sec: i32, fsec: fsec_t) -> bool {
 }
 
 /// TMODULO()
-/// Like FMODULO(), but work on the timestamp datatype (now always int64).
-/// We assume that int64 follows the C99 semantics for division (negative
+/// Like FMODULO(), but work on the timestamp datatype (now always i64).
+/// We assume that i64 follows the C99 semantics for division (negative
 /// quotients truncate towards zero).
 fn TMODULO(t: &mut i64, q: &mut i64, u: i64) {
     *q = *t / u;
@@ -199,7 +188,7 @@ fn timestamp2tm(
              * platform-specific roundoff-in-wrong-direction errors, and adjust to
              * Unix epoch.  Then see if we can convert to pg_time_t without loss. This
              * coding avoids hardwiring any assumptions about the width of pg_time_t,
-             * so it should behave sanely on machines without int64.
+             * so it should behave sanely on machines without i64.
              */
             dt = (dt - *fsec as i64) / USECS_PER_SEC
                 + (POSTGRES_EPOCH_JDATE - UNIX_EPOCH_JDATE) * SECS_PER_DAY as i64;
@@ -238,35 +227,12 @@ fn timestamp2tm(
     }
 }
 
-extern "C" {
-    #![allow(improper_ctypes)]
-    fn strtod(_: *const libc::c_char, _: *mut *mut libc::c_char) -> libc::c_double;
-    fn strchr(_: *const libc::c_char, _: i32) -> *mut libc::c_char;
-    fn strlen(_: *const libc::c_char) -> u64;
-    fn __errno_location() -> *mut i32;
-    fn __ctype_b_loc() -> *mut *const libc::c_ushort;
-}
+type Timestamp = i64;
+type TimestampTz = i64;
+type TimeOffset = i64;
+pub type fsec_t = i32;
+pub(crate) type pg_time_t = i64;
 
-type int32 = i32;
-type int64 = i64;
-const _ISblank: u32 = 1 << 0;
-const _IScntrl: u32 = 1 << 1;
-const _ISpunct: u32 = 1 << 2;
-const _ISalnum: u32 = 1 << 3;
-const _ISupper: u32 = 1 << 8;
-const _ISlower: u32 = 1 << 9;
-const _ISalpha: u32 = 1 << 10;
-const _ISdigit: u32 = 1 << 11;
-const _ISxdigit: u32 = 1 << 12;
-const _ISspace: u32 = 1 << 13;
-const _ISprint: u32 = 1 << 14;
-const _ISgraph: u32 = 1 << 15;
-type Timestamp = int64;
-type TimestampTz = int64;
-type TimeOffset = int64;
-pub type fsec_t = int32;
-pub type DateADT = int32;
-pub(crate) type pg_time_t = int64;
 #[derive(Debug, Clone)]
 pub struct pg_tm {
     pub tm_sec: i32,
@@ -782,11 +748,6 @@ fn GetCurrentTimeUsec(tm: &mut pg_tm, fsec: &mut fsec_t, tzp: Option<&mut i32>) 
     if let Some(tzp) = tzp {
         *tzp = tzp_local;
     }
-}
-
-unsafe fn ParseFractionalSecond(cp: *mut libc::c_char, fsec: &mut fsec_t) -> i32 {
-    let cp = std::ffi::CStr::from_ptr(cp).to_str().unwrap();
-    ParseFractionalSecond_rust(cp, fsec)
 }
 
 fn ParseFractionalSecond_rust(cp: &str, fsec: &mut fsec_t) -> i32 {
@@ -1710,17 +1671,6 @@ fn DetermineTimeZoneAbbrevOffsetInternal(
     false
 }
 
-unsafe fn DecodeDate(
-    str: *mut libc::c_char,
-    fmask: FieldMask,
-    tmask: &mut FieldMask,
-    is2digits: &mut bool,
-    tm: &mut pg_tm,
-) -> i32 {
-    let str = std::ffi::CStr::from_ptr(str).to_str().unwrap();
-    DecodeDate_rust(str, fmask, tmask, is2digits, tm)
-}
-
 fn DecodeDate_rust(
     mut str: &str,
     mut fmask: FieldMask,
@@ -1880,18 +1830,6 @@ fn ValidateDate(
 ///
 /// Only check the lower limit on hours, since this same code can be
 /// used to represent time spans.
-unsafe fn DecodeTime(
-    str: *mut libc::c_char,
-    _fmask: FieldMask,
-    range: i32,
-    tmask: &mut FieldMask,
-    tm: &mut pg_tm,
-    fsec: &mut fsec_t,
-) -> i32 {
-    let str = std::ffi::CStr::from_ptr(str).to_str().unwrap();
-    DecodeTime_rust(str, range, tmask, tm, fsec)
-}
-
 fn DecodeTime_rust(
     str: &str,
     range: i32,
@@ -1957,22 +1895,6 @@ fn DecodeTime_rust(
         return -2;
     }
     0
-}
-
-#[allow(clippy::too_many_arguments)]
-unsafe fn DecodeNumber(
-    flen: i32,
-    str: *mut libc::c_char,
-    haveTextMonth: bool,
-    fmask: FieldMask,
-    tmask: &mut FieldMask,
-    tm: &mut pg_tm,
-    fsec: &mut fsec_t,
-    is2digits: &mut bool,
-) -> i32 {
-    let str = std::slice::from_raw_parts(str as *const u8, flen as usize);
-    let str = std::str::from_utf8(str).unwrap();
-    DecodeNumber_rust(str, haveTextMonth, fmask, tmask, tm, fsec, is2digits)
 }
 
 fn DecodeNumber_rust(
@@ -2097,20 +2019,6 @@ fn DecodeNumber_rust(
     0
 }
 
-unsafe fn DecodeNumberField(
-    len: i32,
-    str: *mut libc::c_char,
-    fmask: FieldMask,
-    tmask: &mut FieldMask,
-    tm: &mut pg_tm,
-    fsec: &mut fsec_t,
-    is2digits: &mut bool,
-) -> i32 {
-    let str = std::slice::from_raw_parts(str as *const u8, len as usize);
-    let str = std::str::from_utf8(str).unwrap();
-    DecodeNumberField_rust(str, fmask, tmask, tm, fsec, is2digits)
-}
-
 fn DecodeNumberField_rust(
     mut str: &str,
     fmask: FieldMask,
@@ -2168,11 +2076,6 @@ fn DecodeNumberField_rust(
     -1
 }
 
-unsafe fn DecodeTimezone(str: *mut libc::c_char, tzp: &mut i32) -> i32 {
-    let str = std::ffi::CStr::from_ptr(str).to_str().unwrap();
-    DecodeTimezone_rust(str, tzp)
-}
-
 fn DecodeTimezone_rust(str: &str, tzp: &mut i32) -> i32 {
     let mut tz: i32;
     let min: i32;
@@ -2222,21 +2125,6 @@ fn DecodeTimezone_rust(str: &str, tzp: &mut i32) -> i32 {
     0
 }
 
-unsafe fn DecodeTimezoneAbbrev(
-    lowtoken: *mut libc::c_char,
-    offset: &mut i32,
-    tz: &mut Option<&pg_tz>,
-) -> FieldType {
-    let lowtoken = std::ffi::CStr::from_ptr(lowtoken).to_str().unwrap();
-    let mut local_tz = None;
-    let ret = DecodeTimezoneAbbrev_rust(lowtoken, offset, &mut local_tz);
-    match local_tz {
-        Some(t) => *tz = Some(t),
-        None => *tz = None,
-    };
-    ret
-}
-
 fn DecodeTimezoneAbbrev_rust(
     lowtoken: &str,
     offset: &mut i32,
@@ -2270,11 +2158,6 @@ fn DecodeTimezoneAbbrev_rust(
             FieldType::UnknownField
         }
     }
-}
-
-unsafe fn DecodeSpecial(lowtoken: *mut libc::c_char, val: &mut i32) -> FieldType {
-    let lowtoken = std::ffi::CStr::from_ptr(lowtoken).to_str().unwrap();
-    DecodeSpecial_rust(lowtoken, val)
 }
 
 fn DecodeSpecial_rust(lowtoken: &str, val: &mut i32) -> FieldType {

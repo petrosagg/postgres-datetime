@@ -1,9 +1,7 @@
-use std::ffi::CString;
-
 use bitmask::bitmask;
 use once_cell::sync::Lazy;
 
-use crate::datetime_raw::{fsec_t, pg_tm, DateADT, DecodeDateTime};
+use crate::datetime_raw::{fsec_t, pg_tm, DecodeDateTime};
 
 #[derive(Debug, PartialEq, Eq)]
 #[repr(i32)]
@@ -199,7 +197,6 @@ pub fn decode(
         ftype.push(*typ as i32);
     }
 
-    let _date: DateADT = 0;
     let mut fsec: fsec_t = 0;
     let mut tt = pg_tm {
         tm_sec: 0,
