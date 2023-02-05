@@ -950,7 +950,7 @@ pub fn parse_datetime(input: &str) -> Result<Vec<(String, TokenFieldType)>, i32>
 
 pub fn DecodeDateTime(
     field: &[&str],
-    ftype: &[i32],
+    ftype: &[TokenFieldType],
     nf: usize,
     dtype: &mut TokenFieldType,
     mut tm: &mut pg_tm,
@@ -1000,7 +1000,7 @@ pub fn DecodeDateTime(
     let mut current_block_236: u64;
     for i in 0..nf {
         match ftype[i] {
-            2 => {
+            TokenFieldType::Date => {
                 if ptype == TokenFieldType::Julian {
                     let mut cp = field[i];
                     let tzp = match tzp.as_mut() {
@@ -1069,14 +1069,8 @@ pub fn DecodeDateTime(
                         if dterr != 0 {
                             return dterr;
                         }
-                        let dterr = DecodeNumberField(
-                            prefix,
-                            fmask,
-                            &mut tmask,
-                            tm,
-                            fsec,
-                            &mut is2digits,
-                        );
+                        let dterr =
+                            DecodeNumberField(prefix, fmask, &mut tmask, tm, fsec, &mut is2digits);
                         if dterr < 0 {
                             return dterr;
                         }
@@ -1101,7 +1095,7 @@ pub fn DecodeDateTime(
                 }
                 current_block_236 = 13797367574128857302;
             }
-            3 => {
+            TokenFieldType::Time => {
                 if ptype != TokenFieldType::Number {
                     if ptype != TokenFieldType::Time {
                         eprintln!("ptype is not Time: {:?}", ptype);
@@ -1118,7 +1112,7 @@ pub fn DecodeDateTime(
                 }
                 current_block_236 = 13797367574128857302;
             }
-            4 => {
+            TokenFieldType::Tz => {
                 let mut tz: i32 = 0;
                 let tzp = match tzp.as_mut() {
                     Some(tzp) => tzp,
@@ -1135,7 +1129,7 @@ pub fn DecodeDateTime(
                 tmask = FieldMask::from(FieldType::Tz);
                 current_block_236 = 13797367574128857302;
             }
-            0 => {
+            TokenFieldType::Number => {
                 if ptype != TokenFieldType::Number {
                     let mut cp_1 = field[i];
                     let val_1 = match strtoint(field[i], &mut cp_1) {
@@ -1260,8 +1254,7 @@ pub fn DecodeDateTime(
                     let cp_2 = field[i].find('.').map(|idx| &field[i][idx..]);
                     // Embedded decimal and no date yet?
                     if !cp_2.is_none() && !fmask.intersects(*FIELD_MASK_DATE) {
-                        let dterr =
-                            DecodeDate(field[i], fmask, &mut tmask, &mut is2digits, tm);
+                        let dterr = DecodeDate(field[i], fmask, &mut tmask, &mut is2digits, tm);
                         if dterr != 0 {
                             return dterr;
                         }
@@ -1321,7 +1314,7 @@ pub fn DecodeDateTime(
                 }
                 current_block_236 = 13797367574128857302;
             }
-            1 | 6 => {
+            TokenFieldType::String | TokenFieldType::Special => {
                 let mut type_0 = DecodeTimezoneAbbrev(field[i], &mut val, &mut valtz);
                 if type_0 == FieldType::UnknownField {
                     type_0 = DecodeSpecial(field[i], &mut val);
@@ -1331,8 +1324,8 @@ pub fn DecodeDateTime(
                 } else {
                     tmask = FieldMask::from(type_0);
                     match type_0 {
-                        FieldType::Reserved => match val {
-                            12 => {
+                        FieldType::Reserved => match TokenFieldType::try_from(val).unwrap() {
+                            TokenFieldType::Now => {
                                 tmask = *FIELD_MASK_DATE | *FIELD_MASK_TIME | FieldType::Tz;
                                 *dtype = TokenFieldType::Date;
                                 let tzp = match tzp {
@@ -1341,7 +1334,7 @@ pub fn DecodeDateTime(
                                 };
                                 GetCurrentTimeUsec(tm, fsec, tzp);
                             }
-                            13 => {
+                            TokenFieldType::Yesterday => {
                                 tmask = *FIELD_MASK_DATE;
                                 *dtype = TokenFieldType::Date;
                                 GetCurrentDateTime(&mut cur_tm);
@@ -1352,7 +1345,7 @@ pub fn DecodeDateTime(
                                     &mut tm.tm_mday,
                                 );
                             }
-                            14 => {
+                            TokenFieldType::Today => {
                                 tmask = *FIELD_MASK_DATE;
                                 *dtype = TokenFieldType::Date;
                                 GetCurrentDateTime(&mut cur_tm);
@@ -1360,7 +1353,7 @@ pub fn DecodeDateTime(
                                 tm.tm_mon = cur_tm.tm_mon;
                                 tm.tm_mday = cur_tm.tm_mday;
                             }
-                            15 => {
+                            TokenFieldType::Tomorrow => {
                                 tmask = *FIELD_MASK_DATE;
                                 *dtype = TokenFieldType::Date;
                                 GetCurrentDateTime(&mut cur_tm);
@@ -1371,7 +1364,7 @@ pub fn DecodeDateTime(
                                     &mut tm.tm_mday,
                                 );
                             }
-                            16 => {
+                            TokenFieldType::Zulu => {
                                 tmask = *FIELD_MASK_TIME | FieldType::Tz;
                                 *dtype = TokenFieldType::Date;
                                 tm.tm_hour = 0;
@@ -1468,7 +1461,12 @@ pub fn DecodeDateTime(
                             //    DTK_TIME should be hh:mm:ss.fff
                             //    DTK_DATE should be hhmmss-zz
                             if i >= nf - 1
-                                || ftype[i + 1] != 0 && ftype[i + 1] != 3 && ftype[i + 1] != 2
+                                || !matches!(
+                                    ftype[i + 1],
+                                    TokenFieldType::Number
+                                        | TokenFieldType::Time
+                                        | TokenFieldType::Date
+                                )
                             {
                                 eprintln!("next field are not the right type");
                                 return -1;
@@ -2125,11 +2123,7 @@ fn DecodeTimezone(str: &str, tzp: &mut i32) -> i32 {
     0
 }
 
-fn DecodeTimezoneAbbrev(
-    lowtoken: &str,
-    offset: &mut i32,
-    tz: &mut Option<&pg_tz>,
-) -> FieldType {
+fn DecodeTimezoneAbbrev(lowtoken: &str, offset: &mut i32, tz: &mut Option<&pg_tz>) -> FieldType {
     match &ZONE_ABBREV_TABLE {
         Some(table) => match table.abbrevs.binary_search_by(|tk| tk.token.cmp(lowtoken)) {
             Ok(idx) => {

@@ -3,7 +3,7 @@ use once_cell::sync::Lazy;
 
 use crate::datetime_raw::{fsec_t, pg_tm, DecodeDateTime};
 
-#[derive(Debug, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 #[repr(i32)]
 pub enum TokenFieldType {
     Number = 0,
@@ -194,7 +194,7 @@ pub fn decode(
     let mut ftype = vec![];
     for (data, typ) in fields.iter() {
         field.push(&**data);
-        ftype.push(*typ as i32);
+        ftype.push(typ.clone());
     }
 
     let mut fsec: fsec_t = 0;
