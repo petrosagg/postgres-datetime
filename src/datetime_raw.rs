@@ -2280,6 +2280,20 @@ unsafe fn DecodeTimezoneAbbrev(
     tz: *mut *mut pg_tz,
 ) -> FieldType {
     let lowtoken = std::ffi::CStr::from_ptr(lowtoken).to_str().unwrap();
+    let mut local_tz = None;
+    let ret = DecodeTimezoneAbbrev_rust(lowtoken, offset, &mut local_tz);
+    match local_tz {
+        Some(t) => *tz = t as *const _ as *mut _,
+        None => *tz = std::ptr::null_mut(),
+    };
+    ret
+}
+
+fn DecodeTimezoneAbbrev_rust(
+    lowtoken: &str,
+    offset: &mut i32,
+    tz: &mut Option<&pg_tz>,
+) -> FieldType {
     match &ZONE_ABBREV_TABLE {
         Some(table) => match table.abbrevs.binary_search_by(|tk| tk.token.cmp(lowtoken)) {
             Ok(idx) => {
@@ -2291,20 +2305,20 @@ unsafe fn DecodeTimezoneAbbrev(
                     }
                     _ => {
                         *offset = token.value;
-                        *tz = std::ptr::null_mut::<pg_tz>();
+                        *tz = None;
                     }
                 };
                 token.typ
             }
             Err(_) => {
                 *offset = 0;
-                *tz = std::ptr::null_mut::<pg_tz>();
+                *tz = None;
                 FieldType::UnknownField
             }
         },
         None => {
             *offset = 0;
-            *tz = std::ptr::null_mut::<pg_tz>();
+            *tz = None;
             FieldType::UnknownField
         }
     }
@@ -2329,7 +2343,7 @@ fn DecodeSpecial_rust(lowtoken: &str, val: &mut i32) -> FieldType {
     }
 }
 
-unsafe fn FetchDynamicTimeZone(_tbl: &TimeZoneAbbrevTable, _tp: &DateToken) -> *mut pg_tz {
+fn FetchDynamicTimeZone<'a>(_tbl: &'a TimeZoneAbbrevTable, _tp: &DateToken) -> Option<&'a pg_tz> {
     // This is unimplemented because the C code was doing pointer weird pointer arithmetic to
     // relate the value of the token to an offset of a dynamic timezone definition in the zone
     // table.
