@@ -77,13 +77,13 @@ fn pg_next_dst_boundary(
     0
 }
 
-fn pg_tzset_rust(_tzname: &str) -> Option<&'static pg_tz> {
+fn pg_tzset(_tzname: &str) -> Option<&'static pg_tz> {
     None
 }
 
 static session_timezone: Lazy<pg_tz> = Lazy::new(|| Default::default());
 
-fn strtoint_rust<'a>(s: &'a str, end: &mut &'a str) -> Result<i32, ()> {
+fn strtoint<'a>(s: &'a str, end: &mut &'a str) -> Result<i32, ()> {
     let idx = s.find(|c: char| !c.is_ascii_digit()).unwrap_or(s.len());
     *end = &s[idx..];
     i32::from_str(&s[..idx]).or(Err(()))
@@ -750,7 +750,7 @@ fn GetCurrentTimeUsec(tm: &mut pg_tm, fsec: &mut fsec_t, tzp: Option<&mut i32>) 
     }
 }
 
-fn ParseFractionalSecond_rust(cp: &str, fsec: &mut fsec_t) -> i32 {
+fn ParseFractionalSecond(cp: &str, fsec: &mut fsec_t) -> i32 {
     let frac = match f64::from_str(cp) {
         Ok(frac) => frac,
         Err(_) => return -1,
@@ -1010,13 +1010,13 @@ pub fn DecodeDateTime(
                             return -1;
                         }
                     };
-                    let val_0 = match strtoint_rust(field[i], &mut cp) {
+                    let val_0 = match strtoint(field[i], &mut cp) {
                         Ok(val) => val,
                         Err(_) => return -2,
                     };
                     j2date(val_0, &mut tm.tm_year, &mut tm.tm_mon, &mut tm.tm_mday);
                     isjulian = true;
-                    let dterr = DecodeTimezone_rust(cp, tzp);
+                    let dterr = DecodeTimezone(cp, tzp);
                     if dterr != 0 {
                         return dterr;
                     }
@@ -1065,11 +1065,11 @@ pub fn DecodeDateTime(
                                 return -1;
                             }
                         };
-                        let dterr = DecodeTimezone_rust(cp_0, tzp);
+                        let dterr = DecodeTimezone(cp_0, tzp);
                         if dterr != 0 {
                             return dterr;
                         }
-                        let dterr = DecodeNumberField_rust(
+                        let dterr = DecodeNumberField(
                             prefix,
                             fmask,
                             &mut tmask,
@@ -1083,7 +1083,7 @@ pub fn DecodeDateTime(
                         // modify tmask after returning from DecodeNumberField()
                         tmask.set(FieldType::Tz);
                     } else {
-                        namedTz = pg_tzset_rust(field[i]);
+                        namedTz = pg_tzset(field[i]);
                         if namedTz.is_none() {
                             // ereport(ERROR,
                             // 		(errcode(ERRCODE_INVALID_PARAMETER_VALUE),
@@ -1094,7 +1094,7 @@ pub fn DecodeDateTime(
                         tmask = FieldMask::from(FieldType::Tz);
                     }
                 } else {
-                    let dterr = DecodeDate_rust(field[i], fmask, &mut tmask, &mut is2digits, tm);
+                    let dterr = DecodeDate(field[i], fmask, &mut tmask, &mut is2digits, tm);
                     if dterr != 0 {
                         return dterr;
                     }
@@ -1109,7 +1109,7 @@ pub fn DecodeDateTime(
                     }
                     ptype = TokenFieldType::Number
                 }
-                let dterr = DecodeTime_rust(field[i], 0x7fff, &mut tmask, tm, fsec);
+                let dterr = DecodeTime(field[i], 0x7fff, &mut tmask, tm, fsec);
                 if dterr != 0 {
                     return dterr;
                 }
@@ -1127,7 +1127,7 @@ pub fn DecodeDateTime(
                         return -1;
                     }
                 };
-                let dterr = DecodeTimezone_rust(field[i], &mut tz);
+                let dterr = DecodeTimezone(field[i], &mut tz);
                 if dterr != 0 {
                     return dterr;
                 }
@@ -1138,7 +1138,7 @@ pub fn DecodeDateTime(
             0 => {
                 if ptype != TokenFieldType::Number {
                     let mut cp_1 = field[i];
-                    let val_1 = match strtoint_rust(field[i], &mut cp_1) {
+                    let val_1 = match strtoint(field[i], &mut cp_1) {
                         Ok(val) => val,
                         Err(_) => return -2,
                     };
@@ -1187,7 +1187,7 @@ pub fn DecodeDateTime(
                             tm.tm_sec = val_1;
                             tmask = FieldMask::from(FieldType::Second);
                             if cp_1.starts_with('.') {
-                                let dterr = ParseFractionalSecond_rust(cp_1, fsec);
+                                let dterr = ParseFractionalSecond(cp_1, fsec);
                                 if dterr != 0 {
                                     return dterr;
                                 }
@@ -1203,7 +1203,7 @@ pub fn DecodeDateTime(
                                 }
                             };
                             tmask = FieldMask::from(FieldType::Tz);
-                            let dterr = DecodeTimezone_rust(field[i], tzp);
+                            let dterr = DecodeTimezone(field[i], tzp);
                             if dterr != 0 {
                                 return dterr;
                             }
@@ -1232,7 +1232,7 @@ pub fn DecodeDateTime(
                             }
                         }
                         TokenFieldType::Time => {
-                            let dterr = DecodeNumberField_rust(
+                            let dterr = DecodeNumberField(
                                 field[i],
                                 fmask | *FIELD_MASK_DATE,
                                 &mut tmask,
@@ -1261,7 +1261,7 @@ pub fn DecodeDateTime(
                     // Embedded decimal and no date yet?
                     if !cp_2.is_none() && !fmask.intersects(*FIELD_MASK_DATE) {
                         let dterr =
-                            DecodeDate_rust(field[i], fmask, &mut tmask, &mut is2digits, tm);
+                            DecodeDate(field[i], fmask, &mut tmask, &mut is2digits, tm);
                         if dterr != 0 {
                             return dterr;
                         }
@@ -1272,7 +1272,7 @@ pub fn DecodeDateTime(
                         // Interpret as a concatenated date or time Set the type field to allow
                         // decoding other fields later.
                         // Example: 20011223 or 040506
-                        let dterr = DecodeNumberField_rust(
+                        let dterr = DecodeNumberField(
                             field[i],
                             fmask,
                             &mut tmask,
@@ -1292,7 +1292,7 @@ pub fn DecodeDateTime(
                         && (!fmask.intersects(*FIELD_MASK_DATE)
                             || !fmask.intersects(*FIELD_MASK_TIME))
                     {
-                        let dterr = DecodeNumberField_rust(
+                        let dterr = DecodeNumberField(
                             field[i],
                             fmask,
                             &mut tmask,
@@ -1305,7 +1305,7 @@ pub fn DecodeDateTime(
                         }
                     // otherwise it is a single date/time field...
                     } else {
-                        let dterr = DecodeNumber_rust(
+                        let dterr = DecodeNumber(
                             field[i],
                             haveTextMonth,
                             fmask,
@@ -1322,9 +1322,9 @@ pub fn DecodeDateTime(
                 current_block_236 = 13797367574128857302;
             }
             1 | 6 => {
-                let mut type_0 = DecodeTimezoneAbbrev_rust(field[i], &mut val, &mut valtz);
+                let mut type_0 = DecodeTimezoneAbbrev(field[i], &mut val, &mut valtz);
                 if type_0 == FieldType::UnknownField {
-                    type_0 = DecodeSpecial_rust(field[i], &mut val);
+                    type_0 = DecodeSpecial(field[i], &mut val);
                 }
                 if type_0 == FieldType::IgnoreDtf {
                     current_block_236 = 12209867499936983673;
@@ -1478,7 +1478,7 @@ pub fn DecodeDateTime(
                         FieldType::UnknownField => {
                             // Before giving up and declaring error, check to see
                             // if it is an all-alpha timezone name.
-                            namedTz = pg_tzset_rust(field[i]);
+                            namedTz = pg_tzset(field[i]);
                             if namedTz.is_none() {
                                 eprintln!("namedTz is null");
                                 return -1;
@@ -1671,7 +1671,7 @@ fn DetermineTimeZoneAbbrevOffsetInternal(
     false
 }
 
-fn DecodeDate_rust(
+fn DecodeDate(
     mut str: &str,
     mut fmask: FieldMask,
     tmask: &mut FieldMask,
@@ -1714,7 +1714,7 @@ fn DecodeDate_rust(
             .unwrap()
             .starts_with(|c: char| c.is_ascii_alphabetic())
         {
-            let type_0 = DecodeSpecial_rust(fields[i].unwrap(), &mut val);
+            let type_0 = DecodeSpecial(fields[i].unwrap(), &mut val);
             if type_0 != FieldType::IgnoreDtf {
                 dmask = FieldMask::from(type_0);
                 match type_0 {
@@ -1742,7 +1742,7 @@ fn DecodeDate_rust(
             if len <= 0 {
                 return -1;
             }
-            let dterr = DecodeNumber_rust(
+            let dterr = DecodeNumber(
                 field,
                 haveTextMonth,
                 fmask,
@@ -1830,7 +1830,7 @@ fn ValidateDate(
 ///
 /// Only check the lower limit on hours, since this same code can be
 /// used to represent time spans.
-fn DecodeTime_rust(
+fn DecodeTime(
     str: &str,
     range: i32,
     tmask: &mut FieldMask,
@@ -1839,14 +1839,14 @@ fn DecodeTime_rust(
 ) -> i32 {
     let mut cp = str;
     *tmask = *FIELD_MASK_TIME;
-    tm.tm_hour = match strtoint_rust(str, &mut cp) {
+    tm.tm_hour = match strtoint(str, &mut cp) {
         Ok(val) => val,
         Err(_) => return -2,
     };
     if !cp.starts_with(':') {
         return -1;
     }
-    tm.tm_min = match strtoint_rust(&cp[1..], &mut cp) {
+    tm.tm_min = match strtoint(&cp[1..], &mut cp) {
         Ok(val) => val,
         Err(_) => return -2,
     };
@@ -1859,7 +1859,7 @@ fn DecodeTime_rust(
             tm.tm_hour = 0;
         }
     } else if cp.starts_with('.') {
-        let dterr = ParseFractionalSecond_rust(cp, fsec);
+        let dterr = ParseFractionalSecond(cp, fsec);
         if dterr != 0 {
             return dterr;
         }
@@ -1867,14 +1867,14 @@ fn DecodeTime_rust(
         tm.tm_min = tm.tm_hour;
         tm.tm_hour = 0;
     } else if cp.starts_with(':') {
-        tm.tm_sec = match strtoint_rust(&cp[1..], &mut cp) {
+        tm.tm_sec = match strtoint(&cp[1..], &mut cp) {
             Ok(val) => val,
             Err(_) => return -2,
         };
         if cp.is_empty() {
             *fsec = 0;
         } else if cp.starts_with('.') {
-            let dterr = ParseFractionalSecond_rust(cp, fsec);
+            let dterr = ParseFractionalSecond(cp, fsec);
             if dterr != 0 {
                 return dterr;
             }
@@ -1897,7 +1897,7 @@ fn DecodeTime_rust(
     0
 }
 
-fn DecodeNumber_rust(
+fn DecodeNumber(
     str: &str,
     haveTextMonth: bool,
     fmask: FieldMask,
@@ -1908,7 +1908,7 @@ fn DecodeNumber_rust(
 ) -> i32 {
     let mut cp = str;
     *tmask = FieldMask::none();
-    let val = match strtoint_rust(str, &mut cp) {
+    let val = match strtoint(str, &mut cp) {
         Ok(val) => val,
         Err(_) => return -2,
     };
@@ -1918,13 +1918,13 @@ fn DecodeNumber_rust(
     if cp.starts_with('.') {
         if str.len() - cp.len() > 2 {
             let dterr =
-                DecodeNumberField_rust(str, fmask | *FIELD_MASK_DATE, tmask, tm, fsec, is2digits);
+                DecodeNumberField(str, fmask | *FIELD_MASK_DATE, tmask, tm, fsec, is2digits);
             if dterr < 0 {
                 return dterr;
             }
             return 0;
         }
-        let dterr = ParseFractionalSecond_rust(cp, fsec);
+        let dterr = ParseFractionalSecond(cp, fsec);
         if dterr != 0 {
             return dterr;
         }
@@ -2004,7 +2004,7 @@ fn DecodeNumber_rust(
             tm.tm_year = val;
         }
         14 => {
-            let dterr = DecodeNumberField_rust(str, fmask, tmask, tm, fsec, is2digits);
+            let dterr = DecodeNumberField(str, fmask, tmask, tm, fsec, is2digits);
             if dterr < 0 {
                 return dterr;
             }
@@ -2019,7 +2019,7 @@ fn DecodeNumber_rust(
     0
 }
 
-fn DecodeNumberField_rust(
+fn DecodeNumberField(
     mut str: &str,
     fmask: FieldMask,
     tmask: &mut FieldMask,
@@ -2076,7 +2076,7 @@ fn DecodeNumberField_rust(
     -1
 }
 
-fn DecodeTimezone_rust(str: &str, tzp: &mut i32) -> i32 {
+fn DecodeTimezone(str: &str, tzp: &mut i32) -> i32 {
     let mut tz: i32;
     let min: i32;
     let mut sec: i32 = 0;
@@ -2084,17 +2084,17 @@ fn DecodeTimezone_rust(str: &str, tzp: &mut i32) -> i32 {
     if !str.starts_with('+') && !str.starts_with('-') {
         return -1;
     }
-    let mut hr = match strtoint_rust(&str[1..], &mut cp) {
+    let mut hr = match strtoint(&str[1..], &mut cp) {
         Ok(hr) => hr,
         Err(_) => return -5,
     };
     if cp.starts_with(':') {
-        min = match strtoint_rust(&cp[1..], &mut cp) {
+        min = match strtoint(&cp[1..], &mut cp) {
             Ok(min) => min,
             Err(_) => return -5,
         };
         if cp.starts_with(':') {
-            sec = match strtoint_rust(&cp[1..], &mut cp) {
+            sec = match strtoint(&cp[1..], &mut cp) {
                 Ok(sec) => sec,
                 Err(_) => return -5,
             };
@@ -2125,7 +2125,7 @@ fn DecodeTimezone_rust(str: &str, tzp: &mut i32) -> i32 {
     0
 }
 
-fn DecodeTimezoneAbbrev_rust(
+fn DecodeTimezoneAbbrev(
     lowtoken: &str,
     offset: &mut i32,
     tz: &mut Option<&pg_tz>,
@@ -2160,7 +2160,7 @@ fn DecodeTimezoneAbbrev_rust(
     }
 }
 
-fn DecodeSpecial_rust(lowtoken: &str, val: &mut i32) -> FieldType {
+fn DecodeSpecial(lowtoken: &str, val: &mut i32) -> FieldType {
     match DATE_TOKEN_TABLE.binary_search_by(|tk| tk.token.cmp(lowtoken)) {
         Ok(idx) => {
             let token = &DATE_TOKEN_TABLE[idx];
