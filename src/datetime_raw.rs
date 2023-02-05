@@ -10,17 +10,18 @@ use crate::tz::pg_tz;
 
 const HOURS_PER_DAY: i32 = 24;
 const MINS_PER_HOUR: i32 = 60;
-const SECS_PER_DAY: i32 = 86400;
+const SECS_PER_DAY: i32 = 86_400;
 const SECS_PER_HOUR: i32 = 3600;
 const SECS_PER_MINUTE: i32 = 60;
-const USECS_PER_DAY: i64 = 86400000000;
-const USECS_PER_HOUR: i64 = 3600000000;
-const USECS_PER_MINUTE: i64 = 60000000;
-const USECS_PER_SEC: i64 = 1000000;
-const POSTGRES_EPOCH_JDATE: i64 = 2451545; /* == date2j(2000, 1, 1) */
-const UNIX_EPOCH_JDATE: i64 = 2440588; /* == date2j(1970, 1, 1) */
+const USECS_PER_DAY: i64 = 86_400_000_000;
+const USECS_PER_HOUR: i64 = 3_600_000_000;
+const USECS_PER_MINUTE: i64 = 60_000_000;
+const USECS_PER_SEC: i64 = 1_000_000;
+const POSTGRES_EPOCH_JDATE: i64 = 2_451_545; /* == date2j(2000, 1, 1) */
+const UNIX_EPOCH_JDATE: i64 = 2_440_588; /* == date2j(1970, 1, 1) */
 
 static DateOrder: i32 = 0;
+
 fn dt2time(jd: Timestamp, hour: &mut i32, min: &mut i32, sec: &mut i32, fsec: &mut fsec_t) {
     let mut time: TimeOffset;
 
