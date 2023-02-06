@@ -9,6 +9,7 @@ use crate::datetime::{
 
 use crate::tz::pg_tz;
 
+const MAX_TZDISP_HOUR: i32 = 15;
 const HOURS_PER_DAY: i32 = 24;
 const MINS_PER_HOUR: i32 = 60;
 const SECS_PER_DAY: i64 = 86_400;
@@ -1284,7 +1285,7 @@ pub fn DecodeDateTime(
                                     Ok(val) => val,
                                     Err(_) => return -1,
                                 };
-                                time *= 86400000000.0;
+                                time *= USECS_PER_DAY as f64;
                                 dt2time(
                                     time as Timestamp,
                                     &mut tm.tm_hour,
@@ -1574,13 +1575,13 @@ pub fn DecodeDateTime(
         return dterr;
     }
     // handle AM/PM
-    if mer != 2 && tm.tm_hour > 24 / 2 {
+    if mer != 2 && tm.tm_hour > HOURS_PER_DAY / 2 {
         return -2;
     }
-    if mer == 0 && tm.tm_hour == 24 / 2 {
+    if mer == 0 && tm.tm_hour == HOURS_PER_DAY / 2 {
         tm.tm_hour = 0;
-    } else if mer == 1 && tm.tm_hour != 24 / 2 {
-        tm.tm_hour += 24 / 2;
+    } else if mer == 1 && tm.tm_hour != HOURS_PER_DAY / 2 {
+        tm.tm_hour += HOURS_PER_DAY / 2;
     }
     // do additional checking for full date specs...
     if *dtype == TokenFieldType::Date {
@@ -1646,6 +1647,15 @@ fn DetermineTimeZoneOffset(tm: &mut pg_tm, tzp: &pg_tz) -> i32 {
     DetermineTimeZoneOffsetInternal(tm, tzp, &mut t)
 }
 
+fn is_valid_julian(year: i32, month: i32) -> bool {
+    const JULIAN_MINYEAR: i32 = -4713;
+    const JULIAN_MINMONTH: i32 = 11;
+    const JULIAN_MAXYEAR: i32 = 5874898;
+    const JULIAN_MAXMONTH: i32 = 6;
+    (year > JULIAN_MINYEAR || year == JULIAN_MINYEAR && month >= JULIAN_MINMONTH)
+        && (year < JULIAN_MAXYEAR || year == JULIAN_MAXYEAR && month < JULIAN_MAXMONTH)
+}
+
 /// As above, but also return the actual UTC time imputed to the date/time into `tp`.
 ///
 /// In event of an out-of-range date, we punt by returning zero into `tp`.
@@ -1664,14 +1674,11 @@ fn DetermineTimeZoneOffsetInternal(mut tm: &mut pg_tm, tzp: &pg_tz, tp: &mut pg_
     // y/m/d/h/m/s taken as GMT time.  If this overflows, punt and decide the
     // timezone is GMT.  (For a valid Julian date, integer overflow should be
     // impossible with 64-bit pg_time_t, but let's check for safety.)
-    // TODO(petrosagg): this if statement is actually a macro IS_VALID_JULIAN, extract as an fn
-    if (tm.tm_year > -4713 || tm.tm_year == -4713 && tm.tm_mon >= 11)
-        && (tm.tm_year < 5874898 || tm.tm_year == 5874898 && tm.tm_mon < 6)
-    {
+    if !is_valid_julian(tm.tm_year, tm.tm_mon) {
         let date = date2j(tm.tm_year, tm.tm_mon, tm.tm_mday) - (UNIX_EPOCH_JDATE as i32);
         let day = date as pg_time_t * SECS_PER_DAY;
         if day / SECS_PER_DAY == date as i64 {
-            let sec = tm.tm_sec + (tm.tm_min + tm.tm_hour * 60) * 60;
+            let sec = tm.tm_sec + (tm.tm_min + tm.tm_hour * MINS_PER_HOUR) * SECS_PER_MINUTE;
             let mytime = day + sec as i64;
             // since sec >= 0, overflow could only be from +day to -mytime
             if !(mytime < 0 && day > 0) {
@@ -2070,11 +2077,11 @@ fn DecodeTime(
     // do a sanity check
     if tm.tm_hour < 0
         || tm.tm_min < 0
-        || tm.tm_min > 60 - 1
+        || tm.tm_min > MINS_PER_HOUR - 1
         || tm.tm_sec < 0
-        || tm.tm_sec > 60
+        || tm.tm_sec > SECS_PER_MINUTE
         || (*fsec as i64) < 0
-        || *fsec as i64 > 1000000
+        || *fsec as i64 > USECS_PER_SEC
     {
         return -2;
     }
@@ -2323,16 +2330,16 @@ fn DecodeTimezone(str: &str, tzp: &mut i32) -> i32 {
     }
 
     // Range-check the values; see notes in datatype/timestamp.h
-    if !(0..=15).contains(&hr) {
+    if !(0..=MAX_TZDISP_HOUR).contains(&hr) {
         return -5;
     }
-    if !(0..60).contains(&min) {
+    if !(0..MINS_PER_HOUR).contains(&min) {
         return -5;
     }
-    if !(0..60).contains(&sec) {
+    if !(0..SECS_PER_MINUTE).contains(&sec) {
         return -5;
     }
-    tz = (hr * 60 + min) * 60 + sec;
+    tz = (hr * MINS_PER_HOUR + min) * SECS_PER_MINUTE + sec;
     if str.starts_with('-') {
         tz = -tz;
     }
