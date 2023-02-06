@@ -93,7 +93,7 @@ fn pg_tzset(_tzname: &str) -> Option<&'static pg_tz> {
     None
 }
 
-static session_timezone: Lazy<pg_tz> = Lazy::new(|| Default::default());
+static SESSION_TIMEZONE: Lazy<pg_tz> = Lazy::new(|| Default::default());
 
 fn strtoint<'a>(s: &'a str, end: &mut &'a str) -> Result<i32, ()> {
     let idx = s.find(|c: char| !c.is_ascii_digit()).unwrap_or(s.len());
@@ -152,7 +152,7 @@ fn timestamp2tm(
 
     /* Use session timezone if caller asks for default */
     if attimezone.is_none() {
-        attimezone = Some(&session_timezone);
+        attimezone = Some(&SESSION_TIMEZONE);
     }
 
     time = dt;
@@ -271,10 +271,8 @@ struct DynamicZoneAbbrev {
     _zone: [libc::c_char; 0],
 }
 
-static day_tab: [[i32; 13]; 2] = [
-    [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31, 0],
-    [31, 29, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31, 0],
-];
+static DAY_TAB: [i32; 13] = [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31, 0];
+static LEAP_DAY_TAB: [i32; 13] = [31, 29, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31, 0];
 
 const EPOCH: &str = "epoch";
 const EARLY: &str = "-infinity";
@@ -781,7 +779,7 @@ fn GetCurrentTimeUsec(tm: &mut pg_tm, fsec: &mut fsec_t, tzp: Option<&mut i32>) 
         tm,
         fsec,
         None,
-        Some(&session_timezone),
+        Some(&SESSION_TIMEZONE),
     ) != 0
     {
         // ereport(ERROR,
@@ -1628,7 +1626,7 @@ pub fn DecodeDateTime(
                 if fmask.contains(FieldType::DtzMod) {
                     return -1;
                 }
-                *tzp = DetermineTimeZoneOffset(tm, &session_timezone);
+                *tzp = DetermineTimeZoneOffset(tm, &SESSION_TIMEZONE);
             }
         }
     }
@@ -1936,6 +1934,10 @@ fn DecodeDate(
     0
 }
 
+fn is_leap(year: i32) -> bool {
+    year % 4 == 0 && (year % 100 != 0 || year % 400 == 0)
+}
+
 /// Check valid year/month/day values, handle BC and DOY cases.
 /// Return 0 if okay, a DTERR code if not.
 fn ValidateDate(
@@ -1996,12 +1998,11 @@ fn ValidateDate(
         // Check for valid day of month, now that we know for sure the month
         // and year. Note we don't use MD_FIELD_OVERFLOW here, since it seems
         // unlikely that "Feb 29" is a YMD-order error.
-        // TODO(petrosagg): the original code contains an isleap function for the expression below
-        if tm.tm_mday
-            > day_tab
-                [(tm.tm_year % 4 == 0 && (tm.tm_year % 100 != 0 || tm.tm_year % 400 == 0)) as usize]
-                [(tm.tm_mon - 1) as usize]
-        {
+        let month_days = match is_leap(tm.tm_year) {
+            true => LEAP_DAY_TAB[(tm.tm_mon - 1) as usize],
+            false => DAY_TAB[(tm.tm_mon - 1) as usize],
+        };
+        if tm.tm_mday > month_days {
             return -2;
         }
     }
