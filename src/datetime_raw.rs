@@ -11,7 +11,7 @@ use crate::tz::pg_tz;
 
 const HOURS_PER_DAY: i32 = 24;
 const MINS_PER_HOUR: i32 = 60;
-const SECS_PER_DAY: i32 = 86_400;
+const SECS_PER_DAY: i64 = 86_400;
 const SECS_PER_HOUR: i32 = 3600;
 const SECS_PER_MINUTE: i32 = 60;
 const USECS_PER_DAY: i64 = 86_400_000_000;
@@ -691,6 +691,23 @@ static DATE_TOKEN_TABLE: &[DateToken] = &[
 
 static ZONE_ABBREV_TABLE: Option<TimeZoneAbbrevTable> = None;
 
+/// Calendar time to Julian date conversions.
+/// Julian date is commonly used in astronomical applications,
+///	since it is numerically accurate and computationally simple.
+/// The algorithms here will accurately convert between Julian day
+///	and calendar date for all non-negative Julian days
+///	(i.e. from Nov 24, -4713 on).
+///
+/// Rewritten to eliminate overflow problems. This now allows the
+/// routines to work correctly for all Julian day counts from
+/// 0 to 2147483647	(Nov 24, -4713 to Jun 3, 5874898) assuming
+/// a 32-bit integer. Longer types should also work to the limits
+/// of their precision.
+///
+/// Actually, date2j() will work sanely, in the sense of producing
+/// valid negative Julian dates, significantly before Nov 24, -4713.
+/// We rely on it to do so back to Nov 1, -4713; see IS_VALID_JULIAN()
+/// and associated commentary in timestamp.h.
 const fn date2j(mut y: i32, mut m: i32, d: i32) -> i32 {
     if m > 2 {
         m += 1;
@@ -735,11 +752,25 @@ fn j2date(jd: i32, year: &mut i32, month: &mut i32, day: &mut i32) {
     *month = quad.wrapping_add(10).wrapping_rem(12).wrapping_add(1) as i32;
 }
 
+/// Get the transaction start time ("now()") broken down as a struct pg_tm,
+/// converted according to the session timezone setting.
+///
+/// This is just a convenience wrapper for GetCurrentTimeUsec, to cover the
+/// case where caller doesn't need either fractional seconds or tz offset.
 fn GetCurrentDateTime(tm: &mut pg_tm) {
     let mut fsec: fsec_t = 0;
     GetCurrentTimeUsec(tm, &mut fsec, None);
 }
 
+/// Get the transaction start time ("now()") broken down as a struct pg_tm,
+/// including fractional seconds and timezone offset.  The time is converted
+/// according to the session timezone setting.
+///
+/// Callers may pass tzp = NULL if they don't need the offset, but this does
+/// not affect the conversion behavior (unlike timestamp2tm()).
+///
+/// Internally, we cache the result, since this could be called many times
+/// in a transaction, within which now() doesn't change.
 fn GetCurrentTimeUsec(tm: &mut pg_tm, fsec: &mut fsec_t, tzp: Option<&mut i32>) {
     let cur_ts: TimestampTz = GetCurrentTransactionStartTimestamp();
     let mut tzp_local = 0;
@@ -761,7 +792,10 @@ fn GetCurrentTimeUsec(tm: &mut pg_tm, fsec: &mut fsec_t, tzp: Option<&mut i32>) 
     }
 }
 
+/// Fetch a fractional-second value with suitable error checking
 fn ParseFractionalSecond(cp: &str, fsec: &mut fsec_t) -> i32 {
+    // Caller should always pass the start of the fraction part
+    assert!(cp.starts_with('.'));
     let frac = match f64::from_str(cp) {
         Ok(frac) => frac,
         Err(_) => return -1,
@@ -958,7 +992,6 @@ pub fn parse_datetime(input: &str) -> Result<Vec<(String, TokenFieldType)>, i32>
 /// If the date is outside the range of pg_time_t (in practice that could only
 /// happen if pg_time_t is just 32 bits), then assume UTC time zone - thomas
 /// 1997-05-27
-
 pub fn DecodeDateTime(
     fields: &[(&str, TokenFieldType)],
     dtype: &mut TokenFieldType,
@@ -969,7 +1002,8 @@ pub fn DecodeDateTime(
 ) -> i32 {
     let mut fmask = FieldMask::none();
     let mut tmask = FieldMask::none();
-    let mut ptype = TokenFieldType::Number; // "prefix type" for ISO y2001m02d04 format
+    // "prefix type" for ISO y2001m02d04 format
+    let mut ptype = TokenFieldType::Number;
     let mut val: i32 = 0;
     let mut mer: i32 = 2;
     let mut haveTextMonth = false;
@@ -1012,6 +1046,9 @@ pub fn DecodeDateTime(
     while let Some(&(field, ref ftype)) = field_iter.next() {
         match ftype {
             TokenFieldType::Date => {
+                // Integral julian day with attached time zone? All other
+                // forms with JD will be separated into distinct fields, so we
+                // handle just this case here.
                 if ptype == TokenFieldType::Julian {
                     let mut cp = field;
                     let tzp = match tzp.as_mut() {
@@ -1021,12 +1058,15 @@ pub fn DecodeDateTime(
                             return -1;
                         }
                     };
+
                     let val_0 = match strtoint(field, &mut cp) {
                         Ok(val) => val,
                         Err(_) => return -2,
                     };
                     j2date(val_0, &mut tm.tm_year, &mut tm.tm_mon, &mut tm.tm_mday);
                     isjulian = true;
+
+                    // Get the time zone from the end of the string
                     let dterr = DecodeTimezone(cp, tzp);
                     if dterr != 0 {
                         return dterr;
@@ -1056,6 +1096,7 @@ pub fn DecodeDateTime(
                         || ptype != TokenFieldType::Number
                     {
                         if ptype != TokenFieldType::Number {
+                            // Sanity check; should not fail this test
                             if ptype != TokenFieldType::Time {
                                 eprintln!("ptype is not Time: {:?}", ptype);
                                 return -1;
@@ -1076,20 +1117,27 @@ pub fn DecodeDateTime(
                                 return -1;
                             }
                         };
+
+                        // Get the time zone from the end of the string
                         let dterr = DecodeTimezone(cp_0, tzp);
                         if dterr != 0 {
                             return dterr;
                         }
+
+                        // Then read the rest of the field as a concatenated time
                         let dterr =
                             DecodeNumberField(prefix, fmask, &mut tmask, tm, fsec, &mut is2digits);
                         if dterr < 0 {
                             return dterr;
                         }
+
                         // modify tmask after returning from DecodeNumberField()
                         tmask.set(FieldType::Tz);
                     } else {
                         namedTz = pg_tzset(field);
                         if namedTz.is_none() {
+                            // We should return an error code instead of ereport'ing directly, but
+                            // then there is no way to report the bad time zone name.
                             // ereport(ERROR,
                             // 		(errcode(ERRCODE_INVALID_PARAMETER_VALUE),
                             // 		 errmsg("time zone \"%s\" not recognized",
@@ -1108,7 +1156,9 @@ pub fn DecodeDateTime(
                 current_block_236 = 13797367574128857302;
             }
             TokenFieldType::Time => {
+                // This might be an ISO time following a "t" field.
                 if ptype != TokenFieldType::Number {
+                    // Sanity check; should not fail this test
                     if ptype != TokenFieldType::Time {
                         eprintln!("ptype is not Time: {:?}", ptype);
                         return -1;
@@ -1119,6 +1169,8 @@ pub fn DecodeDateTime(
                 if dterr != 0 {
                     return dterr;
                 }
+
+                // check for time overflow
                 if time_overflows(tm.tm_hour, tm.tm_min, tm.tm_sec, *fsec) {
                     return -2;
                 }
@@ -1142,12 +1194,15 @@ pub fn DecodeDateTime(
                 current_block_236 = 13797367574128857302;
             }
             TokenFieldType::Number => {
+                // Was this an "ISO date" with embedded field labels?
+                // An example is "y2001m02d04" - thomas 2001-02-04
                 if ptype != TokenFieldType::Number {
                     let mut cp_1 = field;
                     let val_1 = match strtoint(field, &mut cp_1) {
                         Ok(val) => val,
                         Err(_) => return -2,
                     };
+                    // only a few kinds are allowed to have an embedded decimal
                     if cp_1.starts_with('.') {
                         match ptype {
                             TokenFieldType::Julian
@@ -1215,12 +1270,15 @@ pub fn DecodeDateTime(
                             }
                         }
                         TokenFieldType::Julian => {
+                            // previous field was a label for "julian date"
                             if val_1 < 0 {
                                 return -2;
                             }
                             tmask = *FIELD_MASK_DATE;
                             j2date(val_1, &mut tm.tm_year, &mut tm.tm_mon, &mut tm.tm_mday);
                             isjulian = true;
+
+                            // fractional Julian Day?
                             if cp_1.starts_with('.') {
                                 let mut time = match f64::from_str(cp_1) {
                                     Ok(val) => val,
@@ -1238,6 +1296,7 @@ pub fn DecodeDateTime(
                             }
                         }
                         TokenFieldType::Time => {
+                            // previous field was "t" for ISO time
                             let dterr = DecodeNumberField(
                                 field,
                                 fmask | *FIELD_MASK_DATE,
@@ -1317,6 +1376,7 @@ pub fn DecodeDateTime(
                 current_block_236 = 13797367574128857302;
             }
             TokenFieldType::String | TokenFieldType::Special => {
+                // timezone abbrevs take precedence over built-in tokens
                 let mut type_0 = DecodeTimezoneAbbrev(field, &mut val, &mut valtz);
                 if type_0 == FieldType::UnknownField {
                     type_0 = DecodeSpecial(field, &mut val);
@@ -1380,8 +1440,8 @@ pub fn DecodeDateTime(
                                 *dtype = val.try_into().unwrap();
                             }
                         },
+                        // already have a (numeric) month? then see if we can substitute...
                         FieldType::Month => {
-                            // already have a (numeric) month? then see if we can substitute...
                             if fmask.contains(FieldType::Month)
                                 && !haveTextMonth
                                 && !fmask.contains(FieldType::Day)
@@ -1394,6 +1454,7 @@ pub fn DecodeDateTime(
                             haveTextMonth = true;
                             tm.tm_mon = val;
                         }
+                        // daylight savings time modifier (solves "MET DST" syntax)
                         FieldType::DtzMod => {
                             tmask.set(FieldType::DTz);
                             tm.tm_isdst = Some(true);
@@ -1406,6 +1467,8 @@ pub fn DecodeDateTime(
                             **tzp -= val;
                         }
                         FieldType::DTz => {
+                            // set mask for TZ here _or_ check for DTZ later when getting default
+                            // timezone
                             tmask.set(FieldType::Tz);
                             tm.tm_isdst = Some(true);
                             let tzp = match tzp.as_mut() {
@@ -1431,6 +1494,7 @@ pub fn DecodeDateTime(
                             if tzp.is_none() {
                                 return -1;
                             }
+                            // we'll determine the actual offset later
                             abbrevTz = valtz;
                             abbrev = Some(field);
                         }
@@ -1484,6 +1548,7 @@ pub fn DecodeDateTime(
                                 eprintln!("namedTz is null");
                                 return -1;
                             }
+                            // we'll apply the zone setting below
                             tmask = FieldMask::from(FieldType::Tz);
                         }
                         typ => {
@@ -1543,6 +1608,7 @@ pub fn DecodeDateTime(
         }
         // Likewise, if we had a dynamic timezone abbreviation, resolve it now.
         if let Some(abbrevTz) = abbrevTz {
+            // daylight savings time modifier disallowed with dynamic TZ
             if fmask.contains(FieldType::DtzMod) {
                 return -1;
             }
@@ -1568,27 +1634,52 @@ pub fn DecodeDateTime(
     0
 }
 
+/// Given a `pg_tm` in which `tm_year`, `tm_mon`, `tm_mday`, `tm_hour`, `tm_min`, and `tm_sec`
+/// fields are set, and a zic-style time zone definition, determine the applicable GMT offset and
+/// daylight-savings status at that time. Set the struct pg_tm's tm_isdst field accordingly, and
+/// return the GMT offset as the function result.
+///
+/// Note: if the date is out of the range we can deal with, we return zero as the GMT offset and
+/// set `tm_isdst = 0`.  We don't throw an error here, though probably some higher-level code will.
 fn DetermineTimeZoneOffset(tm: &mut pg_tm, tzp: &pg_tz) -> i32 {
     let mut t: pg_time_t = 0;
     DetermineTimeZoneOffsetInternal(tm, tzp, &mut t)
 }
 
+/// As above, but also return the actual UTC time imputed to the date/time into `tp`.
+///
+/// In event of an out-of-range date, we punt by returning zero into `tp`.
+/// This is okay for the immediate callers but is a good reason for not exposing this worker
+/// function globally.
+///
+/// Note: it might seem that we should use mktime() for this, but bitter experience teaches
+/// otherwise.  This code is much faster than most versions of mktime(), anyway.
 fn DetermineTimeZoneOffsetInternal(mut tm: &mut pg_tm, tzp: &pg_tz, tp: &mut pg_time_t) -> i32 {
     let mut boundary: pg_time_t = 0;
     let mut before_gmtoff: i64 = 0;
     let mut after_gmtoff: i64 = 0;
     let mut before_isdst = false;
     let mut after_isdst = false;
+    // First, generate the pg_time_t value corresponding to the given
+    // y/m/d/h/m/s taken as GMT time.  If this overflows, punt and decide the
+    // timezone is GMT.  (For a valid Julian date, integer overflow should be
+    // impossible with 64-bit pg_time_t, but let's check for safety.)
+    // TODO(petrosagg): this if statement is actually a macro IS_VALID_JULIAN, extract as an fn
     if (tm.tm_year > -4713 || tm.tm_year == -4713 && tm.tm_mon >= 11)
         && (tm.tm_year < 5874898 || tm.tm_year == 5874898 && tm.tm_mon < 6)
     {
-        let date = date2j(tm.tm_year, tm.tm_mon, tm.tm_mday) - 2440588;
-        let day = date as pg_time_t * 86400;
-        if day / 86400 == date as i64 {
+        let date = date2j(tm.tm_year, tm.tm_mon, tm.tm_mday) - (UNIX_EPOCH_JDATE as i32);
+        let day = date as pg_time_t * SECS_PER_DAY;
+        if day / SECS_PER_DAY == date as i64 {
             let sec = tm.tm_sec + (tm.tm_min + tm.tm_hour * 60) * 60;
             let mytime = day + sec as i64;
+            // since sec >= 0, overflow could only be from +day to -mytime
             if !(mytime < 0 && day > 0) {
-                let prevtime = mytime - 86400;
+                // Find the DST time boundary just before or following the target time. We
+                // assume that all zones have GMT offsets less than 24 hours, and that DST
+                // boundaries can't be closer together than 48 hours, so backing up 24
+                // hours and finding the "next" boundary will work.
+                let prevtime = mytime - SECS_PER_DAY;
                 if !(mytime < 0 && prevtime > 0) {
                     let res = pg_next_dst_boundary(
                         &prevtime,
@@ -1601,10 +1692,12 @@ fn DetermineTimeZoneOffsetInternal(mut tm: &mut pg_tm, tzp: &pg_tz, tp: &mut pg_
                     );
                     if res >= 0 {
                         if res == 0 {
+                            // Non-DST zone, life is simple
                             tm.tm_isdst = Some(before_isdst);
                             *tp = mytime - before_gmtoff;
                             return -(before_gmtoff as i32);
                         }
+                        // Form the candidate pg_time_t values with local-time adjustment
                         let beforetime = mytime - before_gmtoff;
                         if !(before_gmtoff > 0 && mytime < 0 && beforetime > 0
                             || before_gmtoff <= 0 && mytime > 0 && beforetime < 0)
@@ -1613,6 +1706,10 @@ fn DetermineTimeZoneOffsetInternal(mut tm: &mut pg_tm, tzp: &pg_tz, tp: &mut pg_
                             if !(after_gmtoff > 0 && mytime < 0 && aftertime > 0
                                 || after_gmtoff <= 0 && mytime > 0 && aftertime < 0)
                             {
+                                // If both before or both after the boundary time, we know what to
+                                // do. The boundary time itself is considered to be after the
+                                // transition, which means we can accept aftertime == boundary in
+                                // the second case.
                                 if beforetime < boundary && aftertime < boundary {
                                     tm.tm_isdst = Some(before_isdst);
                                     *tp = beforetime;
@@ -1623,6 +1720,16 @@ fn DetermineTimeZoneOffsetInternal(mut tm: &mut pg_tm, tzp: &pg_tz, tp: &mut pg_
                                     *tp = aftertime;
                                     return -(after_gmtoff as i32);
                                 }
+                                // It's an invalid or ambiguous time due to timezone transition.
+                                // In a spring-forward transition, prefer the "before"
+                                // interpretation; in a fall-back transition, prefer "after".  (We
+                                // used to define and implement this test as "prefer the
+                                // standard-time interpretation", but that rule does not help to
+                                // resolve the behavior when both times are reported as standard
+                                // time; which does happen, eg Europe/Moscow in Oct 2014.  Also, in
+                                // some zones such as Europe/Dublin, there is widespread confusion
+                                // about which time offset is "standard" time, so it's fortunate
+                                // that our behavior doesn't depend on that.)
                                 if beforetime > aftertime {
                                     tm.tm_isdst = Some(before_isdst);
                                     *tp = beforetime;
@@ -1638,23 +1745,45 @@ fn DetermineTimeZoneOffsetInternal(mut tm: &mut pg_tm, tzp: &pg_tz, tp: &mut pg_
             }
         }
     }
+    // Given date is out of range, so assume UTC
     tm.tm_isdst = Some(false);
     *tp = 0 as pg_time_t;
     0
 }
 
+/// Determine the GMT offset and DST flag to be attributed to a dynamic
+/// time zone abbreviation, that is one whose meaning has changed over time.
+/// *tm contains the local time at which the meaning should be determined,
+/// and tm->tm_isdst receives the DST flag.
+///
+/// This differs from the behavior of DetermineTimeZoneOffset() in that a
+/// standard-time or daylight-time abbreviation forces use of the corresponding
+/// GMT offset even when the zone was then in DS or standard time respectively.
+/// (However, that happens only if we can match the given abbreviation to some
+/// abbreviation that appears in the IANA timezone data.  Otherwise, we fall
+/// back to doing DetermineTimeZoneOffset().)
 fn DetermineTimeZoneAbbrevOffset(mut tm: &mut pg_tm, abbr: &str, tzp: &pg_tz) -> i32 {
     let mut t: pg_time_t = 0;
     let mut abbr_offset: i32 = 0;
     let mut abbr_isdst = false;
+
+    // Compute the UTC time we want to probe at.  (In event of overflow, we'll
+    // probe at the epoch, which is a bit random but probably doesn't matter.)
     let zone_offset = DetermineTimeZoneOffsetInternal(tm, tzp, &mut t);
+
+    // Try to match the abbreviation to something in the zone definition.
     if DetermineTimeZoneAbbrevOffsetInternal(t, abbr, tzp, &mut abbr_offset, &mut abbr_isdst) {
+        // Success, so use the abbrev-specific answers.
         tm.tm_isdst = Some(abbr_isdst);
         return abbr_offset;
     }
+
+    // No match, so use the answers we already got from DetermineTimeZoneOffsetInternal.
     zone_offset
 }
 
+/// Workhorse for above function: work from a `pg_time_t` probe instant.
+/// On success, return GMT offset and DST status into *offset and *isdst.
 fn DetermineTimeZoneAbbrevOffsetInternal(
     t: pg_time_t,
     abbr: &str,
@@ -1663,15 +1792,27 @@ fn DetermineTimeZoneAbbrevOffsetInternal(
     isdst: &mut bool,
 ) -> bool {
     // TODO: the original code re-used stack space to store the temporary uppercased abbreviation
+    // We need to force the abbrev to upper case
     let upabbr = abbr.to_uppercase();
     let mut gmtoff: i64 = 0;
+    // Look up the abbrev's meaning at this time in this zone
     if pg_interpret_timezone_abbrev(&upabbr, &t, &mut gmtoff, isdst, tzp) {
+        // Change sign to agree with DetermineTimeZoneOffset()
         *offset = -gmtoff as i32;
         return true;
     }
     false
 }
 
+/// Decode date string which includes delimiters.
+/// Return 0 if okay, a DTERR code if not.
+///
+///	* `str`: field to be parsed
+///	* `fmask`: bitmask for field types already seen
+///	* `tmask`: receives bitmask for fields found here
+///	* `is2digits`: set to true if we find 2-digit year
+///	* `tm`: field values are stored into appropriate members of this struct
+///	* `date_order`: the expected date order of day month year
 fn DecodeDate(
     mut str: &str,
     mut fmask: FieldMask,
@@ -1686,14 +1827,21 @@ fn DecodeDate(
     let mut val: i32 = 0;
     let mut dmask = FieldMask::none();
     let mut fields: [Option<&str>; 25] = [None; 25];
+
     *tmask = FieldMask::none();
+
+    // parse this string...
     while !str.is_empty() && nf < 25 {
+        // skip field separators
         while !str.is_empty() && !str.starts_with(|c: char| c.is_ascii_alphanumeric()) {
             str = &str[1..];
         }
+
+        // end of string after separator
         if str.is_empty() {
             return -1;
         }
+
         fields[nf] = Some(str);
         if str.starts_with(|c: char| c.is_ascii_digit()) {
             while str.starts_with(|c: char| c.is_ascii_digit()) {
@@ -1704,6 +1852,8 @@ fn DecodeDate(
                 str = &str[1..];
             }
         }
+
+        // Just get rid of any non-digit, non-alpha characters...
         if !str.is_empty() {
             let field = fields[nf].unwrap();
             fields[nf] = Some(&field[0..field.len() - str.len()]);
@@ -1711,6 +1861,8 @@ fn DecodeDate(
         }
         nf += 1;
     }
+
+    // look first for text fields, since that will be unambiguous month
     for i in 0..nf {
         if fields[i]
             .unwrap()
@@ -1732,12 +1884,17 @@ fn DecodeDate(
                 if fmask.intersects(dmask) {
                     return -1;
                 }
+
                 fmask |= dmask;
                 *tmask |= dmask;
+
+                // mark this field as being completed
                 fields[i] = None;
             }
         }
     }
+
+    // now pick up remaining numeric fields
     for i in 0..nf {
         if let Some(field) = fields[i] {
             let len = field.len() as i32;
@@ -1772,8 +1929,8 @@ fn DecodeDate(
     0
 }
 
-/// Check valid year/month/day values, handle BC and DOY cases Return 0 if okay, a DTERR code if not.
-
+/// Check valid year/month/day values, handle BC and DOY cases.
+/// Return 0 if okay, a DTERR code if not.
 fn ValidateDate(
     fmask: FieldMask,
     isjulian: bool,
@@ -1781,14 +1938,20 @@ fn ValidateDate(
     bc: bool,
     mut tm: &mut pg_tm,
 ) -> i32 {
-    if fmask.contains(FieldType::Year) && !isjulian {
-        if bc {
+    if fmask.contains(FieldType::Year) {
+        if isjulian {
+            // tm_year is correct and should not be touched
+        } else if bc {
+            // there is no year zero in AD/BC notation
             if tm.tm_year <= 0 {
                 return -2;
             }
+            // internally, we represent 1 BC as year zero, 2 BC as -1, etc
             tm.tm_year = -(tm.tm_year - 1);
         } else if is2digits {
+            // process 1 or 2-digit input as 1970-2069 AD, allow '0' and '00'
             if tm.tm_year < 0 {
+                // just panaoia
                 return -2;
             }
             if tm.tm_year < 70 {
@@ -1796,10 +1959,14 @@ fn ValidateDate(
             } else if tm.tm_year < 100 {
                 tm.tm_year += 1900;
             }
-        } else if tm.tm_year <= 0 {
-            return -2;
+        } else {
+            // there is no year zero in AD/BC notation
+            if tm.tm_year <= 0 {
+                return -2;
+            }
         }
     }
+
     // now that we have correct year, decode DOY
     if fmask.contains(FieldType::Doy) {
         j2date(
@@ -1809,6 +1976,7 @@ fn ValidateDate(
             &mut tm.tm_mday,
         );
     }
+
     // check for valid month
     if fmask.contains(FieldType::Month) && (tm.tm_mon < 1 || tm.tm_mon > 12) {
         return -3;
@@ -1817,13 +1985,18 @@ fn ValidateDate(
     if fmask.contains(FieldType::Day) && (tm.tm_mday < 1 || tm.tm_mday > 31) {
         return -3;
     }
-    if fmask.contains(*FIELD_MASK_DATE)
-        && tm.tm_mday
+    if fmask.contains(*FIELD_MASK_DATE) {
+        // Check for valid day of month, now that we know for sure the month
+        // and year. Note we don't use MD_FIELD_OVERFLOW here, since it seems
+        // unlikely that "Feb 29" is a YMD-order error.
+        // TODO(petrosagg): the original code contains an isleap function for the expression below
+        if tm.tm_mday
             > day_tab
                 [(tm.tm_year % 4 == 0 && (tm.tm_year % 100 != 0 || tm.tm_year % 400 == 0)) as usize]
                 [(tm.tm_mon - 1) as usize]
-    {
-        return -2;
+        {
+            return -2;
+        }
     }
     0
 }
@@ -1841,11 +2014,14 @@ fn DecodeTime(
     fsec: &mut fsec_t,
 ) -> i32 {
     let mut cp = str;
+
     *tmask = *FIELD_MASK_TIME;
+
     tm.tm_hour = match strtoint(str, &mut cp) {
         Ok(val) => val,
         Err(_) => return -2,
     };
+
     if !cp.starts_with(':') {
         return -1;
     }
@@ -1853,15 +2029,18 @@ fn DecodeTime(
         Ok(val) => val,
         Err(_) => return -2,
     };
+
     if cp.is_empty() {
         tm.tm_sec = 0;
         *fsec = 0;
+        // If it's a MINUTE TO SECOND interval, take 2 fields as being mm:ss
         if range == 1 << 11 | 1 << 12 {
             tm.tm_sec = tm.tm_min;
             tm.tm_min = tm.tm_hour;
             tm.tm_hour = 0;
         }
     } else if cp.starts_with('.') {
+        // always assume mm:ss.sss is MINUTE TO SECOND
         let dterr = ParseFractionalSecond(cp, fsec);
         if dterr != 0 {
             return dterr;
@@ -1887,6 +2066,8 @@ fn DecodeTime(
     } else {
         return -1;
     }
+
+    // do a sanity check
     if tm.tm_hour < 0
         || tm.tm_min < 0
         || tm.tm_min > 60 - 1
@@ -1900,6 +2081,8 @@ fn DecodeTime(
     0
 }
 
+// Interpret plain numeric field as a date value in context.
+// Return 0 if okay, a DTERR code if not.
 fn DecodeNumber(
     str: &str,
     haveTextMonth: bool,
@@ -1920,6 +2103,8 @@ fn DecodeNumber(
         return -1;
     }
     if cp.starts_with('.') {
+        // More than two digits before decimal point? Then could be a date or
+        // a run-together time: 2001.360 20011225 040506.789
         if str.len() - cp.len() > 2 {
             let dterr =
                 DecodeNumberField(str, fmask | *FIELD_MASK_DATE, tmask, tm, fsec, is2digits);
@@ -1935,7 +2120,7 @@ fn DecodeNumber(
     } else if !cp.is_empty() {
         return -1;
     }
-    /* Special case for day of year */
+    // Special case for day of year
     if str.len() == 3
         && fmask & *FIELD_MASK_DATE == FieldMask::from(FieldType::Year)
         && (1..=366).contains(&val)
@@ -2037,6 +2222,10 @@ fn DecodeNumber(
     0
 }
 
+/// Interpret numeric string as a concatenated date or time field.
+/// Return a DTK token (>= 0) if successful, a DTERR code (< 0) if not.
+///
+/// Use the context of previously decoded fields to help with the interpretation.
 fn DecodeNumberField(
     mut str: &str,
     fmask: FieldMask,
@@ -2048,7 +2237,7 @@ fn DecodeNumberField(
     match str.find('.') {
         // Have a decimal point? Then this is a date or something with a seconds field...
         Some(idx) => {
-            // Can we use ParseFractionalSecond here?  Not clear whether trailing
+            // Can we use ParseFractionalSecond here? Not clear whether trailing
             // junk should be rejected ...
             let frac = match f64::from_str(&str[idx..]) {
                 Ok(frac) => frac,
@@ -2094,18 +2283,25 @@ fn DecodeNumberField(
     -1
 }
 
+// Interpret string as a numeric timezone.
+//
+// Return 0 if okay (and set *tzp), a DTERR code if not okay.
 fn DecodeTimezone(str: &str, tzp: &mut i32) -> i32 {
     let mut tz: i32;
     let min: i32;
     let mut sec: i32 = 0;
     let mut cp = str;
+    // leading character must be "+" or "-"
     if !str.starts_with('+') && !str.starts_with('-') {
         return -1;
     }
+
     let mut hr = match strtoint(&str[1..], &mut cp) {
         Ok(hr) => hr,
         Err(_) => return -5,
     };
+
+    // explicit delimiter?
     if cp.starts_with(':') {
         min = match strtoint(&cp[1..], &mut cp) {
             Ok(min) => min,
@@ -2117,12 +2313,16 @@ fn DecodeTimezone(str: &str, tzp: &mut i32) -> i32 {
                 Err(_) => return -5,
             };
         }
+    // otherwise, might have run things together...
     } else if cp.is_empty() && str.len() > 3 {
         min = hr % 100;
         hr /= 100;
+    // we could, but don't, support a run-together hhmmss format
     } else {
         min = 0;
     }
+
+    // Range-check the values; see notes in datatype/timestamp.h
     if !(0..=15).contains(&hr) {
         return -5;
     }
@@ -2143,8 +2343,22 @@ fn DecodeTimezone(str: &str, tzp: &mut i32) -> i32 {
     0
 }
 
+/// Interpret string as a timezone abbreviation, if possible.
+///
+/// Returns an abbreviation type (TZ, DTZ, or DYNTZ), or UNKNOWN_FIELD if
+/// string is not any known abbreviation.  On success, set `offset` and `tz` to
+/// represent the UTC offset (for TZ or DTZ) or underlying zone (for DYNTZ).
+/// Note that full timezone names (such as America/New_York) are not handled
+/// here, mostly for historical reasons.
+///
+/// Given string must be lowercased already.
+///
+/// Implement a cache lookup since it is likely that dates will be related in format.
 fn DecodeTimezoneAbbrev(lowtoken: &str, offset: &mut i32, tz: &mut Option<&pg_tz>) -> FieldType {
     match &ZONE_ABBREV_TABLE {
+        // TODO(petrosagg): original code seemed to imply that it can find truncated tokens
+        // somehow. Investigate. Original comment:
+        // use strncmp so that we match truncated tokens */
         Some(table) => match table.abbrevs.binary_search_by(|tk| tk.token.cmp(lowtoken)) {
             Ok(idx) => {
                 let token = &table.abbrevs[idx];
@@ -2174,7 +2388,17 @@ fn DecodeTimezoneAbbrev(lowtoken: &str, offset: &mut i32, tz: &mut Option<&pg_tz
     }
 }
 
+/// Decode text string using lookup table.
+///
+/// Recognizes the keywords listed in `DATE_TOKEN_TABLE`.
+/// Note: at one time this would also recognize timezone abbreviations, but no more; use
+/// `DecodeTimezoneAbbrev` for that.
+///
+/// Given string must be lowercased already.
 fn DecodeSpecial(lowtoken: &str, val: &mut i32) -> FieldType {
+    // TODO(petrosagg): original code seemed to imply that it can find truncated tokens
+    // somehow. Investigate. Original comment:
+    // use strncmp so that we match truncated tokens */
     match DATE_TOKEN_TABLE.binary_search_by(|tk| tk.token.cmp(lowtoken)) {
         Ok(idx) => {
             let token = &DATE_TOKEN_TABLE[idx];
@@ -2188,6 +2412,7 @@ fn DecodeSpecial(lowtoken: &str, val: &mut i32) -> FieldType {
     }
 }
 
+/// Helper subroutine to locate pg_tz timezone for a dynamic abbreviation.
 fn FetchDynamicTimeZone<'a>(_tbl: &'a TimeZoneAbbrevTable, _tp: &DateToken) -> Option<&'a pg_tz> {
     // This is unimplemented because the C code was doing pointer weird pointer arithmetic to
     // relate the value of the token to an offset of a dynamic timezone definition in the zone
