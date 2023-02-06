@@ -1,6 +1,5 @@
 use std::str::FromStr;
 
-use libc;
 use once_cell::sync::Lazy;
 
 use crate::datetime::{
@@ -177,7 +176,7 @@ fn timestamp2tm(
     date += POSTGRES_EPOCH_JDATE;
 
     /* Julian day routine does not work for negative Julian days */
-    if date < 0 || date > libc::INT_MAX.into() {
+    if date < 0 || date > i32::MAX.into() {
         eprintln!("Julian day routine does not work for negative Julian days");
         return Err(ParseError::BadFormat);
     }
@@ -278,7 +277,7 @@ struct TimeZoneAbbrevTable {
 #[derive(Clone)]
 struct DynamicZoneAbbrev {
     _tz: *mut pg_tz,
-    _zone: [libc::c_char; 0],
+    _zone: &'static str,
 }
 
 static DAY_TAB: [i32; 13] = [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31, 0];
