@@ -18,8 +18,8 @@ const USECS_PER_DAY: i64 = 86_400_000_000;
 const USECS_PER_HOUR: i64 = 3_600_000_000;
 const USECS_PER_MINUTE: i64 = 60_000_000;
 const USECS_PER_SEC: i64 = 1_000_000;
-const POSTGRES_EPOCH_JDATE: i64 = 2_451_545; /* == date2j(2000, 1, 1) */
-const UNIX_EPOCH_JDATE: i64 = 2_440_588; /* == date2j(1970, 1, 1) */
+const POSTGRES_EPOCH_JDATE: i64 = date2j(2000, 1, 1) as i64;
+const UNIX_EPOCH_JDATE: i64 = date2j(1970, 1, 1) as i64;
 
 /// DateOrder defines the field order to be assumed when reading an
 /// ambiguous date (anything not in YYYY-MM-DD format, with a four-digit
@@ -691,7 +691,7 @@ static DATE_TOKEN_TABLE: &[DateToken] = &[
 
 static ZONE_ABBREV_TABLE: Option<TimeZoneAbbrevTable> = None;
 
-fn date2j(mut y: i32, mut m: i32, d: i32) -> i32 {
+const fn date2j(mut y: i32, mut m: i32, d: i32) -> i32 {
     if m > 2 {
         m += 1;
         y += 4800;
