@@ -287,21 +287,36 @@ const YESTERDAY: &str = "yesterday";
 const DA_D: &str = "ad";
 const DB_C: &str = "bc";
 
-// Fundamental time field definitions for parsing.
-//
-// Meridian:  am, pm, or 24-hour style.
-// Millennium: ad, bc
-const AM: i32 = 0;
-const PM: i32 = 1;
-
-const AD: i32 = 0;
-const BC: i32 = 1;
-
+#[derive(Debug)]
 struct DateToken {
     token: &'static str,
     typ: FieldType,
-    value: i32,
+    value: DateTokenValue,
 }
+
+#[derive(Debug,Clone)]
+enum Millennium {
+    AD,
+    BC,
+}
+
+#[derive(Debug,PartialEq,Clone)]
+enum Meridian {
+    AM,
+    PM,
+    HR24,
+}
+
+#[derive(Debug,Clone)]
+enum DateTokenValue {
+    FieldType(TokenFieldType),
+    Millennium(Millennium),
+    Meridian(Meridian),
+    Month(u8),
+    DayOfWeek(u8),
+    Number(i32),
+}
+
 /// holds date/time keywords.
 ///
 /// Note that this table must be strictly alphabetically ordered to allow an
@@ -315,379 +330,379 @@ static DATE_TOKEN_TABLE: &[DateToken] = &[
     DateToken {
         token: EARLY,
         typ: FieldType::Reserved,
-        value: TokenFieldType::Early as i32,
+        value: DateTokenValue::FieldType(TokenFieldType::Early),
     },
     // "ad" for years > 0
     DateToken {
         token: DA_D,
         typ: FieldType::Adbc,
-        value: AD,
+        value: DateTokenValue::Millennium(Millennium::AD),
     },
     // 00:00:00
     DateToken {
         token: "allballs",
         typ: FieldType::Reserved,
-        value: TokenFieldType::Zulu as i32,
+        value: DateTokenValue::FieldType(TokenFieldType::Zulu),
     },
     DateToken {
         token: "am",
         typ: FieldType::AmPm,
-        value: AM,
+        value: DateTokenValue::Meridian(Meridian::AM),
     },
     DateToken {
         token: "apr",
         typ: FieldType::Month,
-        value: 4,
+        value: DateTokenValue::Month(4),
     },
     DateToken {
         token: "april",
         typ: FieldType::Month,
-        value: 4,
+        value: DateTokenValue::Month(4),
     },
     // "at" (throwaway)
     DateToken {
         token: "at",
         typ: FieldType::IgnoreDtf,
-        value: 0,
+        value: DateTokenValue::Number(0),
     },
     DateToken {
         token: "aug",
         typ: FieldType::Month,
-        value: 8,
+        value: DateTokenValue::Month(8),
     },
     DateToken {
         token: "august",
         typ: FieldType::Month,
-        value: 8,
+        value: DateTokenValue::Month(8),
     },
     // "bc" for years <= 0
     DateToken {
         token: DB_C,
         typ: FieldType::Adbc,
-        value: BC,
+        value: DateTokenValue::Millennium(Millennium::BC),
     },
     // "day of month" for ISO input
     DateToken {
         token: "d",
         typ: FieldType::Units,
-        value: TokenFieldType::Day as i32,
+        value: DateTokenValue::FieldType(TokenFieldType::Day),
     },
     DateToken {
         token: "dec",
         typ: FieldType::Month,
-        value: 12,
+        value: DateTokenValue::Month(12),
     },
     DateToken {
         token: "december",
         typ: FieldType::Month,
-        value: 12,
+        value: DateTokenValue::Month(12),
     },
     // day of week
     DateToken {
         token: "dow",
         typ: FieldType::Units,
-        value: TokenFieldType::Dow as i32,
+        value: DateTokenValue::FieldType(TokenFieldType::Dow),
     },
     // day of year
     DateToken {
         token: "doy",
         typ: FieldType::Units,
-        value: TokenFieldType::Doy as i32,
+        value: DateTokenValue::FieldType(TokenFieldType::Doy),
     },
     DateToken {
         token: "dst",
         typ: FieldType::DtzMod,
-        value: SECS_PER_HOUR,
+        value: DateTokenValue::Number(SECS_PER_HOUR),
     },
     // "epoch" reserved for system epoch time
     DateToken {
         token: EPOCH,
         typ: FieldType::Reserved,
-        value: TokenFieldType::Epoch as i32,
+        value: DateTokenValue::FieldType(TokenFieldType::Epoch),
     },
     DateToken {
         token: "feb",
         typ: FieldType::Month,
-        value: 2,
+        value: DateTokenValue::Month(2),
     },
     DateToken {
         token: "february",
         typ: FieldType::Month,
-        value: 2,
+        value: DateTokenValue::Month(2),
     },
     DateToken {
         token: "fri",
         typ: FieldType::Dow,
-        value: 5,
+        value: DateTokenValue::DayOfWeek(5),
     },
     DateToken {
         token: "friday",
         typ: FieldType::Dow,
-        value: 5,
+        value: DateTokenValue::DayOfWeek(5),
     },
     // "hour"
     DateToken {
         token: "h",
         typ: FieldType::Units,
-        value: TokenFieldType::Hour as i32,
+        value: DateTokenValue::FieldType(TokenFieldType::Hour),
     },
     // "infinity" reserved for "late time"
     DateToken {
         token: LATE,
         typ: FieldType::Reserved,
-        value: TokenFieldType::Late as i32,
+        value: DateTokenValue::FieldType(TokenFieldType::Late),
     },
     // ISO day of week, Sunday == 7
     DateToken {
         token: "isodow",
         typ: FieldType::Units,
-        value: TokenFieldType::IsoDow as i32,
+        value: DateTokenValue::FieldType(TokenFieldType::IsoDow),
     },
     // year in terms of the ISO week date
     DateToken {
         token: "isoyear",
         typ: FieldType::Units,
-        value: TokenFieldType::IsoYear as i32,
+        value: DateTokenValue::FieldType(TokenFieldType::IsoYear),
     },
     DateToken {
         token: "j",
         typ: FieldType::Units,
-        value: TokenFieldType::Julian as i32,
+        value: DateTokenValue::FieldType(TokenFieldType::Julian),
     },
     DateToken {
         token: "jan",
         typ: FieldType::Month,
-        value: 1,
+        value: DateTokenValue::Month(1),
     },
     DateToken {
         token: "january",
         typ: FieldType::Month,
-        value: 1,
+        value: DateTokenValue::Month(1),
     },
     DateToken {
         token: "jd",
         typ: FieldType::Units,
-        value: TokenFieldType::Julian as i32,
+        value: DateTokenValue::FieldType(TokenFieldType::Julian),
     },
     DateToken {
         token: "jul",
         typ: FieldType::Month,
-        value: 7,
+        value: DateTokenValue::Month(7),
     },
     DateToken {
         token: "julian",
         typ: FieldType::Units,
-        value: TokenFieldType::Julian as i32,
+        value: DateTokenValue::FieldType(TokenFieldType::Julian),
     },
     DateToken {
         token: "july",
         typ: FieldType::Month,
-        value: 7,
+        value: DateTokenValue::Month(7),
     },
     DateToken {
         token: "jun",
         typ: FieldType::Month,
-        value: 6,
+        value: DateTokenValue::Month(6),
     },
     DateToken {
         token: "june",
         typ: FieldType::Month,
-        value: 6,
+        value: DateTokenValue::Month(6),
     },
     // "month" for ISO input
     DateToken {
         token: "m",
         typ: FieldType::Units,
-        value: TokenFieldType::Month as i32,
+        value: DateTokenValue::FieldType(TokenFieldType::Month),
     },
     DateToken {
         token: "mar",
         typ: FieldType::Month,
-        value: 3,
+        value: DateTokenValue::Month(3),
     },
     DateToken {
         token: "march",
         typ: FieldType::Month,
-        value: 3,
+        value: DateTokenValue::Month(3),
     },
     DateToken {
         token: "may",
         typ: FieldType::Month,
-        value: 5,
+        value: DateTokenValue::Month(5),
     },
     // "minute" for ISO input
     DateToken {
         token: "mm",
         typ: FieldType::Units,
-        value: TokenFieldType::Minute as i32,
+        value: DateTokenValue::FieldType(TokenFieldType::Minute),
     },
     DateToken {
         token: "mon",
         typ: FieldType::Dow,
-        value: 1,
+        value: DateTokenValue::DayOfWeek(1),
     },
     DateToken {
         token: "monday",
         typ: FieldType::Dow,
-        value: 1,
+        value: DateTokenValue::DayOfWeek(1),
     },
     DateToken {
         token: "nov",
         typ: FieldType::Month,
-        value: 11,
+        value: DateTokenValue::Month(11),
     },
     DateToken {
         token: "november",
         typ: FieldType::Month,
-        value: 11,
+        value: DateTokenValue::Month(11),
     },
     // current transaction time
     DateToken {
         token: NOW,
         typ: FieldType::Reserved,
-        value: TokenFieldType::Now as i32,
+        value: DateTokenValue::FieldType(TokenFieldType::Now),
     },
     DateToken {
         token: "oct",
         typ: FieldType::Month,
-        value: 10,
+        value: DateTokenValue::Month(10),
     },
     DateToken {
         token: "october",
         typ: FieldType::Month,
-        value: 10,
+        value: DateTokenValue::Month(10),
     },
     // "on" (throwaway)
     DateToken {
         token: "on",
         typ: FieldType::IgnoreDtf,
-        value: 0,
+        value: DateTokenValue::Number(0),
     },
     DateToken {
         token: "pm",
         typ: FieldType::AmPm,
-        value: PM,
+        value: DateTokenValue::Meridian(Meridian::PM),
     },
     // "seconds" for ISO input
     DateToken {
         token: "s",
         typ: FieldType::Units,
-        value: TokenFieldType::Second as i32,
+        value: DateTokenValue::FieldType(TokenFieldType::Second),
     },
     DateToken {
         token: "sat",
         typ: FieldType::Dow,
-        value: 6,
+        value: DateTokenValue::DayOfWeek(6),
     },
     DateToken {
         token: "saturday",
         typ: FieldType::Dow,
-        value: 6,
+        value: DateTokenValue::DayOfWeek(6),
     },
     DateToken {
         token: "sep",
         typ: FieldType::Month,
-        value: 9,
+        value: DateTokenValue::Month(9),
     },
     DateToken {
         token: "sept",
         typ: FieldType::Month,
-        value: 9,
+        value: DateTokenValue::Month(9),
     },
     DateToken {
         token: "september",
         typ: FieldType::Month,
-        value: 9,
+        value: DateTokenValue::Month(9),
     },
     DateToken {
         token: "sun",
         typ: FieldType::Dow,
-        value: 0,
+        value: DateTokenValue::DayOfWeek(0),
     },
     DateToken {
         token: "sunday",
         typ: FieldType::Dow,
-        value: 0,
+        value: DateTokenValue::DayOfWeek(0),
     },
     // Filler for ISO time fields
     DateToken {
         token: "t",
         typ: FieldType::IsoTime,
-        value: TokenFieldType::Time as i32,
+        value: DateTokenValue::FieldType(TokenFieldType::Time),
     },
     DateToken {
         token: "thu",
         typ: FieldType::Dow,
-        value: 4,
+        value: DateTokenValue::DayOfWeek(4),
     },
     DateToken {
         token: "thur",
         typ: FieldType::Dow,
-        value: 4,
+        value: DateTokenValue::DayOfWeek(4),
     },
     DateToken {
         token: "thurs",
         typ: FieldType::Dow,
-        value: 4,
+        value: DateTokenValue::DayOfWeek(4),
     },
     DateToken {
         token: "thursday",
         typ: FieldType::Dow,
-        value: 4,
+        value: DateTokenValue::DayOfWeek(4),
     },
     // midnight
     DateToken {
         token: TODAY,
         typ: FieldType::Reserved,
-        value: TokenFieldType::Today as i32,
+        value: DateTokenValue::FieldType(TokenFieldType::Today),
     },
     // tomorrow midnight
     DateToken {
         token: TOMORROW,
         typ: FieldType::Reserved,
-        value: TokenFieldType::Tomorrow as i32,
+        value: DateTokenValue::FieldType(TokenFieldType::Tomorrow),
     },
     DateToken {
         token: "tue",
         typ: FieldType::Dow,
-        value: 2,
+        value: DateTokenValue::DayOfWeek(2),
     },
     DateToken {
         token: "tues",
         typ: FieldType::Dow,
-        value: 2,
+        value: DateTokenValue::DayOfWeek(2),
     },
     DateToken {
         token: "tuesday",
         typ: FieldType::Dow,
-        value: 2,
+        value: DateTokenValue::DayOfWeek(2),
     },
     DateToken {
         token: "wed",
         typ: FieldType::Dow,
-        value: 3,
+        value: DateTokenValue::DayOfWeek(3),
     },
     DateToken {
         token: "wednesday",
         typ: FieldType::Dow,
-        value: 3,
+        value: DateTokenValue::DayOfWeek(3),
     },
     DateToken {
         token: "weds",
         typ: FieldType::Dow,
-        value: 3,
+        value: DateTokenValue::DayOfWeek(3),
     },
     // "year" for ISO input
     DateToken {
         token: "y",
         typ: FieldType::Units,
-        value: TokenFieldType::Year as i32,
+        value: DateTokenValue::FieldType(TokenFieldType::Year),
     },
     // yesterday midnight
     DateToken {
         token: YESTERDAY,
         typ: FieldType::Reserved,
-        value: TokenFieldType::Yesterday as i32,
+        value: DateTokenValue::FieldType(TokenFieldType::Yesterday),
     },
 ];
 
@@ -1010,8 +1025,7 @@ pub fn DecodeDateTime(
     let mut tmask = FieldMask::none();
     // "prefix type" for ISO y2001m02d04 format
     let mut ptype = TokenFieldType::Number;
-    let mut val: i32 = 0;
-    let mut mer: i32 = 2;
+    let mut mer = Meridian::HR24;
     let mut haveTextMonth = false;
     let mut isjulian = false;
     let mut is2digits = false;
@@ -1335,17 +1349,19 @@ pub fn DecodeDateTime(
             }
             TokenFieldType::String | TokenFieldType::Special => {
                 // timezone abbrevs take precedence over built-in tokens
-                let mut type_0 = DecodeTimezoneAbbrev(field, &mut val, &mut valtz);
+                let mut utc_offset = 0;
+                let mut type_0 = DecodeTimezoneAbbrev(field, &mut utc_offset, &mut valtz);
+                let mut token_value = DateTokenValue::Number(utc_offset);
                 if type_0 == FieldType::UnknownField {
-                    type_0 = DecodeSpecial(field, &mut val);
+                    type_0 = DecodeSpecial(field, &mut token_value);
                 }
                 if type_0 == FieldType::IgnoreDtf {
                     current_block_236 = 12209867499936983673;
                 } else {
                     tmask = FieldMask::from(type_0);
                     match type_0 {
-                        FieldType::Reserved => match TokenFieldType::try_from(val).unwrap() {
-                            TokenFieldType::Now => {
+                        FieldType::Reserved => match token_value {
+                            DateTokenValue::FieldType(TokenFieldType::Now) => {
                                 tmask = *FIELD_MASK_DATE | *FIELD_MASK_TIME | FieldType::Tz;
                                 *dtype = TokenFieldType::Date;
                                 let tzp = match tzp {
@@ -1354,7 +1370,7 @@ pub fn DecodeDateTime(
                                 };
                                 GetCurrentTimeUsec(tm, fsec, tzp);
                             }
-                            TokenFieldType::Yesterday => {
+                            DateTokenValue::FieldType(TokenFieldType::Yesterday) => {
                                 tmask = *FIELD_MASK_DATE;
                                 *dtype = TokenFieldType::Date;
                                 GetCurrentDateTime(&mut cur_tm);
@@ -1365,7 +1381,7 @@ pub fn DecodeDateTime(
                                     &mut tm.tm_mday,
                                 );
                             }
-                            TokenFieldType::Today => {
+                            DateTokenValue::FieldType(TokenFieldType::Today) => {
                                 tmask = *FIELD_MASK_DATE;
                                 *dtype = TokenFieldType::Date;
                                 GetCurrentDateTime(&mut cur_tm);
@@ -1373,7 +1389,7 @@ pub fn DecodeDateTime(
                                 tm.tm_mon = cur_tm.tm_mon;
                                 tm.tm_mday = cur_tm.tm_mday;
                             }
-                            TokenFieldType::Tomorrow => {
+                            DateTokenValue::FieldType(TokenFieldType::Tomorrow) => {
                                 tmask = *FIELD_MASK_DATE;
                                 *dtype = TokenFieldType::Date;
                                 GetCurrentDateTime(&mut cur_tm);
@@ -1384,7 +1400,7 @@ pub fn DecodeDateTime(
                                     &mut tm.tm_mday,
                                 );
                             }
-                            TokenFieldType::Zulu => {
+                            DateTokenValue::FieldType(TokenFieldType::Zulu) => {
                                 tmask = *FIELD_MASK_TIME | FieldType::Tz;
                                 *dtype = TokenFieldType::Date;
                                 tm.tm_hour = 0;
@@ -1394,9 +1410,10 @@ pub fn DecodeDateTime(
                                     **tzp = 0;
                                 }
                             }
-                            _ => {
-                                *dtype = val.try_into().unwrap();
+                            DateTokenValue::FieldType(typ) => {
+                                *dtype = typ;
                             }
+                            val => panic!("invalid date token value: {val:?}"),
                         },
                         // already have a (numeric) month? then see if we can substitute...
                         FieldType::Month => {
@@ -1410,7 +1427,10 @@ pub fn DecodeDateTime(
                                 tmask = FieldMask::from(FieldType::Day);
                             }
                             haveTextMonth = true;
-                            tm.tm_mon = val;
+                            tm.tm_mon = match token_value {
+                                DateTokenValue::Month(mon) => mon.into(),
+                                val => panic!("invalid date token value: {val:?}"),
+                            };
                         }
                         // daylight savings time modifier (solves "MET DST" syntax)
                         FieldType::DtzMod => {
@@ -1422,7 +1442,10 @@ pub fn DecodeDateTime(
                                     return Err(ParseError::BadFormat);
                                 }
                             };
-                            **tzp -= val;
+                            **tzp -= match token_value {
+                                DateTokenValue::Number(offset) => offset,
+                                val => panic!("invalid date token value: {val:?}"),
+                            };
                         }
                         FieldType::DTz => {
                             // set mask for TZ here _or_ check for DTZ later when getting default
@@ -1435,7 +1458,10 @@ pub fn DecodeDateTime(
                                     return Err(ParseError::BadFormat);
                                 }
                             };
-                            **tzp = -val;
+                            **tzp -= match token_value {
+                                DateTokenValue::Number(offset) => offset,
+                                val => panic!("invalid date token value: {val:?}"),
+                            };
                         }
                         FieldType::Tz => {
                             tm.tm_isdst = Some(false);
@@ -1445,7 +1471,10 @@ pub fn DecodeDateTime(
                                     return Err(ParseError::BadFormat);
                                 }
                             };
-                            **tzp = -val;
+                            **tzp -= match token_value {
+                                DateTokenValue::Number(offset) => offset,
+                                val => panic!("invalid date token value: {val:?}"),
+                            };
                         }
                         FieldType::DynTz => {
                             tmask.set(FieldType::Tz);
@@ -1457,17 +1486,30 @@ pub fn DecodeDateTime(
                             abbrev = Some(field);
                         }
                         FieldType::AmPm => {
-                            mer = val;
+                            mer = match token_value {
+                                DateTokenValue::Meridian(mer) => mer,
+                                val => panic!("invalid date token value: {val:?}"),
+                            };
                         }
                         FieldType::Adbc => {
-                            bc = val == 1;
+                            bc = match token_value {
+                                DateTokenValue::Millennium(Millennium::BC) => true,
+                                DateTokenValue::Millennium(Millennium::AD) => false,
+                                val => panic!("invalid date token value: {val:?}"),
+                            };
                         }
                         FieldType::Dow => {
-                            tm.tm_wday = val;
+                            tm.tm_wday = match token_value {
+                                DateTokenValue::DayOfWeek(wday) => wday.into(),
+                                val => panic!("invalid date token value: {val:?}"),
+                            };
                         }
                         FieldType::Units => {
                             tmask = FieldMask::none();
-                            ptype = val.try_into().unwrap();
+                            ptype = match token_value {
+                                DateTokenValue::FieldType(typ) => typ,
+                                val => panic!("invalid date token value: {val:?}"),
+                            };
                         }
                         FieldType::IsoTime => {
                             // This is a filler field "t" indicating that the next
@@ -1496,7 +1538,10 @@ pub fn DecodeDateTime(
                                 eprintln!("next field are not the right type");
                                 return Err(ParseError::BadFormat);
                             }
-                            ptype = val.try_into().unwrap();
+                            ptype = match token_value {
+                                DateTokenValue::FieldType(typ) => typ,
+                                val => panic!("invalid date token value: {val:?}"),
+                            };
                         }
                         FieldType::UnknownField => {
                             // Before giving up and declaring error, check to see
@@ -1529,12 +1574,12 @@ pub fn DecodeDateTime(
     // do final checking/adjustment of Y/M/D fields
     ValidateDate(fmask, isjulian, is2digits, bc, tm)?;
     // handle AM/PM
-    if mer != 2 && tm.tm_hour > HOURS_PER_DAY / 2 {
+    if mer != Meridian::HR24 && tm.tm_hour > HOURS_PER_DAY / 2 {
         return Err(ParseError::FieldOverflow);
     }
-    if mer == 0 && tm.tm_hour == HOURS_PER_DAY / 2 {
+    if mer == Meridian::AM && tm.tm_hour == HOURS_PER_DAY / 2 {
         tm.tm_hour = 0;
-    } else if mer == 1 && tm.tm_hour != HOURS_PER_DAY / 2 {
+    } else if mer == Meridian::PM && tm.tm_hour != HOURS_PER_DAY / 2 {
         tm.tm_hour += HOURS_PER_DAY / 2;
     }
     // do additional checking for full date specs...
@@ -1784,7 +1829,6 @@ fn DecodeDate(
     let mut fsec: fsec_t = 0;
     let mut nf: usize = 0;
     let mut haveTextMonth: bool = false;
-    let mut val: i32 = 0;
     let mut dmask = FieldMask::none();
     let mut fields: [Option<&str>; 25] = [None; 25];
 
@@ -1828,12 +1872,16 @@ fn DecodeDate(
             .unwrap()
             .starts_with(|c: char| c.is_ascii_alphabetic())
         {
-            let type_0 = DecodeSpecial(fields[i].unwrap(), &mut val);
+            let mut token_value = DateTokenValue::Number(0);
+            let type_0 = DecodeSpecial(fields[i].unwrap(), &mut token_value);
             if type_0 != FieldType::IgnoreDtf {
                 dmask = FieldMask::from(type_0);
                 match type_0 {
                     FieldType::Month => {
-                        tm.tm_mon = val;
+                        tm.tm_mon = match token_value {
+                            DateTokenValue::Month(mon) => mon.into(),
+                            val => panic!("invalid date token value: {val:?}"),
+                        };
                         haveTextMonth = true;
                     }
                     typ => {
@@ -2288,7 +2336,12 @@ fn DecodeTimezoneAbbrev(lowtoken: &str, offset: &mut i32, tz: &mut Option<&pg_tz
                         *tz = FetchDynamicTimeZone(&table, token);
                     }
                     _ => {
-                        *offset = token.value;
+                        *offset = match token.value {
+                            // TODO(petrosagg): we should probably have a dedicated variantt to
+                            // timezone offsets
+                            DateTokenValue::Number(n) => n,
+                            _ => panic!("unexpected token"),
+                        };
                         *tz = None;
                     }
                 };
@@ -2315,18 +2368,18 @@ fn DecodeTimezoneAbbrev(lowtoken: &str, offset: &mut i32, tz: &mut Option<&pg_tz
 /// `DecodeTimezoneAbbrev` for that.
 ///
 /// Given string must be lowercased already.
-fn DecodeSpecial(lowtoken: &str, val: &mut i32) -> FieldType {
+fn DecodeSpecial(lowtoken: &str, val: &mut DateTokenValue) -> FieldType {
     // TODO(petrosagg): original code seemed to imply that it can find truncated tokens
     // somehow. Investigate. Original comment:
     // use strncmp so that we match truncated tokens
     match DATE_TOKEN_TABLE.binary_search_by(|tk| tk.token.cmp(lowtoken)) {
         Ok(idx) => {
             let token = &DATE_TOKEN_TABLE[idx];
-            *val = token.value;
+            *val = token.value.clone();
             token.typ
         }
         Err(_) => {
-            *val = 0;
+            *val = DateTokenValue::Number(0);
             FieldType::UnknownField
         }
     }
