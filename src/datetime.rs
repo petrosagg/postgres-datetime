@@ -1,7 +1,7 @@
 use bitmask::bitmask;
 use once_cell::sync::Lazy;
 
-use crate::datetime_raw::{fsec_t, pg_tm, DateOrder, DecodeDateTime};
+use crate::datetime_raw::{fsec_t, pg_tm, DateOrder, DecodeDateTime, ParseError};
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 #[repr(i32)]
@@ -188,7 +188,7 @@ pub static FIELD_MASK_TIME: Lazy<FieldMask> =
 
 pub fn decode(
     fields: Vec<(String, TokenFieldType)>,
-) -> Result<(pg_tm, fsec_t, i32, TokenFieldType), i32> {
+) -> Result<(pg_tm, fsec_t, i32, TokenFieldType), ParseError> {
     let mut fields2 = vec![];
     for (data, typ) in fields.iter() {
         fields2.push((&**data, typ.clone()));
@@ -210,17 +210,14 @@ pub fn decode(
     };
     let mut tzp: i32 = 0;
     let mut dtype = TokenFieldType::Number;
-    let dterr = DecodeDateTime(
+    DecodeDateTime(
         &fields2,
         &mut dtype,
         &mut tt,
         &mut fsec,
         Some(&mut tzp),
         DateOrder::YMD,
-    );
-    if dterr != 0 {
-        return Err(dterr);
-    }
+    )?;
 
     Ok((tt, fsec, tzp, dtype))
 }

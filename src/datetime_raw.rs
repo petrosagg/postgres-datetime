@@ -22,6 +22,16 @@ const USECS_PER_SEC: i64 = 1_000_000;
 const POSTGRES_EPOCH_JDATE: i64 = date2j(2000, 1, 1) as i64;
 const UNIX_EPOCH_JDATE: i64 = date2j(1970, 1, 1) as i64;
 
+#[derive(Debug)]
+pub enum ParseError {
+    BadFormat = -1,
+    FieldOverflow = -2,
+    /// Triggers hint about DateStyle
+    MdFieldOverflow = -3,
+    IntervalOverflow = -4,
+    TzDispOverflow = -5,
+}
+
 /// DateOrder defines the field order to be assumed when reading an
 /// ambiguous date (anything not in YYYY-MM-DD format, with a four-digit
 /// year field first, is taken to be ambiguous):
@@ -146,7 +156,7 @@ fn timestamp2tm(
     fsec: &mut fsec_t,
     tzn: Option<&mut Option<String>>,
     mut attimezone: Option<&pg_tz>,
-) -> i32 {
+) -> Result<(), ParseError> {
     let mut date: Timestamp = 0;
     let mut time: Timestamp;
 
@@ -169,7 +179,7 @@ fn timestamp2tm(
     /* Julian day routine does not work for negative Julian days */
     if date < 0 || date > libc::INT_MAX.into() {
         eprintln!("Julian day routine does not work for negative Julian days");
-        return -1;
+        return Err(ParseError::BadFormat);
     }
 
     j2date(
@@ -189,7 +199,7 @@ fn timestamp2tm(
             if let Some(tzn) = tzn {
                 *tzn = None;
             }
-            return 0;
+            return Ok(());
         }
         Some(tzp) => {
             /*
@@ -234,7 +244,7 @@ fn timestamp2tm(
                     *tzn = None;
                 }
             }
-            0
+            Ok(())
         }
     }
 }
@@ -780,7 +790,8 @@ fn GetCurrentTimeUsec(tm: &mut pg_tm, fsec: &mut fsec_t, tzp: Option<&mut i32>) 
         fsec,
         None,
         Some(&SESSION_TIMEZONE),
-    ) != 0
+    )
+    .is_err()
     {
         // ereport(ERROR,
         // 		(errcode(ERRCODE_DATETIME_VALUE_OUT_OF_RANGE),
@@ -792,15 +803,15 @@ fn GetCurrentTimeUsec(tm: &mut pg_tm, fsec: &mut fsec_t, tzp: Option<&mut i32>) 
 }
 
 /// Fetch a fractional-second value with suitable error checking
-fn ParseFractionalSecond(cp: &str, fsec: &mut fsec_t) -> i32 {
+fn ParseFractionalSecond(cp: &str, fsec: &mut fsec_t) -> Result<(), ParseError> {
     // Caller should always pass the start of the fraction part
     assert!(cp.starts_with('.'));
     let frac = match f64::from_str(cp) {
         Ok(frac) => frac,
-        Err(_) => return -1,
+        Err(_) => return Err(ParseError::BadFormat),
     };
     *fsec = (frac * 1_000_000.0) as fsec_t;
-    0
+    Ok(())
 }
 
 /// Breaks string into tokens based on a date/time context.
@@ -821,7 +832,7 @@ fn ParseFractionalSecond(cp: &str, fsec: &mut fsec_t) -> i32 {
 ///   * TokenFieldType::Number can hold date fields (yy.ddd)
 ///   * TokenFieldType::String can hold months (January) and time zones (PST)
 ///   * TokenFieldType::Date can hold time zone names (America/New_York, GMT-8)
-pub fn parse_datetime(input: &str) -> Result<Vec<(String, TokenFieldType)>, i32> {
+pub fn parse_datetime(input: &str) -> Result<Vec<(String, TokenFieldType)>, ParseError> {
     let mut ret = vec![];
     let mut chars = input.chars().peekable();
 
@@ -955,18 +966,24 @@ pub fn parse_datetime(input: &str) -> Result<Vec<(String, TokenFieldType)>, i32>
                 }
             // otherwise something wrong...
             } else {
-                return Err(-1);
+                return Err(ParseError::BadFormat);
             }
         // ignore other punctuation but use as delimiter
         } else if chars.next_if(|c| c.is_ascii_punctuation()).is_some() {
             continue;
         // otherwise, something is not right...
         } else {
-            return Err(-1);
+            return Err(ParseError::BadFormat);
         }
         ret.push((fdata, ftype));
     }
     Ok(ret)
+}
+
+//TODO(petrosagg): DateKind sounds a lot like DateType. Find a different name
+pub enum DateKind {
+    FullDate,
+    OnlyTime,
 }
 
 /// Interprets previously parsed fields for general date and time.
@@ -998,7 +1015,7 @@ pub fn DecodeDateTime(
     fsec: &mut fsec_t,
     mut tzp: Option<&mut i32>,
     date_order: DateOrder,
-) -> i32 {
+) -> Result<DateKind, ParseError> {
     let mut fmask = FieldMask::none();
     let mut tmask = FieldMask::none();
     // "prefix type" for ISO y2001m02d04 format
@@ -1054,22 +1071,19 @@ pub fn DecodeDateTime(
                         Some(tzp) => tzp,
                         None => {
                             eprintln!("tzp is null");
-                            return -1;
+                            return Err(ParseError::BadFormat);
                         }
                     };
 
                     let val_0 = match strtoint(field, &mut cp) {
                         Ok(val) => val,
-                        Err(_) => return -2,
+                        Err(_) => return Err(ParseError::FieldOverflow),
                     };
                     j2date(val_0, &mut tm.tm_year, &mut tm.tm_mon, &mut tm.tm_mday);
                     isjulian = true;
 
                     // Get the time zone from the end of the string
-                    let dterr = DecodeTimezone(cp, tzp);
-                    if dterr != 0 {
-                        return dterr;
-                    }
+                    DecodeTimezone(cp, tzp)?;
                     tmask = *FIELD_MASK_DATE | *FIELD_MASK_TIME | FieldType::Tz;
                     ptype = TokenFieldType::Number;
                 // Already have a date? Then this might be a time zone name
@@ -1088,7 +1102,7 @@ pub fn DecodeDateTime(
                         Some(tzp) => tzp,
                         None => {
                             eprintln!("tzp is null");
-                            return -1;
+                            return Err(ParseError::BadFormat);
                         }
                     };
                     if field.starts_with(|c: char| c.is_ascii_digit())
@@ -1098,7 +1112,7 @@ pub fn DecodeDateTime(
                             // Sanity check; should not fail this test
                             if ptype != TokenFieldType::Time {
                                 eprintln!("ptype is not Time: {:?}", ptype);
-                                return -1;
+                                return Err(ParseError::BadFormat);
                             }
                             ptype = TokenFieldType::Number;
                         }
@@ -1107,28 +1121,21 @@ pub fn DecodeDateTime(
                         // already...
                         if fmask.contains(*FIELD_MASK_TIME) {
                             eprintln!("started with a digit but already have a time");
-                            return -1;
+                            return Err(ParseError::BadFormat);
                         }
                         let (prefix, cp_0) = match field.find('-') {
                             Some(idx) => field.split_at(idx),
                             None => {
                                 eprintln!("couldn't find '-' character");
-                                return -1;
+                                return Err(ParseError::BadFormat);
                             }
                         };
 
                         // Get the time zone from the end of the string
-                        let dterr = DecodeTimezone(cp_0, tzp);
-                        if dterr != 0 {
-                            return dterr;
-                        }
+                        DecodeTimezone(cp_0, tzp)?;
 
                         // Then read the rest of the field as a concatenated time
-                        let dterr =
-                            DecodeNumberField(prefix, fmask, &mut tmask, tm, fsec, &mut is2digits);
-                        if dterr < 0 {
-                            return dterr;
-                        }
+                        DecodeNumberField(prefix, fmask, &mut tmask, tm, fsec, &mut is2digits)?;
 
                         // modify tmask after returning from DecodeNumberField()
                         tmask.set(FieldType::Tz);
@@ -1146,11 +1153,7 @@ pub fn DecodeDateTime(
                         tmask = FieldMask::from(FieldType::Tz);
                     }
                 } else {
-                    let dterr =
-                        DecodeDate(field, fmask, &mut tmask, &mut is2digits, tm, date_order);
-                    if dterr != 0 {
-                        return dterr;
-                    }
+                    DecodeDate(field, fmask, &mut tmask, &mut is2digits, tm, date_order)?;
                 }
                 current_block_236 = 13797367574128857302;
             }
@@ -1160,18 +1163,15 @@ pub fn DecodeDateTime(
                     // Sanity check; should not fail this test
                     if ptype != TokenFieldType::Time {
                         eprintln!("ptype is not Time: {:?}", ptype);
-                        return -1;
+                        return Err(ParseError::BadFormat);
                     }
                     ptype = TokenFieldType::Number
                 }
-                let dterr = DecodeTime(field, 0x7fff, &mut tmask, tm, fsec);
-                if dterr != 0 {
-                    return dterr;
-                }
+                DecodeTime(field, 0x7fff, &mut tmask, tm, fsec)?;
 
                 // check for time overflow
                 if time_overflows(tm.tm_hour, tm.tm_min, tm.tm_sec, *fsec) {
-                    return -2;
+                    return Err(ParseError::FieldOverflow);
                 }
                 current_block_236 = 13797367574128857302;
             }
@@ -1181,13 +1181,10 @@ pub fn DecodeDateTime(
                     Some(tzp) => tzp,
                     None => {
                         eprintln!("tzp is null");
-                        return -1;
+                        return Err(ParseError::BadFormat);
                     }
                 };
-                let dterr = DecodeTimezone(field, &mut tz);
-                if dterr != 0 {
-                    return dterr;
-                }
+                DecodeTimezone(field, &mut tz)?;
                 **tzp = tz;
                 tmask = FieldMask::from(FieldType::Tz);
                 current_block_236 = 13797367574128857302;
@@ -1199,7 +1196,7 @@ pub fn DecodeDateTime(
                     let mut cp_1 = field;
                     let val_1 = match strtoint(field, &mut cp_1) {
                         Ok(val) => val,
-                        Err(_) => return -2,
+                        Err(_) => return Err(ParseError::FieldOverflow),
                     };
                     // only a few kinds are allowed to have an embedded decimal
                     if cp_1.starts_with('.') {
@@ -1209,12 +1206,12 @@ pub fn DecodeDateTime(
                             | TokenFieldType::Second => {}
                             _ => {
                                 eprintln!("ptype is not Julian, Time, or Second: {:?}", ptype);
-                                return -1;
+                                return Err(ParseError::BadFormat);
                             }
                         }
                     } else if !cp_1.is_empty() {
                         eprintln!("expected EOF");
-                        return -1;
+                        return Err(ParseError::BadFormat);
                     }
                     match ptype {
                         TokenFieldType::Year => {
@@ -1247,10 +1244,7 @@ pub fn DecodeDateTime(
                             tm.tm_sec = val_1;
                             tmask = FieldMask::from(FieldType::Second);
                             if cp_1.starts_with('.') {
-                                let dterr = ParseFractionalSecond(cp_1, fsec);
-                                if dterr != 0 {
-                                    return dterr;
-                                }
+                                ParseFractionalSecond(cp_1, fsec)?;
                                 tmask = *FIELD_MASK_ALL_SECS;
                             }
                         }
@@ -1259,19 +1253,16 @@ pub fn DecodeDateTime(
                                 Some(tzp) => tzp,
                                 None => {
                                     eprintln!("tzp is null");
-                                    return -1;
+                                    return Err(ParseError::BadFormat);
                                 }
                             };
                             tmask = FieldMask::from(FieldType::Tz);
-                            let dterr = DecodeTimezone(field, tzp);
-                            if dterr != 0 {
-                                return dterr;
-                            }
+                            DecodeTimezone(field, tzp)?;
                         }
                         TokenFieldType::Julian => {
                             // previous field was a label for "julian date"
                             if val_1 < 0 {
-                                return -2;
+                                return Err(ParseError::FieldOverflow);
                             }
                             tmask = *FIELD_MASK_DATE;
                             j2date(val_1, &mut tm.tm_year, &mut tm.tm_mon, &mut tm.tm_mday);
@@ -1281,7 +1272,7 @@ pub fn DecodeDateTime(
                             if cp_1.starts_with('.') {
                                 let mut time = match f64::from_str(cp_1) {
                                     Ok(val) => val,
-                                    Err(_) => return -1,
+                                    Err(_) => return Err(ParseError::BadFormat),
                                 };
                                 time *= USECS_PER_DAY as f64;
                                 dt2time(
@@ -1296,25 +1287,22 @@ pub fn DecodeDateTime(
                         }
                         TokenFieldType::Time => {
                             // previous field was "t" for ISO time
-                            let dterr = DecodeNumberField(
+                            DecodeNumberField(
                                 field,
                                 fmask | *FIELD_MASK_DATE,
                                 &mut tmask,
                                 tm,
                                 fsec,
                                 &mut is2digits,
-                            );
-                            if dterr < 0 {
-                                return dterr;
-                            }
+                            )?;
                             if tmask != *FIELD_MASK_TIME {
                                 eprintln!("tmask is not FIELD_MASK_TIME");
-                                return -1;
+                                return Err(ParseError::BadFormat);
                             }
                         }
                         typ => {
                             eprintln!("unexpected ptype: {:?}", typ);
-                            return -1;
+                            return Err(ParseError::BadFormat);
                         }
                     }
                     ptype = TokenFieldType::Number;
@@ -1324,40 +1312,31 @@ pub fn DecodeDateTime(
                     let cp_2 = field.find('.').map(|idx| &field[idx..]);
                     // Embedded decimal and no date yet?
                     if !cp_2.is_none() && !fmask.intersects(*FIELD_MASK_DATE) {
-                        let dterr =
-                            DecodeDate(field, fmask, &mut tmask, &mut is2digits, tm, date_order);
-                        if dterr != 0 {
-                            return dterr;
-                        }
+                        DecodeDate(field, fmask, &mut tmask, &mut is2digits, tm, date_order)?;
+                    }
                     // embedded decimal and several digits before?
-                    } else if !cp_2.is_none()
+                    else if !cp_2.is_none()
                         && (flen as u64).wrapping_sub(cp_2.unwrap().len() as u64) > 2
                     {
                         // Interpret as a concatenated date or time Set the type field to allow
                         // decoding other fields later.
                         // Example: 20011223 or 040506
-                        let dterr =
-                            DecodeNumberField(field, fmask, &mut tmask, tm, fsec, &mut is2digits);
-                        if dterr < 0 {
-                            return dterr;
-                        }
+                        DecodeNumberField(field, fmask, &mut tmask, tm, fsec, &mut is2digits)?;
+                    }
                     // Is this a YMD or HMS specification, or a year number? YMD and HMS are
                     // required to be six digits or more, so if it is 5 digits, it is a year.  If
                     // it is six or more digits, we assume it is YMD or HMS unless no date and no
                     // time values have been specified.  This forces 6+ digit years to be at the
                     // end of the string, or to use the ISO date specification.
-                    } else if flen >= 6
+                    else if flen >= 6
                         && (!fmask.intersects(*FIELD_MASK_DATE)
                             || !fmask.intersects(*FIELD_MASK_TIME))
                     {
-                        let dterr =
-                            DecodeNumberField(field, fmask, &mut tmask, tm, fsec, &mut is2digits);
-                        if dterr < 0 {
-                            return dterr;
-                        }
+                        DecodeNumberField(field, fmask, &mut tmask, tm, fsec, &mut is2digits)?;
+                    }
                     // otherwise it is a single date/time field...
-                    } else {
-                        let dterr = DecodeNumber(
+                    else {
+                        DecodeNumber(
                             field,
                             haveTextMonth,
                             fmask,
@@ -1366,10 +1345,7 @@ pub fn DecodeDateTime(
                             fsec,
                             &mut is2digits,
                             date_order,
-                        );
-                        if dterr != 0 {
-                            return dterr;
-                        }
+                        )?;
                     }
                 }
                 current_block_236 = 13797367574128857302;
@@ -1460,7 +1436,7 @@ pub fn DecodeDateTime(
                             let tzp = match tzp.as_mut() {
                                 Some(tzp) => tzp,
                                 None => {
-                                    return -1;
+                                    return Err(ParseError::BadFormat);
                                 }
                             };
                             **tzp -= val;
@@ -1473,7 +1449,7 @@ pub fn DecodeDateTime(
                             let tzp = match tzp.as_mut() {
                                 Some(tzp) => tzp,
                                 None => {
-                                    return -1;
+                                    return Err(ParseError::BadFormat);
                                 }
                             };
                             **tzp = -val;
@@ -1483,7 +1459,7 @@ pub fn DecodeDateTime(
                             let tzp = match tzp.as_mut() {
                                 Some(tzp) => tzp,
                                 None => {
-                                    return -1;
+                                    return Err(ParseError::BadFormat);
                                 }
                             };
                             **tzp = -val;
@@ -1491,7 +1467,7 @@ pub fn DecodeDateTime(
                         FieldType::DynTz => {
                             tmask.set(FieldType::Tz);
                             if tzp.is_none() {
-                                return -1;
+                                return Err(ParseError::BadFormat);
                             }
                             // we'll determine the actual offset later
                             abbrevTz = valtz;
@@ -1518,7 +1494,7 @@ pub fn DecodeDateTime(
                             // No preceding date? Then quit...
                             if !fmask.contains(*FIELD_MASK_DATE) {
                                 eprintln!("no preceding date");
-                                return -1;
+                                return Err(ParseError::BadFormat);
                             }
 
                             // We will need one of the following fields:
@@ -1535,7 +1511,7 @@ pub fn DecodeDateTime(
                                 ))
                             ) {
                                 eprintln!("next field are not the right type");
-                                return -1;
+                                return Err(ParseError::BadFormat);
                             }
                             ptype = val.try_into().unwrap();
                         }
@@ -1545,36 +1521,33 @@ pub fn DecodeDateTime(
                             namedTz = pg_tzset(field);
                             if namedTz.is_none() {
                                 eprintln!("namedTz is null");
-                                return -1;
+                                return Err(ParseError::BadFormat);
                             }
                             // we'll apply the zone setting below
                             tmask = FieldMask::from(FieldType::Tz);
                         }
                         typ => {
                             eprintln!("unexpected field type: {:?}", typ);
-                            return -1;
+                            return Err(ParseError::BadFormat);
                         }
                     }
                     current_block_236 = 13797367574128857302;
                 }
             }
-            _ => return -1,
+            _ => return Err(ParseError::BadFormat),
         }
         if current_block_236 == 13797367574128857302 {
             if tmask.intersects(fmask) {
-                return -1;
+                return Err(ParseError::BadFormat);
             }
             fmask |= tmask;
         }
     }
     // do final checking/adjustment of Y/M/D fields
-    let dterr = ValidateDate(fmask, isjulian, is2digits, bc, tm);
-    if dterr != 0 {
-        return dterr;
-    }
+    ValidateDate(fmask, isjulian, is2digits, bc, tm)?;
     // handle AM/PM
     if mer != 2 && tm.tm_hour > HOURS_PER_DAY / 2 {
-        return -2;
+        return Err(ParseError::FieldOverflow);
     }
     if mer == 0 && tm.tm_hour == HOURS_PER_DAY / 2 {
         tm.tm_hour = 0;
@@ -1585,22 +1558,21 @@ pub fn DecodeDateTime(
     if *dtype == TokenFieldType::Date {
         if !fmask.contains(*FIELD_MASK_DATE) {
             if fmask.contains(*FIELD_MASK_TIME) {
-                // TODO(petrosagg): this is actually success, as noted in the function doc
-                return 1;
+                return Ok(DateKind::OnlyTime);
             }
-            return -1;
+            return Err(ParseError::BadFormat);
         }
         // If we had a full timezone spec, compute the offset (we could not do
         // it before, because we need the date to resolve DST status).
         if let Some(namedTz) = namedTz {
             // daylight savings time modifier disallowed with full TZ
             if fmask.contains(FieldType::DtzMod) {
-                return -1;
+                return Err(ParseError::BadFormat);
             }
             let tzp = match tzp.as_mut() {
                 Some(tzp) => tzp,
                 None => {
-                    return -1;
+                    return Err(ParseError::BadFormat);
                 }
             };
             **tzp = DetermineTimeZoneOffset(tm, namedTz);
@@ -1609,12 +1581,12 @@ pub fn DecodeDateTime(
         if let Some(abbrevTz) = abbrevTz {
             // daylight savings time modifier disallowed with dynamic TZ
             if fmask.contains(FieldType::DtzMod) {
-                return -1;
+                return Err(ParseError::BadFormat);
             }
             let tzp = match tzp.as_mut() {
                 Some(tzp) => tzp,
                 None => {
-                    return -1;
+                    return Err(ParseError::BadFormat);
                 }
             };
             **tzp = DetermineTimeZoneAbbrevOffset(tm, abbrev.unwrap(), abbrevTz);
@@ -1624,13 +1596,13 @@ pub fn DecodeDateTime(
             if !fmask.contains(FieldType::Tz) {
                 // daylight savings time modifier but no standard timezone? then error
                 if fmask.contains(FieldType::DtzMod) {
-                    return -1;
+                    return Err(ParseError::BadFormat);
                 }
                 *tzp = DetermineTimeZoneOffset(tm, &SESSION_TIMEZONE);
             }
         }
     }
-    0
+    Ok(DateKind::FullDate)
 }
 
 /// Given a `pg_tm` in which `tm_year`, `tm_mon`, `tm_mday`, `tm_hour`, `tm_min`, and `tm_sec`
@@ -1825,7 +1797,7 @@ fn DecodeDate(
     is2digits: &mut bool,
     mut tm: &mut pg_tm,
     date_order: DateOrder,
-) -> i32 {
+) -> Result<(), ParseError> {
     let mut fsec: fsec_t = 0;
     let mut nf: usize = 0;
     let mut haveTextMonth: bool = false;
@@ -1844,7 +1816,7 @@ fn DecodeDate(
 
         // end of string after separator
         if str.is_empty() {
-            return -1;
+            return Err(ParseError::BadFormat);
         }
 
         fields[nf] = Some(str);
@@ -1883,11 +1855,11 @@ fn DecodeDate(
                     }
                     typ => {
                         eprintln!("unexpected field type: {:?}", typ);
-                        return -1;
+                        return Err(ParseError::BadFormat);
                     }
                 }
                 if fmask.intersects(dmask) {
-                    return -1;
+                    return Err(ParseError::BadFormat);
                 }
 
                 fmask |= dmask;
@@ -1904,9 +1876,9 @@ fn DecodeDate(
         if let Some(field) = fields[i] {
             let len = field.len() as i32;
             if len <= 0 {
-                return -1;
+                return Err(ParseError::BadFormat);
             }
-            let dterr = DecodeNumber(
+            DecodeNumber(
                 field,
                 haveTextMonth,
                 fmask,
@@ -1915,23 +1887,20 @@ fn DecodeDate(
                 &mut fsec,
                 is2digits,
                 date_order,
-            );
-            if dterr != 0 {
-                return dterr;
-            }
+            )?;
             if fmask.intersects(dmask) {
-                return -1;
+                return Err(ParseError::BadFormat);
             }
             fmask |= dmask;
             *tmask |= dmask;
         }
     }
     if fmask & !(FieldType::Doy | FieldType::Tz) != *FIELD_MASK_DATE {
-        return -1;
+        return Err(ParseError::BadFormat);
     }
 
     // validation of the field values must wait until ValidateDate()
-    0
+    Ok(())
 }
 
 fn is_leap(year: i32) -> bool {
@@ -1946,14 +1915,14 @@ fn ValidateDate(
     is2digits: bool,
     bc: bool,
     mut tm: &mut pg_tm,
-) -> i32 {
+) -> Result<(), ParseError> {
     if fmask.contains(FieldType::Year) {
         if isjulian {
             // tm_year is correct and should not be touched
         } else if bc {
             // there is no year zero in AD/BC notation
             if tm.tm_year <= 0 {
-                return -2;
+                return Err(ParseError::FieldOverflow);
             }
             // internally, we represent 1 BC as year zero, 2 BC as -1, etc
             tm.tm_year = -(tm.tm_year - 1);
@@ -1961,7 +1930,7 @@ fn ValidateDate(
             // process 1 or 2-digit input as 1970-2069 AD, allow '0' and '00'
             if tm.tm_year < 0 {
                 // just panaoia
-                return -2;
+                return Err(ParseError::FieldOverflow);
             }
             if tm.tm_year < 70 {
                 tm.tm_year += 2000;
@@ -1971,7 +1940,7 @@ fn ValidateDate(
         } else {
             // there is no year zero in AD/BC notation
             if tm.tm_year <= 0 {
-                return -2;
+                return Err(ParseError::FieldOverflow);
             }
         }
     }
@@ -1988,11 +1957,11 @@ fn ValidateDate(
 
     // check for valid month
     if fmask.contains(FieldType::Month) && (tm.tm_mon < 1 || tm.tm_mon > 12) {
-        return -3;
+        return Err(ParseError::MdFieldOverflow);
     }
     // minimal check for valid day
     if fmask.contains(FieldType::Day) && (tm.tm_mday < 1 || tm.tm_mday > 31) {
-        return -3;
+        return Err(ParseError::MdFieldOverflow);
     }
     if fmask.contains(*FIELD_MASK_DATE) {
         // Check for valid day of month, now that we know for sure the month
@@ -2003,10 +1972,10 @@ fn ValidateDate(
             false => DAY_TAB[(tm.tm_mon - 1) as usize],
         };
         if tm.tm_mday > month_days {
-            return -2;
+            return Err(ParseError::FieldOverflow);
         }
     }
-    0
+    Ok(())
 }
 
 /// Decode time string which includes delimiters.
@@ -2020,22 +1989,22 @@ fn DecodeTime(
     tmask: &mut FieldMask,
     mut tm: &mut pg_tm,
     fsec: &mut fsec_t,
-) -> i32 {
+) -> Result<(), ParseError> {
     let mut cp = str;
 
     *tmask = *FIELD_MASK_TIME;
 
     tm.tm_hour = match strtoint(str, &mut cp) {
         Ok(val) => val,
-        Err(_) => return -2,
+        Err(_) => return Err(ParseError::FieldOverflow),
     };
 
     if !cp.starts_with(':') {
-        return -1;
+        return Err(ParseError::BadFormat);
     }
     tm.tm_min = match strtoint(&cp[1..], &mut cp) {
         Ok(val) => val,
-        Err(_) => return -2,
+        Err(_) => return Err(ParseError::FieldOverflow),
     };
 
     if cp.is_empty() {
@@ -2049,30 +2018,24 @@ fn DecodeTime(
         }
     } else if cp.starts_with('.') {
         // always assume mm:ss.sss is MINUTE TO SECOND
-        let dterr = ParseFractionalSecond(cp, fsec);
-        if dterr != 0 {
-            return dterr;
-        }
+        ParseFractionalSecond(cp, fsec)?;
         tm.tm_sec = tm.tm_min;
         tm.tm_min = tm.tm_hour;
         tm.tm_hour = 0;
     } else if cp.starts_with(':') {
         tm.tm_sec = match strtoint(&cp[1..], &mut cp) {
             Ok(val) => val,
-            Err(_) => return -2,
+            Err(_) => return Err(ParseError::FieldOverflow),
         };
         if cp.is_empty() {
             *fsec = 0;
         } else if cp.starts_with('.') {
-            let dterr = ParseFractionalSecond(cp, fsec);
-            if dterr != 0 {
-                return dterr;
-            }
+            ParseFractionalSecond(cp, fsec)?;
         } else {
-            return -1;
+            return Err(ParseError::BadFormat);
         }
     } else {
-        return -1;
+        return Err(ParseError::BadFormat);
     }
 
     // do a sanity check
@@ -2084,9 +2047,9 @@ fn DecodeTime(
         || (*fsec as i64) < 0
         || *fsec as i64 > USECS_PER_SEC
     {
-        return -2;
+        return Err(ParseError::FieldOverflow);
     }
-    0
+    Ok(())
 }
 
 // Interpret plain numeric field as a date value in context.
@@ -2100,33 +2063,26 @@ fn DecodeNumber(
     fsec: &mut fsec_t,
     is2digits: &mut bool,
     date_order: DateOrder,
-) -> i32 {
+) -> Result<(), ParseError> {
     let mut cp = str;
     *tmask = FieldMask::none();
     let val = match strtoint(str, &mut cp) {
         Ok(val) => val,
-        Err(_) => return -2,
+        Err(_) => return Err(ParseError::FieldOverflow),
     };
     if cp == str {
-        return -1;
+        return Err(ParseError::BadFormat);
     }
     if cp.starts_with('.') {
         // More than two digits before decimal point? Then could be a date or
         // a run-together time: 2001.360 20011225 040506.789
         if str.len() - cp.len() > 2 {
-            let dterr =
-                DecodeNumberField(str, fmask | *FIELD_MASK_DATE, tmask, tm, fsec, is2digits);
-            if dterr < 0 {
-                return dterr;
-            }
-            return 0;
+            DecodeNumberField(str, fmask | *FIELD_MASK_DATE, tmask, tm, fsec, is2digits)?;
+            return Ok(());
         }
-        let dterr = ParseFractionalSecond(cp, fsec);
-        if dterr != 0 {
-            return dterr;
-        }
+        ParseFractionalSecond(cp, fsec)?;
     } else if !cp.is_empty() {
-        return -1;
+        return Err(ParseError::BadFormat);
     }
     // Special case for day of year
     if str.len() == 3
@@ -2136,7 +2092,7 @@ fn DecodeNumber(
         *tmask = FieldType::Doy | FieldType::Month | FieldType::Day;
         tm.tm_yday = val;
         // tm_mon and tm_mday can't actually be set yet ...
-        return 0;
+        return Ok(());
     }
     // Switch based on what we have so far
     match fmask & *FIELD_MASK_DATE {
@@ -2214,20 +2170,17 @@ fn DecodeNumber(
         }
         mask if mask == FieldType::Year | FieldType::Month | FieldType::Day => {
             // we have all the date, so it must be a time field
-            let dterr = DecodeNumberField(str, fmask, tmask, tm, fsec, is2digits);
-            if dterr < 0 {
-                return dterr;
-            }
-            return 0;
+            DecodeNumberField(str, fmask, tmask, tm, fsec, is2digits)?;
+            return Ok(());
         }
         // Anything else is bogus input
-        _ => return -1,
+        _ => return Err(ParseError::BadFormat),
     }
     // When processing a year field, mark it for adjustment if it's only one or two digits.
     if *tmask == FieldMask::from(FieldType::Year) {
         *is2digits = str.len() <= 2;
     }
-    0
+    Ok(())
 }
 
 /// Interpret numeric string as a concatenated date or time field.
@@ -2241,7 +2194,7 @@ fn DecodeNumberField(
     mut tm: &mut pg_tm,
     fsec: &mut fsec_t,
     is2digits: &mut bool,
-) -> i32 {
+) -> Result<TokenFieldType, ParseError> {
     match str.find('.') {
         // Have a decimal point? Then this is a date or something with a seconds field...
         Some(idx) => {
@@ -2249,7 +2202,7 @@ fn DecodeNumberField(
             // junk should be rejected ...
             let frac = match f64::from_str(&str[idx..]) {
                 Ok(frac) => frac,
-                Err(_) => return -1,
+                Err(_) => return Err(ParseError::BadFormat),
             };
             *fsec = (frac * 1_000_000.0) as fsec_t;
             // Now truncate off the fraction for further processing
@@ -2266,7 +2219,7 @@ fn DecodeNumberField(
                 if str.len() - 4 == 2 {
                     *is2digits = true;
                 }
-                return 2;
+                return Ok(TokenFieldType::Date);
             }
         }
     }
@@ -2278,47 +2231,47 @@ fn DecodeNumberField(
             tm.tm_sec = i32::from_str(&str[4..]).unwrap();
             tm.tm_min = i32::from_str(&str[2..4]).unwrap();
             tm.tm_hour = i32::from_str(&str[0..2]).unwrap();
-            return 3;
+            return Ok(TokenFieldType::Time);
         // hhmm?
         } else if str.len() == 4 {
             *tmask = *FIELD_MASK_TIME;
             tm.tm_sec = 0;
             tm.tm_min = i32::from_str(&str[2..]).unwrap();
             tm.tm_hour = i32::from_str(&str[0..2]).unwrap();
-            return 3;
+            return Ok(TokenFieldType::Time);
         }
     }
-    -1
+    Err(ParseError::BadFormat)
 }
 
 // Interpret string as a numeric timezone.
 //
 // Return 0 if okay (and set *tzp), a DTERR code if not okay.
-fn DecodeTimezone(str: &str, tzp: &mut i32) -> i32 {
+fn DecodeTimezone(str: &str, tzp: &mut i32) -> Result<(), ParseError> {
     let mut tz: i32;
     let min: i32;
     let mut sec: i32 = 0;
     let mut cp = str;
     // leading character must be "+" or "-"
     if !str.starts_with('+') && !str.starts_with('-') {
-        return -1;
+        return Err(ParseError::BadFormat);
     }
 
     let mut hr = match strtoint(&str[1..], &mut cp) {
         Ok(hr) => hr,
-        Err(_) => return -5,
+        Err(_) => return Err(ParseError::TzDispOverflow),
     };
 
     // explicit delimiter?
     if cp.starts_with(':') {
         min = match strtoint(&cp[1..], &mut cp) {
             Ok(min) => min,
-            Err(_) => return -5,
+            Err(_) => return Err(ParseError::TzDispOverflow),
         };
         if cp.starts_with(':') {
             sec = match strtoint(&cp[1..], &mut cp) {
                 Ok(sec) => sec,
-                Err(_) => return -5,
+                Err(_) => return Err(ParseError::TzDispOverflow),
             };
         }
     // otherwise, might have run things together...
@@ -2332,13 +2285,13 @@ fn DecodeTimezone(str: &str, tzp: &mut i32) -> i32 {
 
     // Range-check the values; see notes in datatype/timestamp.h
     if !(0..=MAX_TZDISP_HOUR).contains(&hr) {
-        return -5;
+        return Err(ParseError::TzDispOverflow);
     }
     if !(0..MINS_PER_HOUR).contains(&min) {
-        return -5;
+        return Err(ParseError::TzDispOverflow);
     }
     if !(0..SECS_PER_MINUTE).contains(&sec) {
-        return -5;
+        return Err(ParseError::TzDispOverflow);
     }
     tz = (hr * MINS_PER_HOUR + min) * SECS_PER_MINUTE + sec;
     if str.starts_with('-') {
@@ -2346,9 +2299,9 @@ fn DecodeTimezone(str: &str, tzp: &mut i32) -> i32 {
     }
     *tzp = -tz;
     if !cp.is_empty() {
-        return -1;
+        return Err(ParseError::BadFormat);
     }
-    0
+    Ok(())
 }
 
 /// Interpret string as a timezone abbreviation, if possible.
