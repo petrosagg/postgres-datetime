@@ -111,7 +111,7 @@ fn strtoint<'a>(s: &'a str, end: &mut &'a str) -> Result<i32, ()> {
 }
 
 fn time_overflows(hour: i32, min: i32, sec: i32, fsec: fsec_t) -> bool {
-    /* Range-check the fields individually. */
+    // Range-check the fields individually.
     if !(0..=HOURS_PER_DAY).contains(&hour)
         || !(0..MINS_PER_HOUR).contains(&min)
         || !(0..=SECS_PER_MINUTE).contains(&sec)
@@ -121,10 +121,8 @@ fn time_overflows(hour: i32, min: i32, sec: i32, fsec: fsec_t) -> bool {
         return true;
     }
 
-    /*
-     * Because we allow, eg, hour = 24 or sec = 60, we must check separately
-     * that the total time value doesn't exceed 24:00:00.
-     */
+    // Because we allow, eg, hour = 24 or sec = 60, we must check separately
+    // that the total time value doesn't exceed 24:00:00.
     if (((((hour as i64 * MINS_PER_HOUR as i64 + min as i64) * SECS_PER_MINUTE as i64)
         + sec as i64)
         * USECS_PER_SEC as i64)
@@ -159,7 +157,7 @@ fn timestamp2tm(
     let mut date: Timestamp = 0;
     let mut time: Timestamp;
 
-    /* Use session timezone if caller asks for default */
+    // Use session timezone if caller asks for default
     if attimezone.is_none() {
         attimezone = Some(&SESSION_TIMEZONE);
     }
@@ -172,10 +170,10 @@ fn timestamp2tm(
         date -= 1;
     }
 
-    /* add offset to go from J2000 back to standard Julian date */
+    // add offset to go from J2000 back to standard Julian date
     date += POSTGRES_EPOCH_JDATE;
 
-    /* Julian day routine does not work for negative Julian days */
+    // Julian day routine does not work for negative Julian days
     if date < 0 || date > i32::MAX.into() {
         eprintln!("Julian day routine does not work for negative Julian days");
         return Err(ParseError::BadFormat);
@@ -189,7 +187,7 @@ fn timestamp2tm(
     );
     dt2time(time, &mut tm.tm_hour, &mut tm.tm_min, &mut tm.tm_sec, fsec);
 
-    /* Done if no TZ conversion wanted */
+    // Done if no TZ conversion wanted
     match tzp {
         None => {
             tm.tm_isdst = None;
@@ -201,16 +199,14 @@ fn timestamp2tm(
             return Ok(());
         }
         Some(tzp) => {
-            /*
-             * If the time falls within the range of pg_time_t, use pg_localtime() to
-             * rotate to the local time zone.
-             *
-             * First, convert to an integral timestamp, avoiding possibly
-             * platform-specific roundoff-in-wrong-direction errors, and adjust to
-             * Unix epoch.  Then see if we can convert to pg_time_t without loss. This
-             * coding avoids hardwiring any assumptions about the width of pg_time_t,
-             * so it should behave sanely on machines without i64.
-             */
+            // If the time falls within the range of pg_time_t, use pg_localtime() to
+            // rotate to the local time zone.
+            //
+            // First, convert to an integral timestamp, avoiding possibly
+            // platform-specific roundoff-in-wrong-direction errors, and adjust to
+            // Unix epoch.  Then see if we can convert to pg_time_t without loss. This
+            // coding avoids hardwiring any assumptions about the width of pg_time_t,
+            // so it should behave sanely on machines without i64.
             dt = (dt - *fsec as i64) / USECS_PER_SEC
                 + (POSTGRES_EPOCH_JDATE - UNIX_EPOCH_JDATE) * SECS_PER_DAY as i64;
             let utime: pg_time_t = dt;
@@ -231,11 +227,9 @@ fn timestamp2tm(
                     *tzn = tm.tm_zone.clone();
                 }
             } else {
-                /*
-                 * When out of range of pg_time_t, treat as GMT
-                 */
+                // When out of range of pg_time_t, treat as GMT
                 *tzp = 0;
-                /* Mark this as *no* time zone available */
+                // Mark this as *no* time zone available
                 tm.tm_isdst = None;
                 tm.tm_gmtoff = 0;
                 tm.tm_zone = None;
@@ -1079,6 +1073,7 @@ pub fn DecodeDateTime(
                     DecodeTimezone(cp, tzp)?;
                     tmask = *FIELD_MASK_DATE | *FIELD_MASK_TIME | FieldType::Tz;
                     ptype = TokenFieldType::Number;
+                }
                 // Already have a date? Then this might be a time zone name
                 // with embedded punctuation (e.g. "America/New_York") or a
                 // run-together time with trailing time zone (e.g. hhmmss-zz).
@@ -1087,7 +1082,7 @@ pub fn DecodeDateTime(
                 // We consider it a time zone if we already have month & day.
                 // This is to allow the form "mmm dd hhmmss tz year", which
                 // we've historically accepted.
-                } else if ptype != TokenFieldType::Number
+                else if ptype != TokenFieldType::Number
                     || fmask.contains(FieldType::Month | FieldType::Day)
                 {
                     // No time zone accepted? Then quit...
@@ -2283,7 +2278,7 @@ fn DecodeTimezoneAbbrev(lowtoken: &str, offset: &mut i32, tz: &mut Option<&pg_tz
     match &ZONE_ABBREV_TABLE {
         // TODO(petrosagg): original code seemed to imply that it can find truncated tokens
         // somehow. Investigate. Original comment:
-        // use strncmp so that we match truncated tokens */
+        // use strncmp so that we match truncated tokens
         Some(table) => match table.abbrevs.binary_search_by(|tk| tk.token.cmp(lowtoken)) {
             Ok(idx) => {
                 let token = &table.abbrevs[idx];
@@ -2323,7 +2318,7 @@ fn DecodeTimezoneAbbrev(lowtoken: &str, offset: &mut i32, tz: &mut Option<&pg_tz
 fn DecodeSpecial(lowtoken: &str, val: &mut i32) -> FieldType {
     // TODO(petrosagg): original code seemed to imply that it can find truncated tokens
     // somehow. Investigate. Original comment:
-    // use strncmp so that we match truncated tokens */
+    // use strncmp so that we match truncated tokens
     match DATE_TOKEN_TABLE.binary_search_by(|tk| tk.token.cmp(lowtoken)) {
         Ok(idx) => {
             let token = &DATE_TOKEN_TABLE[idx];
