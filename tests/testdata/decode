@@ -1,17 +1,17 @@
 parse
 (
 ----
-Err(-1)
+Err(BadFormat)
 
 parse
 (,)
 ----
-Err(-1)
+Err(BadFormat)
 
 parse
 {(,)}
 ----
-Err(-1)
+Err(BadFormat)
 
 parse
 00:00
@@ -116,27 +116,27 @@ Ok((pg_tm { tm_sec: 0, tm_min: 0, tm_hour: 0, tm_mday: 31, tm_mon: 12, tm_year: 
 parse
 01-01-1994
 ----
-Err(-3)
+Err(MdFieldOverflow)
 
 parse
 01-01-1997
 ----
-Err(-3)
+Err(MdFieldOverflow)
 
 parse
 01-01-1998
 ----
-Err(-3)
+Err(MdFieldOverflow)
 
 parse
 01-01-2001
 ----
-Err(-3)
+Err(MdFieldOverflow)
 
 parse
 01-01-2009
 ----
-Err(-3)
+Err(MdFieldOverflow)
 
 parse
 01:02
@@ -151,27 +151,27 @@ Ok((pg_tm { tm_sec: 0, tm_min: 0, tm_hour: 0, tm_mday: 3, tm_mon: 2, tm_year: 20
 parse
 01 08 1999
 ----
-Err(-3)
+Err(MdFieldOverflow)
 
 parse
 01-08-1999
 ----
-Err(-3)
+Err(MdFieldOverflow)
 
 parse
 01 08 99
 ----
-Err(-3)
+Err(MdFieldOverflow)
 
 parse
 01-08-99
 ----
-Err(-3)
+Err(MdFieldOverflow)
 
 parse
 01-17-1970
 ----
-Err(-3)
+Err(MdFieldOverflow)
 
 parse
 01:20:30
@@ -186,12 +186,12 @@ Ok((pg_tm { tm_sec: 0, tm_min: 30, tm_hour: 1, tm_mday: 0, tm_mon: 0, tm_year: 0
 parse
 01-31-1994
 ----
-Err(-3)
+Err(MdFieldOverflow)
 
 parse
 02-13-2001
 ----
-Err(-3)
+Err(MdFieldOverflow)
 
 parse
 02:30
@@ -221,57 +221,57 @@ Ok((pg_tm { tm_sec: 0, tm_min: 0, tm_hour: 5, tm_mday: 0, tm_mon: 0, tm_year: 0,
 parse
 07:46:45 GMT+2
 ----
-Err(-1)
+Err(BadFormat)
 
 parse
 07:46:45 GMT+3
 ----
-Err(-1)
+Err(BadFormat)
 
 parse
 07:46:45 GMT+4
 ----
-Err(-1)
+Err(BadFormat)
 
 parse
 08 01 1999
 ----
-Err(-3)
+Err(MdFieldOverflow)
 
 parse
 08-01-1999
 ----
-Err(-3)
+Err(MdFieldOverflow)
 
 parse
 08-01-2009
 ----
-Err(-3)
+Err(MdFieldOverflow)
 
 parse
 08-01-2011
 ----
-Err(-3)
+Err(MdFieldOverflow)
 
 parse
 08 01 99
 ----
-Err(-3)
+Err(MdFieldOverflow)
 
 parse
 08-01-99
 ----
-Err(-3)
+Err(MdFieldOverflow)
 
 parse
 08-31-2009
 ----
-Err(-3)
+Err(MdFieldOverflow)
 
 parse
 08-31-2011
 ----
-Err(-3)
+Err(MdFieldOverflow)
 
 parse
 08:55:08
@@ -281,7 +281,7 @@ Ok((pg_tm { tm_sec: 8, tm_min: 55, tm_hour: 8, tm_mday: 0, tm_mon: 0, tm_year: 0
 parse
 08:55:08 GMT+2
 ----
-Err(-1)
+Err(BadFormat)
 
 parse
 08 Jan 1999
@@ -296,12 +296,12 @@ Ok((pg_tm { tm_sec: 0, tm_min: 0, tm_hour: 0, tm_mday: 8, tm_mon: 1, tm_year: 19
 parse
 08 Jan 99
 ----
-Err(-3)
+Err(MdFieldOverflow)
 
 parse
 08-Jan-99
 ----
-Err(-3)
+Err(MdFieldOverflow)
 
 parse
 10:00
@@ -321,12 +321,12 @@ Ok((pg_tm { tm_sec: 0, tm_min: 0, tm_hour: 0, tm_mday: 1, tm_mon: 1, tm_year: 10
 parse
 10-01-2011
 ----
-Err(-3)
+Err(MdFieldOverflow)
 
 parse
 10:30 today
 ----
-Err(-3)
+Err(MdFieldOverflow)
 
 parse
 10:57:11
@@ -341,52 +341,52 @@ Ok((pg_tm { tm_sec: 0, tm_min: 0, tm_hour: 11, tm_mday: 0, tm_mon: 0, tm_year: 0
 parse
 11-01-2011
 ----
-Err(-3)
+Err(MdFieldOverflow)
 
 parse
 [11:10, 23:00]
 ----
-Err(-1)
+Err(BadFormat)
 
 parse
 1/18/1999
 ----
-Err(-3)
+Err(MdFieldOverflow)
 
 parse
 12/23/1999
 ----
-Err(-3)
+Err(MdFieldOverflow)
 
 parse
 12.27.2001 04:05:06.789+08
 ----
-Err(-3)
+Err(MdFieldOverflow)
 
 parse
 12.27.2001 04:05:06.789-08
 ----
-Err(-3)
+Err(MdFieldOverflow)
 
 parse
 12/27/2001 04:05:06.789-08
 ----
-Err(-3)
+Err(MdFieldOverflow)
 
 parse
 12-31-2009
 ----
-Err(-3)
+Err(MdFieldOverflow)
 
 parse
 12-31-2099
 ----
-Err(-3)
+Err(MdFieldOverflow)
 
 parse
 12/31/294276
 ----
-Err(-3)
+Err(MdFieldOverflow)
 
 parse
 12:34:56 yesterday
@@ -406,12 +406,12 @@ Ok((pg_tm { tm_sec: 28, tm_min: 12, tm_hour: 17, tm_mday: 0, tm_mon: 0, tm_year:
 parse
 18/1/1999
 ----
-Err(-3)
+Err(MdFieldOverflow)
 
 parse
 1/8/1999
 ----
-Err(-3)
+Err(MdFieldOverflow)
 
 parse
 1900-12-31
@@ -496,7 +496,7 @@ Ok((pg_tm { tm_sec: 55, tm_min: 15, tm_hour: 8, tm_mday: 15, tm_mon: 7, tm_year:
 parse
 1980-01-06 00:00 GMT
 ----
-Err(-1)
+Err(BadFormat)
 
 parse
 1981-02-03
@@ -596,7 +596,7 @@ Ok((pg_tm { tm_sec: 0, tm_min: 0, tm_hour: 0, tm_mday: 8, tm_mon: 1, tm_year: 19
 parse
 1999-08-Jan
 ----
-Err(-1)
+Err(BadFormat)
 
 parse
 1999-12-01
@@ -1106,32 +1106,32 @@ Ok((pg_tm { tm_sec: 0, tm_min: 0, tm_hour: 0, tm_mday: 10, tm_mon: 1, tm_year: 2
 parse
 2011-03-26 21:00:00 UTC
 ----
-Err(-1)
+Err(BadFormat)
 
 parse
 2011-03-26 22:00:00 UTC
 ----
-Err(-1)
+Err(BadFormat)
 
 parse
 2011-03-26 22:59:59 UTC
 ----
-Err(-1)
+Err(BadFormat)
 
 parse
 2011-03-26 23:00:00 UTC
 ----
-Err(-1)
+Err(BadFormat)
 
 parse
 2011-03-26 23:00:01 UTC
 ----
-Err(-1)
+Err(BadFormat)
 
 parse
 2011-03-26 23:59:59 UTC
 ----
-Err(-1)
+Err(BadFormat)
 
 parse
 2011-03-27 00:00:00
@@ -1146,12 +1146,12 @@ Ok((pg_tm { tm_sec: 0, tm_min: 0, tm_hour: 0, tm_mday: 27, tm_mon: 3, tm_year: 2
 parse
 2011-03-27 00:00:00 MSK
 ----
-Err(-1)
+Err(BadFormat)
 
 parse
 2011-03-27 00:00:00 UTC
 ----
-Err(-1)
+Err(BadFormat)
 
 parse
 2011-03-27 01:00:00
@@ -1166,7 +1166,7 @@ Ok((pg_tm { tm_sec: 0, tm_min: 0, tm_hour: 1, tm_mday: 27, tm_mon: 3, tm_year: 2
 parse
 2011-03-27 01:00:00 MSK
 ----
-Err(-1)
+Err(BadFormat)
 
 parse
 2011-03-27 01:59:59
@@ -1181,7 +1181,7 @@ Ok((pg_tm { tm_sec: 59, tm_min: 59, tm_hour: 1, tm_mday: 27, tm_mon: 3, tm_year:
 parse
 2011-03-27 01:59:59 MSK
 ----
-Err(-1)
+Err(BadFormat)
 
 parse
 2011-03-27 02:00:00
@@ -1196,7 +1196,7 @@ Ok((pg_tm { tm_sec: 0, tm_min: 0, tm_hour: 2, tm_mday: 27, tm_mon: 3, tm_year: 2
 parse
 2011-03-27 02:00:00 MSK
 ----
-Err(-1)
+Err(BadFormat)
 
 parse
 2011-03-27 02:00:01
@@ -1211,7 +1211,7 @@ Ok((pg_tm { tm_sec: 1, tm_min: 0, tm_hour: 2, tm_mday: 27, tm_mon: 3, tm_year: 2
 parse
 2011-03-27 02:00:01 MSK
 ----
-Err(-1)
+Err(BadFormat)
 
 parse
 2011-03-27 02:59:59
@@ -1226,7 +1226,7 @@ Ok((pg_tm { tm_sec: 59, tm_min: 59, tm_hour: 2, tm_mday: 27, tm_mon: 3, tm_year:
 parse
 2011-03-27 02:59:59 MSK
 ----
-Err(-1)
+Err(BadFormat)
 
 parse
 2011-03-27 03:00:00
@@ -1241,7 +1241,7 @@ Ok((pg_tm { tm_sec: 0, tm_min: 0, tm_hour: 3, tm_mday: 27, tm_mon: 3, tm_year: 2
 parse
 2011-03-27 03:00:00 MSK
 ----
-Err(-1)
+Err(BadFormat)
 
 parse
 2011-03-27 03:00:01
@@ -1256,7 +1256,7 @@ Ok((pg_tm { tm_sec: 1, tm_min: 0, tm_hour: 3, tm_mday: 27, tm_mon: 3, tm_year: 2
 parse
 2011-03-27 03:00:01 MSK
 ----
-Err(-1)
+Err(BadFormat)
 
 parse
 2011-03-27 04:00:00
@@ -1271,7 +1271,7 @@ Ok((pg_tm { tm_sec: 0, tm_min: 0, tm_hour: 4, tm_mday: 27, tm_mon: 3, tm_year: 2
 parse
 2011-03-27 04:00:00 MSK
 ----
-Err(-1)
+Err(BadFormat)
 
 parse
 2011-08-01
@@ -1341,27 +1341,27 @@ Ok((pg_tm { tm_sec: 35, tm_min: 22, tm_hour: 12, tm_mday: 28, tm_mon: 5, tm_year
 parse
 2014-10-25 21:00:00 UTC
 ----
-Err(-1)
+Err(BadFormat)
 
 parse
 2014-10-25 21:59:59 UTC
 ----
-Err(-1)
+Err(BadFormat)
 
 parse
 2014-10-25 22:00:00 UTC
 ----
-Err(-1)
+Err(BadFormat)
 
 parse
 2014-10-25 22:00:01 UTC
 ----
-Err(-1)
+Err(BadFormat)
 
 parse
 2014-10-25 23:00:00 UTC
 ----
-Err(-1)
+Err(BadFormat)
 
 parse
 2014-10-26 00:00:00
@@ -1376,7 +1376,7 @@ Ok((pg_tm { tm_sec: 0, tm_min: 0, tm_hour: 0, tm_mday: 26, tm_mon: 10, tm_year: 
 parse
 2014-10-26 00:00:00 MSK
 ----
-Err(-1)
+Err(BadFormat)
 
 parse
 2014-10-26 00:59:59
@@ -1391,7 +1391,7 @@ Ok((pg_tm { tm_sec: 59, tm_min: 59, tm_hour: 0, tm_mday: 26, tm_mon: 10, tm_year
 parse
 2014-10-26 00:59:59 MSK
 ----
-Err(-1)
+Err(BadFormat)
 
 parse
 2014-10-26 01:00:00
@@ -1406,7 +1406,7 @@ Ok((pg_tm { tm_sec: 0, tm_min: 0, tm_hour: 1, tm_mday: 26, tm_mon: 10, tm_year: 
 parse
 2014-10-26 01:00:00 MSK
 ----
-Err(-1)
+Err(BadFormat)
 
 parse
 2014-10-26 01:00:01
@@ -1421,7 +1421,7 @@ Ok((pg_tm { tm_sec: 1, tm_min: 0, tm_hour: 1, tm_mday: 26, tm_mon: 10, tm_year: 
 parse
 2014-10-26 01:00:01 MSK
 ----
-Err(-1)
+Err(BadFormat)
 
 parse
 2014-10-26 02:00:00
@@ -1436,7 +1436,7 @@ Ok((pg_tm { tm_sec: 0, tm_min: 0, tm_hour: 2, tm_mday: 26, tm_mon: 10, tm_year: 
 parse
 2014-10-26 02:00:00 MSK
 ----
-Err(-1)
+Err(BadFormat)
 
 parse
 2014-12-10 00:00:00 Europe/Prague
@@ -1476,7 +1476,7 @@ Ok((pg_tm { tm_sec: 0, tm_min: 30, tm_hour: 1, tm_mday: 4, tm_mon: 11, tm_year: 
 parse
 2018-11-04 01:30 EDT
 ----
-Err(-1)
+Err(BadFormat)
 
 parse
 2018-12-18 10:59:54 GMT+2
@@ -1506,12 +1506,12 @@ Ok((pg_tm { tm_sec: 0, tm_min: 0, tm_hour: 0, tm_mday: 1, tm_mon: 1, tm_year: 20
 parse
 (2020-01-02, 2021-02-03)
 ----
-Err(-1)
+Err(BadFormat)
 
 parse
 {(2020-01-02, 2021-02-03)}
 ----
-Err(-1)
+Err(BadFormat)
 
 parse
 2020-02-01 00:02:30
@@ -1666,12 +1666,12 @@ Ok((pg_tm { tm_sec: 59, tm_min: 59, tm_hour: 23, tm_mday: 0, tm_mon: 0, tm_year:
 parse
 23:59:59.9999999 PDT
 ----
-Err(-1)
+Err(BadFormat)
 
 parse
 23:59:59.999999 PDT
 ----
-Err(-1)
+Err(BadFormat)
 
 parse
 23:59:60
@@ -1681,17 +1681,17 @@ Ok((pg_tm { tm_sec: 60, tm_min: 59, tm_hour: 23, tm_mday: 0, tm_mon: 0, tm_year:
 parse
 23:59:60.01
 ----
-Err(-2)
+Err(FieldOverflow)
 
 parse
 23:59:60.01 PDT
 ----
-Err(-2)
+Err(FieldOverflow)
 
 parse
 23:59:60 PDT
 ----
-Err(-1)
+Err(BadFormat)
 
 parse
 24:00:00
@@ -1701,52 +1701,52 @@ Ok((pg_tm { tm_sec: 0, tm_min: 0, tm_hour: 24, tm_mday: 0, tm_mon: 0, tm_year: 0
 parse
 24:00:00.01
 ----
-Err(-2)
+Err(FieldOverflow)
 
 parse
 24:00:00.01 PDT
 ----
-Err(-2)
+Err(FieldOverflow)
 
 parse
 24:00:00 PDT
 ----
-Err(-1)
+Err(BadFormat)
 
 parse
 24:01:00
 ----
-Err(-2)
+Err(FieldOverflow)
 
 parse
 24:01:00 PDT
 ----
-Err(-2)
+Err(FieldOverflow)
 
 parse
 25:00:00
 ----
-Err(-2)
+Err(FieldOverflow)
 
 parse
 25:00:00 PDT
 ----
-Err(-2)
+Err(FieldOverflow)
 
 parse
 27.12.2001 04:05:06.789+08
 ----
-Err(-3)
+Err(MdFieldOverflow)
 
 parse
 27.12.2001 04:05:06.789-08
 ----
-Err(-3)
+Err(MdFieldOverflow)
 
 parse
 27/12/2001 04:05:06.789-08
 ----
-Err(-3)
+Err(MdFieldOverflow)
 
 parse
 294270-01-01 00:00:00
@@ -1876,7 +1876,7 @@ Ok((pg_tm { tm_sec: 0, tm_min: 0, tm_hour: 0, tm_mday: 8, tm_mon: 1, tm_year: 19
 parse
 99-08-Jan
 ----
-Err(-1)
+Err(BadFormat)
 
 parse
 99 Jan 08
@@ -1891,7 +1891,7 @@ Ok((pg_tm { tm_sec: 0, tm_min: 0, tm_hour: 0, tm_mday: 8, tm_mon: 1, tm_year: 19
 parse
 empty
 ----
-Err(-1)
+Err(BadFormat)
 
 parse
 epoch
@@ -1901,7 +1901,7 @@ Ok((pg_tm { tm_sec: 0, tm_min: 0, tm_hour: 0, tm_mday: 0, tm_mon: 0, tm_year: 0,
 parse
 Fri Aug 01 00:00:00 2014 CEST
 ----
-Err(-1)
+Err(BadFormat)
 
 parse
 -infinity
@@ -2001,12 +2001,12 @@ Ok((pg_tm { tm_sec: 0, tm_min: 0, tm_hour: 0, tm_mday: 8, tm_mon: 1, tm_year: 19
 parse
 Jan 08 99
 ----
-Err(-3)
+Err(MdFieldOverflow)
 
 parse
 Jan-08-99
 ----
-Err(-3)
+Err(MdFieldOverflow)
 
 parse
 Jan 1, 4713 BC
@@ -2021,37 +2021,37 @@ Ok((pg_tm { tm_sec: 0, tm_min: 0, tm_hour: 0, tm_mday: 8, tm_mon: 1, tm_year: 19
 parse
 January 8, 99 BC
 ----
-Err(-3)
+Err(MdFieldOverflow)
 
 parse
 Mon Aug 04 00:00:00 2014 CEST
 ----
-Err(-1)
+Err(BadFormat)
 
 parse
 Mon Aug 05 00:00:00 2014 CEST
 ----
-Err(-1)
+Err(BadFormat)
 
 parse
 now
 ----
-Err(-3)
+Err(MdFieldOverflow)
 
 parse
 pear
 ----
-Err(-1)
+Err(BadFormat)
 
 parse
 Sat Aug 02 00:00:00 2014 CEST
 ----
-Err(-1)
+Err(BadFormat)
 
 parse
 Sun Nov 23 16:00:00 4714 PST BC
 ----
-Err(-1)
+Err(BadFormat)
 
 parse
 Thu Jan 01 00:00:00 2009
@@ -2061,17 +2061,17 @@ Ok((pg_tm { tm_sec: 0, tm_min: 0, tm_hour: 0, tm_mday: 1, tm_mon: 1, tm_year: 20
 parse
 Thu Jul 31 00:00:00 2014 CEST
 ----
-Err(-1)
+Err(BadFormat)
 
 parse
 today
 ----
-Err(-3)
+Err(MdFieldOverflow)
 
 parse
 today 10:30
 ----
-Err(-3)
+Err(MdFieldOverflow)
 
 parse
 tomorrow
@@ -2086,17 +2086,17 @@ Ok((pg_tm { tm_sec: 0, tm_min: 0, tm_hour: 16, tm_mday: 1, tm_mon: 1, tm_year: 1
 parse
 tomorrow EST
 ----
-Err(-1)
+Err(BadFormat)
 
 parse
 tomorrow zulu
 ----
-Err(-1)
+Err(BadFormat)
 
 parse
 Tue Dec 18 04:59:54 2018 PST
 ----
-Err(-1)
+Err(BadFormat)
 
 parse
 Tue Feb 01 00:00:00 2000
@@ -2106,17 +2106,17 @@ Ok((pg_tm { tm_sec: 0, tm_min: 0, tm_hour: 0, tm_mday: 1, tm_mon: 2, tm_year: 20
 parse
 {"Tue Feb 01 00:00:00 2000","Fri Jan 01 00:00:00 2010"}
 ----
-Err(-1)
+Err(BadFormat)
 
 parse
 Tue Feb 01 00:00:00 2000 PST
 ----
-Err(-1)
+Err(BadFormat)
 
 parse
 {"Tue Feb 01 00:00:00 2000 PST","Fri Jan 01 00:00:00 2010 PST"}
 ----
-Err(-1)
+Err(BadFormat)
 
 parse
 Tue Oct 26 08:55:08 2004
@@ -2131,27 +2131,27 @@ Ok((pg_tm { tm_sec: 0, tm_min: 0, tm_hour: 0, tm_mday: 18, tm_mon: 1, tm_year: 2
 parse
 Wed Jul 11 10:51:14 America/New_York 2001
 ----
-Err(-1)
+Err(BadFormat)
 
 parse
 Wed Jul 11 10:51:14 GMT+4 2001
 ----
-Err(-1)
+Err(BadFormat)
 
 parse
 Wed Jul 11 10:51:14 GMT-4 2001
 ----
-Err(-1)
+Err(BadFormat)
 
 parse
 Wed Jul 11 10:51:14 PST+03:00 2001
 ----
-Err(-1)
+Err(BadFormat)
 
 parse
 Wed Jul 11 10:51:14 PST-03:00 2001
 ----
-Err(-1)
+Err(BadFormat)
 
 parse
 Y2001M12D27H04M05S06.789+08
@@ -2186,4 +2186,4 @@ Ok((pg_tm { tm_sec: 56, tm_min: 34, tm_hour: 12, tm_mday: 30, tm_mon: 12, tm_yea
 parse
 +%y%j
 ----
-Err(-1)
+Err(BadFormat)
