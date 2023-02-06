@@ -16,12 +16,12 @@ Err(-1)
 parse
 00:00
 ----
-Err(1)
+Ok((pg_tm { tm_sec: 0, tm_min: 0, tm_hour: 0, tm_mday: 0, tm_mon: 0, tm_year: 0, tm_wday: 0, tm_yday: 0, tm_isdst: None, tm_gmtoff: 0, tm_zone: None }, 0, 0, Date))
 
 parse
 00:01
 ----
-Err(1)
+Ok((pg_tm { tm_sec: 0, tm_min: 1, tm_hour: 0, tm_mday: 0, tm_mon: 0, tm_year: 0, tm_wday: 0, tm_yday: 0, tm_isdst: None, tm_gmtoff: 0, tm_zone: None }, 0, 0, Date))
 
 parse
 0001-01-01
@@ -81,7 +81,7 @@ Ok((pg_tm { tm_sec: 0, tm_min: 0, tm_hour: 0, tm_mday: 31, tm_mon: 12, tm_year: 
 parse
 00:30
 ----
-Err(1)
+Ok((pg_tm { tm_sec: 0, tm_min: 30, tm_hour: 0, tm_mday: 0, tm_mon: 0, tm_year: 0, tm_wday: 0, tm_yday: 0, tm_isdst: None, tm_gmtoff: 0, tm_zone: None }, 0, 0, Date))
 
 parse
 0055-06-17 BC
@@ -101,7 +101,7 @@ Ok((pg_tm { tm_sec: 17, tm_min: 44, tm_hour: 15, tm_mday: 10, tm_mon: 6, tm_year
 parse
 01:00
 ----
-Err(1)
+Ok((pg_tm { tm_sec: 0, tm_min: 0, tm_hour: 1, tm_mday: 0, tm_mon: 0, tm_year: 0, tm_wday: 0, tm_yday: 0, tm_isdst: None, tm_gmtoff: 0, tm_zone: None }, 0, 0, Date))
 
 parse
 0100-12-31 BC
@@ -141,7 +141,7 @@ Err(-3)
 parse
 01:02
 ----
-Err(1)
+Ok((pg_tm { tm_sec: 0, tm_min: 2, tm_hour: 1, tm_mday: 0, tm_mon: 0, tm_year: 0, tm_wday: 0, tm_yday: 0, tm_isdst: None, tm_gmtoff: 0, tm_zone: None }, 0, 0, Date))
 
 parse
 01/02/03
@@ -176,12 +176,12 @@ Err(-3)
 parse
 01:20:30
 ----
-Err(1)
+Ok((pg_tm { tm_sec: 30, tm_min: 20, tm_hour: 1, tm_mday: 0, tm_mon: 0, tm_year: 0, tm_wday: 0, tm_yday: 0, tm_isdst: None, tm_gmtoff: 0, tm_zone: None }, 0, 0, Date))
 
 parse
 01:30
 ----
-Err(1)
+Ok((pg_tm { tm_sec: 0, tm_min: 30, tm_hour: 1, tm_mday: 0, tm_mon: 0, tm_year: 0, tm_wday: 0, tm_yday: 0, tm_isdst: None, tm_gmtoff: 0, tm_zone: None }, 0, 0, Date))
 
 parse
 01-31-1994
@@ -196,27 +196,27 @@ Err(-3)
 parse
 02:30
 ----
-Err(1)
+Ok((pg_tm { tm_sec: 0, tm_min: 30, tm_hour: 2, tm_mday: 0, tm_mon: 0, tm_year: 0, tm_wday: 0, tm_yday: 0, tm_isdst: None, tm_gmtoff: 0, tm_zone: None }, 0, 0, Date))
 
 parse
 03:00
 ----
-Err(1)
+Ok((pg_tm { tm_sec: 0, tm_min: 0, tm_hour: 3, tm_mday: 0, tm_mon: 0, tm_year: 0, tm_wday: 0, tm_yday: 0, tm_isdst: None, tm_gmtoff: 0, tm_zone: None }, 0, 0, Date))
 
 parse
 03:30
 ----
-Err(1)
+Ok((pg_tm { tm_sec: 0, tm_min: 30, tm_hour: 3, tm_mday: 0, tm_mon: 0, tm_year: 0, tm_wday: 0, tm_yday: 0, tm_isdst: None, tm_gmtoff: 0, tm_zone: None }, 0, 0, Date))
 
 parse
 04:05:06
 ----
-Err(1)
+Ok((pg_tm { tm_sec: 6, tm_min: 5, tm_hour: 4, tm_mday: 0, tm_mon: 0, tm_year: 0, tm_wday: 0, tm_yday: 0, tm_isdst: None, tm_gmtoff: 0, tm_zone: None }, 0, 0, Date))
 
 parse
 05:00
 ----
-Err(1)
+Ok((pg_tm { tm_sec: 0, tm_min: 0, tm_hour: 5, tm_mday: 0, tm_mon: 0, tm_year: 0, tm_wday: 0, tm_yday: 0, tm_isdst: None, tm_gmtoff: 0, tm_zone: None }, 0, 0, Date))
 
 parse
 07:46:45 GMT+2
@@ -276,7 +276,7 @@ Err(-3)
 parse
 08:55:08
 ----
-Err(1)
+Ok((pg_tm { tm_sec: 8, tm_min: 55, tm_hour: 8, tm_mday: 0, tm_mon: 0, tm_year: 0, tm_wday: 0, tm_yday: 0, tm_isdst: None, tm_gmtoff: 0, tm_zone: None }, 0, 0, Date))
 
 parse
 08:55:08 GMT+2
@@ -306,7 +306,7 @@ Err(-3)
 parse
 10:00
 ----
-Err(1)
+Ok((pg_tm { tm_sec: 0, tm_min: 0, tm_hour: 10, tm_mday: 0, tm_mon: 0, tm_year: 0, tm_wday: 0, tm_yday: 0, tm_isdst: None, tm_gmtoff: 0, tm_zone: None }, 0, 0, Date))
 
 parse
 1000-12-31
@@ -331,12 +331,12 @@ Err(-3)
 parse
 10:57:11
 ----
-Err(1)
+Ok((pg_tm { tm_sec: 11, tm_min: 57, tm_hour: 10, tm_mday: 0, tm_mon: 0, tm_year: 0, tm_wday: 0, tm_yday: 0, tm_isdst: None, tm_gmtoff: 0, tm_zone: None }, 0, 0, Date))
 
 parse
 11:00
 ----
-Err(1)
+Ok((pg_tm { tm_sec: 0, tm_min: 0, tm_hour: 11, tm_mday: 0, tm_mon: 0, tm_year: 0, tm_wday: 0, tm_yday: 0, tm_isdst: None, tm_gmtoff: 0, tm_zone: None }, 0, 0, Date))
 
 parse
 11-01-2011
@@ -401,7 +401,7 @@ Ok((pg_tm { tm_sec: 0, tm_min: 0, tm_hour: 16, tm_mday: 1, tm_mon: 1, tm_year: 1
 parse
 17:12:28.5
 ----
-Err(1)
+Ok((pg_tm { tm_sec: 28, tm_min: 12, tm_hour: 17, tm_mday: 0, tm_mon: 0, tm_year: 0, tm_wday: 0, tm_yday: 0, tm_isdst: None, tm_gmtoff: 0, tm_zone: None }, 500000, 0, Date))
 
 parse
 18/1/1999
@@ -1656,12 +1656,12 @@ Ok((pg_tm { tm_sec: 0, tm_min: 0, tm_hour: 0, tm_mday: 5, tm_mon: 10, tm_year: 2
 parse
 23:59:59.999999
 ----
-Err(1)
+Ok((pg_tm { tm_sec: 59, tm_min: 59, tm_hour: 23, tm_mday: 0, tm_mon: 0, tm_year: 0, tm_wday: 0, tm_yday: 0, tm_isdst: None, tm_gmtoff: 0, tm_zone: None }, 999999, 0, Date))
 
 parse
 23:59:59.9999999
 ----
-Err(1)
+Ok((pg_tm { tm_sec: 59, tm_min: 59, tm_hour: 23, tm_mday: 0, tm_mon: 0, tm_year: 0, tm_wday: 0, tm_yday: 0, tm_isdst: None, tm_gmtoff: 0, tm_zone: None }, 999999, 0, Date))
 
 parse
 23:59:59.9999999 PDT
@@ -1676,7 +1676,7 @@ Err(-1)
 parse
 23:59:60
 ----
-Err(1)
+Ok((pg_tm { tm_sec: 60, tm_min: 59, tm_hour: 23, tm_mday: 0, tm_mon: 0, tm_year: 0, tm_wday: 0, tm_yday: 0, tm_isdst: None, tm_gmtoff: 0, tm_zone: None }, 0, 0, Date))
 
 parse
 23:59:60.01
@@ -1696,7 +1696,7 @@ Err(-1)
 parse
 24:00:00
 ----
-Err(1)
+Ok((pg_tm { tm_sec: 0, tm_min: 0, tm_hour: 24, tm_mday: 0, tm_mon: 0, tm_year: 0, tm_wday: 0, tm_yday: 0, tm_isdst: None, tm_gmtoff: 0, tm_zone: None }, 0, 0, Date))
 
 parse
 24:00:00.01
