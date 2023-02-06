@@ -806,10 +806,7 @@ fn GetCurrentTimeUsec(tm: &mut pg_tm, fsec: &mut fsec_t, tzp: Option<&mut i32>) 
 fn ParseFractionalSecond(cp: &str, fsec: &mut fsec_t) -> Result<(), ParseError> {
     // Caller should always pass the start of the fraction part
     assert!(cp.starts_with('.'));
-    let frac = match f64::from_str(cp) {
-        Ok(frac) => frac,
-        Err(_) => return Err(ParseError::BadFormat),
-    };
+    let frac = f64::from_str(cp).or(Err(ParseError::BadFormat))?;
     *fsec = (frac * 1_000_000.0) as fsec_t;
     Ok(())
 }
@@ -1075,10 +1072,7 @@ pub fn DecodeDateTime(
                         }
                     };
 
-                    let val_0 = match strtoint(field, &mut cp) {
-                        Ok(val) => val,
-                        Err(_) => return Err(ParseError::FieldOverflow),
-                    };
+                    let val_0 = strtoint(field, &mut cp).or(Err(ParseError::FieldOverflow))?;
                     j2date(val_0, &mut tm.tm_year, &mut tm.tm_mon, &mut tm.tm_mday);
                     isjulian = true;
 
@@ -1194,10 +1188,7 @@ pub fn DecodeDateTime(
                 // An example is "y2001m02d04" - thomas 2001-02-04
                 if ptype != TokenFieldType::Number {
                     let mut cp_1 = field;
-                    let val_1 = match strtoint(field, &mut cp_1) {
-                        Ok(val) => val,
-                        Err(_) => return Err(ParseError::FieldOverflow),
-                    };
+                    let val_1 = strtoint(field, &mut cp_1).or(Err(ParseError::FieldOverflow))?;
                     // only a few kinds are allowed to have an embedded decimal
                     if cp_1.starts_with('.') {
                         match ptype {
@@ -1270,10 +1261,8 @@ pub fn DecodeDateTime(
 
                             // fractional Julian Day?
                             if cp_1.starts_with('.') {
-                                let mut time = match f64::from_str(cp_1) {
-                                    Ok(val) => val,
-                                    Err(_) => return Err(ParseError::BadFormat),
-                                };
+                                let mut time =
+                                    f64::from_str(cp_1).or(Err(ParseError::BadFormat))?;
                                 time *= USECS_PER_DAY as f64;
                                 dt2time(
                                     time as Timestamp,
@@ -1994,18 +1983,12 @@ fn DecodeTime(
 
     *tmask = *FIELD_MASK_TIME;
 
-    tm.tm_hour = match strtoint(str, &mut cp) {
-        Ok(val) => val,
-        Err(_) => return Err(ParseError::FieldOverflow),
-    };
+    tm.tm_hour = strtoint(str, &mut cp).or(Err(ParseError::FieldOverflow))?;
 
     if !cp.starts_with(':') {
         return Err(ParseError::BadFormat);
     }
-    tm.tm_min = match strtoint(&cp[1..], &mut cp) {
-        Ok(val) => val,
-        Err(_) => return Err(ParseError::FieldOverflow),
-    };
+    tm.tm_min = strtoint(&cp[1..], &mut cp).or(Err(ParseError::FieldOverflow))?;
 
     if cp.is_empty() {
         tm.tm_sec = 0;
@@ -2023,10 +2006,7 @@ fn DecodeTime(
         tm.tm_min = tm.tm_hour;
         tm.tm_hour = 0;
     } else if cp.starts_with(':') {
-        tm.tm_sec = match strtoint(&cp[1..], &mut cp) {
-            Ok(val) => val,
-            Err(_) => return Err(ParseError::FieldOverflow),
-        };
+        tm.tm_sec = strtoint(&cp[1..], &mut cp).or(Err(ParseError::FieldOverflow))?;
         if cp.is_empty() {
             *fsec = 0;
         } else if cp.starts_with('.') {
@@ -2066,10 +2046,7 @@ fn DecodeNumber(
 ) -> Result<(), ParseError> {
     let mut cp = str;
     *tmask = FieldMask::none();
-    let val = match strtoint(str, &mut cp) {
-        Ok(val) => val,
-        Err(_) => return Err(ParseError::FieldOverflow),
-    };
+    let val = strtoint(str, &mut cp).or(Err(ParseError::FieldOverflow))?;
     if cp == str {
         return Err(ParseError::BadFormat);
     }
@@ -2200,10 +2177,7 @@ fn DecodeNumberField(
         Some(idx) => {
             // Can we use ParseFractionalSecond here? Not clear whether trailing
             // junk should be rejected ...
-            let frac = match f64::from_str(&str[idx..]) {
-                Ok(frac) => frac,
-                Err(_) => return Err(ParseError::BadFormat),
-            };
+            let frac = f64::from_str(&str[idx..]).or(Err(ParseError::BadFormat))?;
             *fsec = (frac * 1_000_000.0) as fsec_t;
             // Now truncate off the fraction for further processing
             str = &str[..idx];
@@ -2257,22 +2231,13 @@ fn DecodeTimezone(str: &str, tzp: &mut i32) -> Result<(), ParseError> {
         return Err(ParseError::BadFormat);
     }
 
-    let mut hr = match strtoint(&str[1..], &mut cp) {
-        Ok(hr) => hr,
-        Err(_) => return Err(ParseError::TzDispOverflow),
-    };
+    let mut hr = strtoint(&str[1..], &mut cp).or(Err(ParseError::TzDispOverflow))?;
 
     // explicit delimiter?
     if cp.starts_with(':') {
-        min = match strtoint(&cp[1..], &mut cp) {
-            Ok(min) => min,
-            Err(_) => return Err(ParseError::TzDispOverflow),
-        };
+        min = strtoint(&cp[1..], &mut cp).or(Err(ParseError::TzDispOverflow))?;
         if cp.starts_with(':') {
-            sec = match strtoint(&cp[1..], &mut cp) {
-                Ok(sec) => sec,
-                Err(_) => return Err(ParseError::TzDispOverflow),
-            };
+            sec = strtoint(&cp[1..], &mut cp).or(Err(ParseError::TzDispOverflow))?;
         }
     // otherwise, might have run things together...
     } else if cp.is_empty() && str.len() > 3 {
