@@ -21,7 +21,18 @@ const USECS_PER_SEC: i64 = 1_000_000;
 const POSTGRES_EPOCH_JDATE: i64 = 2_451_545; /* == date2j(2000, 1, 1) */
 const UNIX_EPOCH_JDATE: i64 = 2_440_588; /* == date2j(1970, 1, 1) */
 
-static DateOrder: i32 = 0;
+/// DateOrder defines the field order to be assumed when reading an
+/// ambiguous date (anything not in YYYY-MM-DD format, with a four-digit
+/// year field first, is taken to be ambiguous):
+#[derive(Debug, PartialEq, Clone, Copy)]
+pub enum DateOrder {
+    /// Specifies field order yy-mm-dd
+    YMD,
+    /// Specifies field order dd-mm-yy ("European" convention)
+    DMY,
+    /// Specifies field order mm-dd-yy ("US" convention)
+    MDY,
+}
 
 fn dt2time(jd: Timestamp, hour: &mut i32, min: &mut i32, sec: &mut i32, fsec: &mut fsec_t) {
     let mut time: TimeOffset;
@@ -954,6 +965,7 @@ pub fn DecodeDateTime(
     mut tm: &mut pg_tm,
     fsec: &mut fsec_t,
     mut tzp: Option<&mut i32>,
+    date_order: DateOrder,
 ) -> i32 {
     let mut fmask = FieldMask::none();
     let mut tmask = FieldMask::none();
@@ -1087,7 +1099,8 @@ pub fn DecodeDateTime(
                         tmask = FieldMask::from(FieldType::Tz);
                     }
                 } else {
-                    let dterr = DecodeDate(field, fmask, &mut tmask, &mut is2digits, tm);
+                    let dterr =
+                        DecodeDate(field, fmask, &mut tmask, &mut is2digits, tm, date_order);
                     if dterr != 0 {
                         return dterr;
                     }
@@ -1253,7 +1266,8 @@ pub fn DecodeDateTime(
                     let cp_2 = field.find('.').map(|idx| &field[idx..]);
                     // Embedded decimal and no date yet?
                     if !cp_2.is_none() && !fmask.intersects(*FIELD_MASK_DATE) {
-                        let dterr = DecodeDate(field, fmask, &mut tmask, &mut is2digits, tm);
+                        let dterr =
+                            DecodeDate(field, fmask, &mut tmask, &mut is2digits, tm, date_order);
                         if dterr != 0 {
                             return dterr;
                         }
@@ -1293,6 +1307,7 @@ pub fn DecodeDateTime(
                             tm,
                             fsec,
                             &mut is2digits,
+                            date_order,
                         );
                         if dterr != 0 {
                             return dterr;
@@ -1663,6 +1678,7 @@ fn DecodeDate(
     tmask: &mut FieldMask,
     is2digits: &mut bool,
     mut tm: &mut pg_tm,
+    date_order: DateOrder,
 ) -> i32 {
     let mut fsec: fsec_t = 0;
     let mut nf: usize = 0;
@@ -1736,6 +1752,7 @@ fn DecodeDate(
                 tm,
                 &mut fsec,
                 is2digits,
+                date_order,
             );
             if dterr != 0 {
                 return dterr;
@@ -1891,6 +1908,7 @@ fn DecodeNumber(
     mut tm: &mut pg_tm,
     fsec: &mut fsec_t,
     is2digits: &mut bool,
+    date_order: DateOrder,
 ) -> i32 {
     let mut cp = str;
     *tmask = FieldMask::none();
@@ -1935,10 +1953,10 @@ fn DecodeNumber(
             // consensus now is to be paranoid.  It *must* be either
             // YYYY-MM-DD (with a more-than-two-digit year field), or the
             // field order defined by DateOrder.
-            if str.len() >= 3 || DateOrder == 0 {
+            if str.len() >= 3 || date_order == DateOrder::YMD {
                 *tmask = FieldMask::from(FieldType::Year);
                 tm.tm_year = val;
-            } else if DateOrder == 1 {
+            } else if date_order == DateOrder::DMY {
                 *tmask = FieldMask::from(FieldType::Day);
                 tm.tm_mday = val;
             } else {
@@ -1958,7 +1976,7 @@ fn DecodeNumber(
                 // MON-DD-YYYY, DD-MON-YYYY, and YYYY-MON-DD as unambiguous
                 // inputs.  We will also accept MON-DD-YY or DD-MON-YY in
                 // either DMY or MDY modes, as well as YY-MON-DD in YMD mode.
-                if str.len() >= 3 || DateOrder == 0 {
+                if str.len() >= 3 || date_order == DateOrder::YMD {
                     *tmask = FieldMask::from(FieldType::Year);
                     tm.tm_year = val;
                 } else {

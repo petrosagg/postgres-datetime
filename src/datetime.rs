@@ -1,7 +1,7 @@
 use bitmask::bitmask;
 use once_cell::sync::Lazy;
 
-use crate::datetime_raw::{fsec_t, pg_tm, DecodeDateTime};
+use crate::datetime_raw::{fsec_t, pg_tm, DateOrder, DecodeDateTime};
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 #[repr(i32)]
@@ -210,7 +210,14 @@ pub fn decode(
     };
     let mut tzp: i32 = 0;
     let mut dtype = TokenFieldType::Number;
-    let dterr = DecodeDateTime(&fields2, &mut dtype, &mut tt, &mut fsec, Some(&mut tzp));
+    let dterr = DecodeDateTime(
+        &fields2,
+        &mut dtype,
+        &mut tt,
+        &mut fsec,
+        Some(&mut tzp),
+        DateOrder::YMD,
+    );
     if dterr != 0 {
         return Err(dterr);
     }
