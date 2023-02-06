@@ -10,23 +10,13 @@ mod tests {
     #[test]
     fn run() {
         walk("tests/testdata/parse", |f| {
-            f.run(|test_case| -> String {
-                format!(
-                    "{:?}\n",
-                    parse_datetime(&test_case.input).map_err(|err| err as i32)
-                )
-            })
+            f.run(|test_case| -> String { format!("{:?}\n", parse_datetime(&test_case.input)) })
         });
 
         walk("tests/testdata/decode", |f| {
             f.run(|test_case| -> String {
                 println!("test_case: {}", &test_case.input);
-                format!(
-                    "{:?}\n",
-                    parse_datetime(&test_case.input)
-                        .and_then(decode)
-                        .map_err(|err| err as i32)
-                )
+                format!("{:?}\n", parse_datetime(&test_case.input).and_then(decode))
             })
         });
     }
