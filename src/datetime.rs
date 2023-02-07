@@ -108,10 +108,13 @@ bitmask! {
         Year = 1 << 2,
         Day = 1 << 3,
         Julian = 1 << 4,
-        Tz = 1 << 5,               /* fixed-offset timezone abbreviation */
-        DTz = 1 << 6,               /* fixed-offset timezone abbrev, DST */
-        DynTz = 1 << 7,               /* dynamic timezone abbreviation */
-        IgnoreDtf = 1 << 8,
+        /// Fixed-offset timezone abbreviation
+        Tz = 1 << 5,
+        /// Fixed-offset timezone abbrev, DST
+        DTz = 1 << 6,
+        /// Dynamic timezone abbreviation
+        DynTz = 1 << 7,
+        IgnoreDateTimeField = 1 << 8,
         AmPm = 1 << 9,
         Hour = 1 << 10,
         Minute = 1 << 11,
@@ -122,21 +125,22 @@ bitmask! {
         Dow = 1 << 16,
         Units = 1 << 17,
         Adbc = 1 << 18,
-        /* these are only for relative dates */
+        /// These are only for relative dates
         Ago = 1 << 19,
         AbsBefore = 1 << 20,
         AbsAfter = 1 << 21,
-        /* generic fields to help with parsing */
+        /// Generic fields to help with parsing
         IsoDate = 1 << 22,
         IsoTime = 1 << 23,
-        /* these are only for parsing intervals */
+        /// These are only for parsing intervals
         Week = 1 << 24,
         Decade = 1 << 25,
         Century = 1 << 26,
         Millennium = 1 << 27,
-        /* hack for parsing two-word timezone specs "MET DST" etc */
-        DtzMod = 1 << 28,              /* "DST" as a separate word */
-        /* reserved for unrecognized string values */
+        /// Hack for parsing two-word timezone specs "MET DST" etc
+        /// "DST" as a separate word
+        DtzMod = 1 << 28,
+        /// reserved for unrecognized string values
         UnknownField = 1 << 31,
     }
 }
@@ -152,7 +156,7 @@ impl From<u32> for FieldType {
             0b0000_0000_0000_0000_0000_0000_0010_0000 => Self::Tz,
             0b0000_0000_0000_0000_0000_0000_0100_0000 => Self::DTz,
             0b0000_0000_0000_0000_0000_0000_1000_0000 => Self::DynTz,
-            0b0000_0000_0000_0000_0000_0001_0000_0000 => Self::IgnoreDtf,
+            0b0000_0000_0000_0000_0000_0001_0000_0000 => Self::IgnoreDateTimeField,
             0b0000_0000_0000_0000_0000_0010_0000_0000 => Self::AmPm,
             0b0000_0000_0000_0000_0000_0100_0000_0000 => Self::Hour,
             0b0000_0000_0000_0000_0000_1000_0000_0000 => Self::Minute,

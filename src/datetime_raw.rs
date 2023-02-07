@@ -316,7 +316,8 @@ enum DateTokenValue {
     Meridian(Meridian),
     Month(u8),
     DayOfWeek(u8),
-    Number(i32),
+    TzOffset(i32),
+    Invalid,
 }
 
 /// holds date/time keywords.
@@ -364,8 +365,8 @@ static DATE_TOKEN_TABLE: &[DateToken] = &[
     // "at" (throwaway)
     DateToken {
         token: "at",
-        typ: FieldType::IgnoreDtf,
-        value: DateTokenValue::Number(0),
+        typ: FieldType::IgnoreDateTimeField,
+        value: DateTokenValue::Invalid,
     },
     DateToken {
         token: "aug",
@@ -414,7 +415,7 @@ static DATE_TOKEN_TABLE: &[DateToken] = &[
     DateToken {
         token: "dst",
         typ: FieldType::DtzMod,
-        value: DateTokenValue::Number(SECS_PER_HOUR),
+        value: DateTokenValue::TzOffset(SECS_PER_HOUR),
     },
     // "epoch" reserved for system epoch time
     DateToken {
@@ -577,8 +578,8 @@ static DATE_TOKEN_TABLE: &[DateToken] = &[
     // "on" (throwaway)
     DateToken {
         token: "on",
-        typ: FieldType::IgnoreDtf,
-        value: DateTokenValue::Number(0),
+        typ: FieldType::IgnoreDateTimeField,
+        value: DateTokenValue::Invalid,
     },
     DateToken {
         token: "pm",
@@ -928,9 +929,9 @@ pub fn parse_datetime(input: &str) -> Result<Vec<(String, TokenFieldType)>, Pars
             // whether what we have so far is a recognized non-timezone keyword --- if so, don't
             // believe that this is the start of a timezone.
             let mut is_date = false;
-            if matches!(*chars.peek().unwrap(), '-' | '/' | '.') {
+            if matches!(chars.peek(), Some('-' | '/' | '.')) {
                 is_date = true;
-            } else if *chars.peek().unwrap() == '+' || chars.peek().unwrap().is_ascii_digit() {
+            } else if chars.peek().map(|&c| c == '+' || c.is_ascii_digit()) == Some(true) {
                 // we need search only the core token table, not TZ names
                 if DATE_TOKEN_TABLE
                     .binary_search_by(|tk| tk.token.cmp(&*fdata))
@@ -1072,13 +1073,7 @@ pub fn DecodeDateTime(
                 // forms with JD will be separated into distinct fields, so we
                 // handle just this case here.
                 if ptype == TokenFieldType::Julian {
-                    let tzp = match tzp.as_mut() {
-                        Some(tzp) => tzp,
-                        None => {
-                            eprintln!("tzp is null");
-                            return Err(ParseError::BadFormat);
-                        }
-                    };
+                    let tzp = tzp.as_mut().ok_or(ParseError::BadFormat)?;
 
                     let (val_0, cp) = strip_int(field).or(Err(ParseError::FieldOverflow))?;
                     j2date(val_0, &mut tm.tm_year, &mut tm.tm_mon, &mut tm.tm_mday);
@@ -1101,13 +1096,7 @@ pub fn DecodeDateTime(
                     || fmask.contains(FieldType::Month | FieldType::Day)
                 {
                     // No time zone accepted? Then quit...
-                    let tzp = match tzp.as_mut() {
-                        Some(tzp) => tzp,
-                        None => {
-                            eprintln!("tzp is null");
-                            return Err(ParseError::BadFormat);
-                        }
-                    };
+                    let tzp = tzp.as_mut().ok_or(ParseError::BadFormat)?;
                     if field.starts_with(|c: char| c.is_ascii_digit())
                         || ptype != TokenFieldType::Number
                     {
@@ -1180,13 +1169,7 @@ pub fn DecodeDateTime(
             }
             TokenFieldType::Tz => {
                 let mut tz: i32 = 0;
-                let tzp = match tzp.as_mut() {
-                    Some(tzp) => tzp,
-                    None => {
-                        eprintln!("tzp is null");
-                        return Err(ParseError::BadFormat);
-                    }
-                };
+                let tzp = tzp.as_mut().ok_or(ParseError::BadFormat)?;
                 DecodeTimezone(field, &mut tz)?;
                 **tzp = tz;
                 tmask = FieldMask::from(FieldType::Tz);
@@ -1248,13 +1231,7 @@ pub fn DecodeDateTime(
                             }
                         }
                         TokenFieldType::Tz => {
-                            let tzp = match tzp.as_mut() {
-                                Some(tzp) => tzp,
-                                None => {
-                                    eprintln!("tzp is null");
-                                    return Err(ParseError::BadFormat);
-                                }
-                            };
+                            let tzp = tzp.as_mut().ok_or(ParseError::BadFormat)?;
                             tmask = FieldMask::from(FieldType::Tz);
                             DecodeTimezone(field, tzp)?;
                         }
@@ -1349,11 +1326,11 @@ pub fn DecodeDateTime(
                 // timezone abbrevs take precedence over built-in tokens
                 let mut utc_offset = 0;
                 let mut type_0 = DecodeTimezoneAbbrev(field, &mut utc_offset, &mut valtz);
-                let mut token_value = DateTokenValue::Number(utc_offset);
+                let mut token_value = DateTokenValue::TzOffset(utc_offset);
                 if type_0 == FieldType::UnknownField {
                     type_0 = DecodeSpecial(field, &mut token_value);
                 }
-                if type_0 == FieldType::IgnoreDtf {
+                if type_0 == FieldType::IgnoreDateTimeField {
                     current_block_236 = 12209867499936983673;
                 } else {
                     tmask = FieldMask::from(type_0);
@@ -1430,14 +1407,9 @@ pub fn DecodeDateTime(
                         FieldType::DtzMod => {
                             tmask.set(FieldType::DTz);
                             tm.tm_isdst = Some(true);
-                            let tzp = match tzp.as_mut() {
-                                Some(tzp) => tzp,
-                                None => {
-                                    return Err(ParseError::BadFormat);
-                                }
-                            };
+                            let tzp = tzp.as_mut().ok_or(ParseError::BadFormat)?;
                             **tzp -= match token_value {
-                                DateTokenValue::Number(offset) => offset,
+                                DateTokenValue::TzOffset(offset) => offset,
                                 val => panic!("invalid date token value: {val:?}"),
                             };
                         }
@@ -1446,27 +1418,17 @@ pub fn DecodeDateTime(
                             // timezone
                             tmask.set(FieldType::Tz);
                             tm.tm_isdst = Some(true);
-                            let tzp = match tzp.as_mut() {
-                                Some(tzp) => tzp,
-                                None => {
-                                    return Err(ParseError::BadFormat);
-                                }
-                            };
+                            let tzp = tzp.as_mut().ok_or(ParseError::BadFormat)?;
                             **tzp -= match token_value {
-                                DateTokenValue::Number(offset) => offset,
+                                DateTokenValue::TzOffset(offset) => offset,
                                 val => panic!("invalid date token value: {val:?}"),
                             };
                         }
                         FieldType::Tz => {
                             tm.tm_isdst = Some(false);
-                            let tzp = match tzp.as_mut() {
-                                Some(tzp) => tzp,
-                                None => {
-                                    return Err(ParseError::BadFormat);
-                                }
-                            };
+                            let tzp = tzp.as_mut().ok_or(ParseError::BadFormat)?;
                             **tzp -= match token_value {
-                                DateTokenValue::Number(offset) => offset,
+                                DateTokenValue::TzOffset(offset) => offset,
                                 val => panic!("invalid date token value: {val:?}"),
                             };
                         }
@@ -1591,12 +1553,7 @@ pub fn DecodeDateTime(
             if fmask.contains(FieldType::DtzMod) {
                 return Err(ParseError::BadFormat);
             }
-            let tzp = match tzp.as_mut() {
-                Some(tzp) => tzp,
-                None => {
-                    return Err(ParseError::BadFormat);
-                }
-            };
+            let tzp = tzp.as_mut().ok_or(ParseError::BadFormat)?;
             **tzp = DetermineTimeZoneOffset(tm, namedTz);
         }
         // Likewise, if we had a dynamic timezone abbreviation, resolve it now.
@@ -1605,12 +1562,7 @@ pub fn DecodeDateTime(
             if fmask.contains(FieldType::DtzMod) {
                 return Err(ParseError::BadFormat);
             }
-            let tzp = match tzp.as_mut() {
-                Some(tzp) => tzp,
-                None => {
-                    return Err(ParseError::BadFormat);
-                }
-            };
+            let tzp = tzp.as_mut().ok_or(ParseError::BadFormat)?;
             **tzp = DetermineTimeZoneAbbrevOffset(tm, abbrev.unwrap(), abbrevTz);
         }
         // timezone not specified? then use session timezone
@@ -1881,9 +1833,9 @@ fn DecodeDate(
             .unwrap()
             .starts_with(|c: char| c.is_ascii_alphabetic())
         {
-            let mut token_value = DateTokenValue::Number(0);
+            let mut token_value = DateTokenValue::Invalid;
             let type_0 = DecodeSpecial(field.unwrap(), &mut token_value);
-            if type_0 != FieldType::IgnoreDtf {
+            if type_0 != FieldType::IgnoreDateTimeField {
                 dmask = FieldMask::from(type_0);
                 match type_0 {
                     FieldType::Month => {
@@ -2237,9 +2189,10 @@ fn DecodeNumberField(
             // Start from end and consider first 2 as Day, next 2 as Month, and the rest as Year.
             if !fmask.contains(*FIELD_MASK_DATE) && str.len() >= 6 {
                 *tmask = *FIELD_MASK_DATE;
-                tm.tm_mday = i32::from_str(&str[str.len() - 2..]).unwrap();
-                tm.tm_mon = i32::from_str(&str[str.len() - 4..str.len() - 2]).unwrap();
-                tm.tm_year = i32::from_str(&str[..str.len() - 4]).unwrap();
+                tm.tm_mday = i32::from_str(&str[str.len() - 2..]).or(Err(ParseError::BadFormat))?;
+                tm.tm_mon = i32::from_str(&str[str.len() - 4..str.len() - 2])
+                    .or(Err(ParseError::BadFormat))?;
+                tm.tm_year = i32::from_str(&str[..str.len() - 4]).or(Err(ParseError::BadFormat))?;
                 if str.len() - 4 == 2 {
                     *is2digits = true;
                 }
@@ -2252,16 +2205,16 @@ fn DecodeNumberField(
         // hhmmss
         if str.len() == 6 {
             *tmask = *FIELD_MASK_TIME;
-            tm.tm_sec = i32::from_str(&str[4..]).unwrap();
-            tm.tm_min = i32::from_str(&str[2..4]).unwrap();
-            tm.tm_hour = i32::from_str(&str[0..2]).unwrap();
+            tm.tm_sec = i32::from_str(&str[4..]).or(Err(ParseError::BadFormat))?;
+            tm.tm_min = i32::from_str(&str[2..4]).or(Err(ParseError::BadFormat))?;
+            tm.tm_hour = i32::from_str(&str[0..2]).or(Err(ParseError::BadFormat))?;
             return Ok(TokenFieldType::Time);
         // hhmm?
         } else if str.len() == 4 {
             *tmask = *FIELD_MASK_TIME;
             tm.tm_sec = 0;
-            tm.tm_min = i32::from_str(&str[2..]).unwrap();
-            tm.tm_hour = i32::from_str(&str[0..2]).unwrap();
+            tm.tm_min = i32::from_str(&str[2..]).or(Err(ParseError::BadFormat))?;
+            tm.tm_hour = i32::from_str(&str[0..2]).or(Err(ParseError::BadFormat))?;
             return Ok(TokenFieldType::Time);
         }
     }
@@ -2344,9 +2297,7 @@ fn DecodeTimezoneAbbrev(lowtoken: &str, offset: &mut i32, tz: &mut Option<&pg_tz
                     }
                     _ => {
                         *offset = match token.value {
-                            // TODO(petrosagg): we should probably have a dedicated variantt to
-                            // timezone offsets
-                            DateTokenValue::Number(n) => n,
+                            DateTokenValue::TzOffset(n) => n,
                             _ => panic!("unexpected token"),
                         };
                         *tz = None;
@@ -2386,7 +2337,7 @@ fn DecodeSpecial(lowtoken: &str, val: &mut DateTokenValue) -> FieldType {
             token.typ
         }
         Err(_) => {
-            *val = DateTokenValue::Number(0);
+            *val = DateTokenValue::Invalid;
             FieldType::UnknownField
         }
     }
