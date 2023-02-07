@@ -712,14 +712,14 @@ static ZONE_ABBREV_TABLE: Option<TimeZoneAbbrevTable> = None;
 
 /// Calendar time to Julian date conversions.
 /// Julian date is commonly used in astronomical applications,
-///	since it is numerically accurate and computationally simple.
+/// since it is numerically accurate and computationally simple.
 /// The algorithms here will accurately convert between Julian day
-///	and calendar date for all non-negative Julian days
-///	(i.e. from Nov 24, -4713 on).
+/// and calendar date for all non-negative Julian days
+/// (i.e. from Nov 24, -4713 on).
 ///
 /// Rewritten to eliminate overflow problems. This now allows the
 /// routines to work correctly for all Julian day counts from
-/// 0 to 2147483647	(Nov 24, -4713 to Jun 3, 5874898) assuming
+/// 0 to 2147483647 (Nov 24, -4713 to Jun 3, 5874898) assuming
 /// a 32-bit integer. Longer types should also work to the limits
 /// of their precision.
 ///
@@ -804,8 +804,8 @@ fn GetCurrentTimeUsec(tm: &mut pg_tm, fsec: &mut fsec_t, tzp: Option<&mut i32>) 
     .is_err()
     {
         // ereport(ERROR,
-        // 		(errcode(ERRCODE_DATETIME_VALUE_OUT_OF_RANGE),
-        // 		 errmsg("timestamp out of range")));
+        //     errcode(ERRCODE_DATETIME_VALUE_OUT_OF_RANGE),
+        //     ("timestamp out of range")));
     }
     if let Some(tzp) = tzp {
         *tzp = tzp_local;
@@ -1148,9 +1148,9 @@ pub fn DecodeDateTime(
                             // We should return an error code instead of ereport'ing directly, but
                             // then there is no way to report the bad time zone name.
                             // ereport(ERROR,
-                            // 		(errcode(ERRCODE_INVALID_PARAMETER_VALUE),
-                            // 		 errmsg("time zone \"%s\" not recognized",
-                            // 				field[i])));
+                            //     errcode(ERRCODE_INVALID_PARAMETER_VALUE),
+                            //     ("time zone \"%s\" not recognized",
+                            //         [i])));
                         }
                         // we'll apply the zone setting below
                         tmask = FieldMask::from(FieldType::Tz);
@@ -1827,12 +1827,12 @@ fn DetermineTimeZoneAbbrevOffsetInternal(
 /// Decode date string which includes delimiters.
 /// Return 0 if okay, a DTERR code if not.
 ///
-///	* `str`: field to be parsed
-///	* `fmask`: bitmask for field types already seen
-///	* `tmask`: receives bitmask for fields found here
-///	* `is2digits`: set to true if we find 2-digit year
-///	* `tm`: field values are stored into appropriate members of this struct
-///	* `date_order`: the expected date order of day month year
+/// * `str`: field to be parsed
+/// * `fmask`: bitmask for field types already seen
+/// * `tmask`: receives bitmask for fields found here
+/// * `is2digits`: set to true if we find 2-digit year
+/// * `tm`: field values are stored into appropriate members of this struct
+/// * `date_order`: the expected date order of day month year
 fn DecodeDate(
     mut str: &str,
     mut fmask: FieldMask,
