@@ -34,7 +34,7 @@ pub enum ParseError {
 /// DateOrder defines the field order to be assumed when reading an
 /// ambiguous date (anything not in YYYY-MM-DD format, with a four-digit
 /// year field first, is taken to be ambiguous):
-#[derive(Debug, PartialEq, Clone, Copy)]
+#[derive(Debug, PartialEq, Eq, Clone, Copy)]
 pub enum DateOrder {
     /// Specifies field order yy-mm-dd
     YMD,
@@ -103,7 +103,7 @@ fn pg_tzset(_tzname: &str) -> Option<&'static pg_tz> {
     None
 }
 
-static SESSION_TIMEZONE: Lazy<pg_tz> = Lazy::new(|| Default::default());
+static SESSION_TIMEZONE: Lazy<pg_tz> = Lazy::new(Default::default);
 
 fn strip_int(s: &str) -> Result<(i32, &str), ()> {
     let idx = s.find(|c: char| !c.is_ascii_digit()).unwrap_or(s.len());
@@ -198,7 +198,7 @@ fn timestamp2tm(
             if let Some(tzn) = tzn {
                 *tzn = None;
             }
-            return Ok(());
+            Ok(())
         }
         Some(tzp) => {
             // If the time falls within the range of pg_time_t, use pg_localtime() to
@@ -1064,7 +1064,7 @@ pub fn DecodeDateTime(
         **tzp = 0;
     }
     let mut current_block_236: u64;
-    let mut field_iter = fields.into_iter().peekable();
+    let mut field_iter = fields.iter().peekable();
     while let Some(&(field, ref ftype)) = field_iter.next() {
         match ftype {
             TokenFieldType::Date => {
@@ -1308,13 +1308,11 @@ pub fn DecodeDateTime(
                     let flen = field.len();
                     let cp_2 = field.find('.').map(|idx| &field[idx..]);
                     // Embedded decimal and no date yet?
-                    if !cp_2.is_none() && !fmask.intersects(*FIELD_MASK_DATE) {
+                    if cp_2.is_some() && !fmask.intersects(*FIELD_MASK_DATE) {
                         DecodeDate(field, fmask, &mut tmask, &mut is2digits, tm, date_order)?;
                     }
                     // embedded decimal and several digits before?
-                    else if !cp_2.is_none()
-                        && (flen as u64).wrapping_sub(cp_2.unwrap().len() as u64) > 2
-                    {
+                    else if cp_2.is_some() && flen.wrapping_sub(cp_2.unwrap().len()) > 2 {
                         // Interpret as a concatenated date or time Set the type field to allow
                         // decoding other fields later.
                         // Example: 20011223 or 040506
@@ -1364,11 +1362,7 @@ pub fn DecodeDateTime(
                             DateTokenValue::FieldType(TokenFieldType::Now) => {
                                 tmask = *FIELD_MASK_DATE | *FIELD_MASK_TIME | FieldType::Tz;
                                 *dtype = TokenFieldType::Date;
-                                let tzp = match tzp {
-                                    Some(ref mut tzp) => Some(&mut **tzp),
-                                    None => None,
-                                };
-                                GetCurrentTimeUsec(tm, fsec, tzp);
+                                GetCurrentTimeUsec(tm, fsec, tzp.as_deref_mut());
                             }
                             DateTokenValue::FieldType(TokenFieldType::Yesterday) => {
                                 tmask = *FIELD_MASK_DATE;
@@ -1757,7 +1751,7 @@ fn DetermineTimeZoneOffsetInternal(mut tm: &mut pg_tm, tzp: &pg_tz, tp: &mut pg_
         }
         tm.tm_isdst = Some(after_isdst);
         *tp = aftertime;
-        return Ok(-(after_gmtoff as i32));
+        Ok(-(after_gmtoff as i32))
     }
 
     match inner(tm, tzp, tp) {
@@ -1882,13 +1876,13 @@ fn DecodeDate(
     }
 
     // look first for text fields, since that will be unambiguous month
-    for i in 0..nf {
-        if fields[i]
+    for field in fields.iter_mut().take(nf) {
+        if field
             .unwrap()
             .starts_with(|c: char| c.is_ascii_alphabetic())
         {
             let mut token_value = DateTokenValue::Number(0);
-            let type_0 = DecodeSpecial(fields[i].unwrap(), &mut token_value);
+            let type_0 = DecodeSpecial(field.unwrap(), &mut token_value);
             if type_0 != FieldType::IgnoreDtf {
                 dmask = FieldMask::from(type_0);
                 match type_0 {
@@ -1912,34 +1906,32 @@ fn DecodeDate(
                 *tmask |= dmask;
 
                 // mark this field as being completed
-                fields[i] = None;
+                *field = None;
             }
         }
     }
 
     // now pick up remaining numeric fields
-    for i in 0..nf {
-        if let Some(field) = fields[i] {
-            let len = field.len() as i32;
-            if len <= 0 {
-                return Err(ParseError::BadFormat);
-            }
-            DecodeNumber(
-                field,
-                haveTextMonth,
-                fmask,
-                &mut dmask,
-                tm,
-                &mut fsec,
-                is2digits,
-                date_order,
-            )?;
-            if fmask.intersects(dmask) {
-                return Err(ParseError::BadFormat);
-            }
-            fmask |= dmask;
-            *tmask |= dmask;
+    for field in fields.into_iter().flatten() {
+        let len = field.len() as i32;
+        if len <= 0 {
+            return Err(ParseError::BadFormat);
         }
+        DecodeNumber(
+            field,
+            haveTextMonth,
+            fmask,
+            &mut dmask,
+            tm,
+            &mut fsec,
+            is2digits,
+            date_order,
+        )?;
+        if fmask.intersects(dmask) {
+            return Err(ParseError::BadFormat);
+        }
+        fmask |= dmask;
+        *tmask |= dmask;
     }
     if fmask & !(FieldType::Doy | FieldType::Tz) != *FIELD_MASK_DATE {
         return Err(ParseError::BadFormat);
@@ -2062,8 +2054,8 @@ fn DecodeTime(
         tm.tm_sec = tm.tm_min;
         tm.tm_min = tm.tm_hour;
         tm.tm_hour = 0;
-    } else if cp.starts_with(':') {
-        let (sec, cp) = strip_int(&cp[1..]).or(Err(ParseError::FieldOverflow))?;
+    } else if let Some(cp) = cp.strip_prefix(':') {
+        let (sec, cp) = strip_int(cp).or(Err(ParseError::FieldOverflow))?;
         tm.tm_sec = sec;
         if cp.is_empty() {
             *fsec = 0;
@@ -2092,6 +2084,7 @@ fn DecodeTime(
 
 // Interpret plain numeric field as a date value in context.
 // Return 0 if okay, a DTERR code if not.
+#[allow(clippy::too_many_arguments)]
 fn DecodeNumber(
     str: &str,
     haveTextMonth: bool,
@@ -2288,12 +2281,10 @@ fn DecodeTimezone(str: &str, tzp: &mut i32) -> Result<(), ParseError> {
     let (hr, cp) = strip_int(&str[1..]).or(Err(ParseError::TzDisplacementOverflow))?;
 
     // explicit delimiter?
-    let (hr, min, sec) = if cp.starts_with(':') {
-        let (min, cp) = strip_int(&cp[1..]).or(Err(ParseError::TzDisplacementOverflow))?;
-        if cp.starts_with(':') {
-            let sec = strip_int(&cp[1..])
-                .or(Err(ParseError::TzDisplacementOverflow))?
-                .0;
+    let (hr, min, sec) = if let Some(cp) = cp.strip_prefix(':') {
+        let (min, cp) = strip_int(cp).or(Err(ParseError::TzDisplacementOverflow))?;
+        if let Some(cp) = cp.strip_prefix(':') {
+            let sec = strip_int(cp).or(Err(ParseError::TzDisplacementOverflow))?.0;
             (hr, min, sec)
         } else {
             (hr, min, 0)
@@ -2349,7 +2340,7 @@ fn DecodeTimezoneAbbrev(lowtoken: &str, offset: &mut i32, tz: &mut Option<&pg_tz
                 match token.typ {
                     FieldType::DynTz => {
                         *offset = 0;
-                        *tz = FetchDynamicTimeZone(&table, token);
+                        *tz = FetchDynamicTimeZone(table, token);
                     }
                     _ => {
                         *offset = match token.value {
