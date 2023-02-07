@@ -105,10 +105,11 @@ fn pg_tzset(_tzname: &str) -> Option<&'static pg_tz> {
 
 static SESSION_TIMEZONE: Lazy<pg_tz> = Lazy::new(|| Default::default());
 
-fn strtoint<'a>(s: &'a str, end: &mut &'a str) -> Result<i32, ()> {
+fn strip_int(s: &str) -> Result<(i32, &str), ()> {
     let idx = s.find(|c: char| !c.is_ascii_digit()).unwrap_or(s.len());
-    *end = &s[idx..];
-    i32::from_str(&s[..idx]).or(Err(()))
+    let (prefix, suffix) = s.split_at(idx);
+    let val = i32::from_str(prefix).or(Err(()))?;
+    Ok((val, suffix))
 }
 
 fn time_overflows(hour: i32, min: i32, sec: i32, fsec: fsec_t) -> bool {
@@ -1071,7 +1072,6 @@ pub fn DecodeDateTime(
                 // forms with JD will be separated into distinct fields, so we
                 // handle just this case here.
                 if ptype == TokenFieldType::Julian {
-                    let mut cp = field;
                     let tzp = match tzp.as_mut() {
                         Some(tzp) => tzp,
                         None => {
@@ -1080,7 +1080,7 @@ pub fn DecodeDateTime(
                         }
                     };
 
-                    let val_0 = strtoint(field, &mut cp).or(Err(ParseError::FieldOverflow))?;
+                    let (val_0, cp) = strip_int(field).or(Err(ParseError::FieldOverflow))?;
                     j2date(val_0, &mut tm.tm_year, &mut tm.tm_mon, &mut tm.tm_mday);
                     isjulian = true;
 
@@ -1196,8 +1196,7 @@ pub fn DecodeDateTime(
                 // Was this an "ISO date" with embedded field labels?
                 // An example is "y2001m02d04" - thomas 2001-02-04
                 if ptype != TokenFieldType::Number {
-                    let mut cp_1 = field;
-                    let val_1 = strtoint(field, &mut cp_1).or(Err(ParseError::FieldOverflow))?;
+                    let (val_1, cp_1) = strip_int(field).or(Err(ParseError::FieldOverflow))?;
                     // only a few kinds are allowed to have an embedded decimal
                     if cp_1.starts_with('.') {
                         match ptype {
@@ -2037,16 +2036,16 @@ fn DecodeTime(
     mut tm: &mut pg_tm,
     fsec: &mut fsec_t,
 ) -> Result<(), ParseError> {
-    let mut cp = str;
-
     *tmask = *FIELD_MASK_TIME;
 
-    tm.tm_hour = strtoint(str, &mut cp).or(Err(ParseError::FieldOverflow))?;
+    let (hour, cp) = strip_int(str).or(Err(ParseError::FieldOverflow))?;
+    tm.tm_hour = hour;
 
     if !cp.starts_with(':') {
         return Err(ParseError::BadFormat);
     }
-    tm.tm_min = strtoint(&cp[1..], &mut cp).or(Err(ParseError::FieldOverflow))?;
+    let (min, cp) = strip_int(&cp[1..]).or(Err(ParseError::FieldOverflow))?;
+    tm.tm_min = min;
 
     if cp.is_empty() {
         tm.tm_sec = 0;
@@ -2064,7 +2063,8 @@ fn DecodeTime(
         tm.tm_min = tm.tm_hour;
         tm.tm_hour = 0;
     } else if cp.starts_with(':') {
-        tm.tm_sec = strtoint(&cp[1..], &mut cp).or(Err(ParseError::FieldOverflow))?;
+        let (sec, cp) = strip_int(&cp[1..]).or(Err(ParseError::FieldOverflow))?;
+        tm.tm_sec = sec;
         if cp.is_empty() {
             *fsec = 0;
         } else if cp.starts_with('.') {
@@ -2102,9 +2102,8 @@ fn DecodeNumber(
     is2digits: &mut bool,
     date_order: DateOrder,
 ) -> Result<(), ParseError> {
-    let mut cp = str;
     *tmask = FieldMask::none();
-    let val = strtoint(str, &mut cp).or(Err(ParseError::FieldOverflow))?;
+    let (val, cp) = strip_int(str).or(Err(ParseError::FieldOverflow))?;
     if cp == str {
         return Err(ParseError::BadFormat);
     }
@@ -2281,30 +2280,31 @@ fn DecodeNumberField(
 // Return 0 if okay (and set *tzp), a DTERR code if not okay.
 fn DecodeTimezone(str: &str, tzp: &mut i32) -> Result<(), ParseError> {
     let mut tz: i32;
-    let min: i32;
-    let mut sec: i32 = 0;
-    let mut cp = str;
     // leading character must be "+" or "-"
     if !str.starts_with('+') && !str.starts_with('-') {
         return Err(ParseError::BadFormat);
     }
 
-    let mut hr = strtoint(&str[1..], &mut cp).or(Err(ParseError::TzDisplacementOverflow))?;
+    let (hr, cp) = strip_int(&str[1..]).or(Err(ParseError::TzDisplacementOverflow))?;
 
     // explicit delimiter?
-    if cp.starts_with(':') {
-        min = strtoint(&cp[1..], &mut cp).or(Err(ParseError::TzDisplacementOverflow))?;
+    let (hr, min, sec) = if cp.starts_with(':') {
+        let (min, cp) = strip_int(&cp[1..]).or(Err(ParseError::TzDisplacementOverflow))?;
         if cp.starts_with(':') {
-            sec = strtoint(&cp[1..], &mut cp).or(Err(ParseError::TzDisplacementOverflow))?;
+            let sec = strip_int(&cp[1..])
+                .or(Err(ParseError::TzDisplacementOverflow))?
+                .0;
+            (hr, min, sec)
+        } else {
+            (hr, min, 0)
         }
     // otherwise, might have run things together...
     } else if cp.is_empty() && str.len() > 3 {
-        min = hr % 100;
-        hr /= 100;
+        (hr / 100, hr % 100, 0)
     // we could, but don't, support a run-together hhmmss format
     } else {
-        min = 0;
-    }
+        (hr, 0, 0)
+    };
 
     // Range-check the values; see notes in datatype/timestamp.h
     if !(0..=MAX_TZDISP_HOUR).contains(&hr) {
