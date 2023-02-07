@@ -56,6 +56,7 @@ fn dt2time(jd: Timestamp, hour: &mut i32, min: &mut i32, sec: &mut i32, fsec: &m
     *sec = (time / USECS_PER_SEC).try_into().unwrap();
     *fsec = (time - (*sec as i64 * USECS_PER_SEC)).try_into().unwrap();
 }
+
 fn GetCurrentTransactionStartTimestamp() -> TimestampTz {
     11223344
 }
@@ -94,7 +95,7 @@ fn pg_next_dst_boundary(
     _after_gmtoff: *mut i64,
     _after_isdst: &mut bool,
     _tz: &pg_tz,
-) -> i32 {
+) -> Result<i32, ()> {
     0
 }
 
@@ -1706,11 +1707,7 @@ fn DetermineTimeZoneOffsetInternal(mut tm: &mut pg_tm, tzp: &pg_tz, tp: &mut pg_
             &mut after_gmtoff,
             &mut after_isdst,
             tzp,
-        );
-        if res < 0 {
-            // failure?
-            return Err(());
-        }
+        )?;
 
         if res == 0 {
             // Non-DST zone, life is simple
