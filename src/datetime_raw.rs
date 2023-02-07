@@ -28,7 +28,7 @@ pub enum ParseError {
     /// Triggers hint about DateStyle
     MdFieldOverflow = -3,
     IntervalOverflow = -4,
-    TzDispOverflow = -5,
+    TzDisplacementOverflow = -5,
 }
 
 /// DateOrder defines the field order to be assumed when reading an
@@ -96,7 +96,7 @@ fn pg_next_dst_boundary(
     _after_isdst: &mut bool,
     _tz: &pg_tz,
 ) -> Result<i32, ()> {
-    0
+    Ok(0)
 }
 
 fn pg_tzset(_tzname: &str) -> Option<&'static pg_tz> {
@@ -2289,13 +2289,13 @@ fn DecodeTimezone(str: &str, tzp: &mut i32) -> Result<(), ParseError> {
         return Err(ParseError::BadFormat);
     }
 
-    let mut hr = strtoint(&str[1..], &mut cp).or(Err(ParseError::TzDispOverflow))?;
+    let mut hr = strtoint(&str[1..], &mut cp).or(Err(ParseError::TzDisplacementOverflow))?;
 
     // explicit delimiter?
     if cp.starts_with(':') {
-        min = strtoint(&cp[1..], &mut cp).or(Err(ParseError::TzDispOverflow))?;
+        min = strtoint(&cp[1..], &mut cp).or(Err(ParseError::TzDisplacementOverflow))?;
         if cp.starts_with(':') {
-            sec = strtoint(&cp[1..], &mut cp).or(Err(ParseError::TzDispOverflow))?;
+            sec = strtoint(&cp[1..], &mut cp).or(Err(ParseError::TzDisplacementOverflow))?;
         }
     // otherwise, might have run things together...
     } else if cp.is_empty() && str.len() > 3 {
@@ -2308,13 +2308,13 @@ fn DecodeTimezone(str: &str, tzp: &mut i32) -> Result<(), ParseError> {
 
     // Range-check the values; see notes in datatype/timestamp.h
     if !(0..=MAX_TZDISP_HOUR).contains(&hr) {
-        return Err(ParseError::TzDispOverflow);
+        return Err(ParseError::TzDisplacementOverflow);
     }
     if !(0..MINS_PER_HOUR).contains(&min) {
-        return Err(ParseError::TzDispOverflow);
+        return Err(ParseError::TzDisplacementOverflow);
     }
     if !(0..SECS_PER_MINUTE).contains(&sec) {
-        return Err(ParseError::TzDispOverflow);
+        return Err(ParseError::TzDisplacementOverflow);
     }
     tz = (hr * MINS_PER_HOUR + min) * SECS_PER_MINUTE + sec;
     if str.starts_with('-') {
