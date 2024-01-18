@@ -1,12 +1,10 @@
 use std::str::FromStr;
 
-use once_cell::sync::Lazy;
+use chrono_tz::Tz;
 
 use crate::datetime::{
     FieldMask, FieldType, TokenFieldType, FIELD_MASK_ALL_SECS, FIELD_MASK_DATE, FIELD_MASK_TIME,
 };
-
-use crate::tz::pg_tz;
 
 const MAX_TZDISP_HOUR: i32 = 15;
 const HOURS_PER_DAY: i32 = 24;
@@ -61,7 +59,7 @@ fn GetCurrentTransactionStartTimestamp() -> TimestampTz {
     11223344
 }
 
-fn pg_localtime(_timep: *const pg_time_t, _tz: &pg_tz) -> Box<pg_tm> {
+fn pg_localtime(_timep: *const pg_time_t, _tz: Tz) -> Box<pg_tm> {
     Box::new(pg_tm {
         tm_sec: 0,
         tm_min: 0,
@@ -82,7 +80,7 @@ fn pg_interpret_timezone_abbrev(
     _timep: &pg_time_t,
     _gmtoff: &mut i64,
     _isdst: &mut bool,
-    _tz: &pg_tz,
+    _tz: Tz,
 ) -> bool {
     unimplemented!()
 }
@@ -94,16 +92,17 @@ fn pg_next_dst_boundary(
     _boundary: *mut pg_time_t,
     _after_gmtoff: *mut i64,
     _after_isdst: &mut bool,
-    _tz: &pg_tz,
+    _tz: Tz,
 ) -> Result<i32, ()> {
     Ok(0)
 }
 
-fn pg_tzset(_tzname: &str) -> Option<&'static pg_tz> {
-    None
+fn pg_tzset(tzname: &str) -> Option<Tz> {
+    panic!();
+    Tz::from_str_insensitive(tzname).ok()
 }
 
-static SESSION_TIMEZONE: Lazy<pg_tz> = Lazy::new(Default::default);
+static SESSION_TIMEZONE: Tz = Tz::Etc__UTC;
 
 fn strip_int(s: &str) -> Result<(i32, &str), ()> {
     let idx = s.find(|c: char| !c.is_ascii_digit()).unwrap_or(s.len());
@@ -154,14 +153,14 @@ fn timestamp2tm(
     tm: &mut pg_tm,
     fsec: &mut fsec_t,
     tzn: Option<&mut Option<String>>,
-    mut attimezone: Option<&pg_tz>,
+    mut attimezone: Option<Tz>,
 ) -> Result<(), ParseError> {
     let mut date: Timestamp = 0;
     let mut time: Timestamp;
 
     // Use session timezone if caller asks for default
     if attimezone.is_none() {
-        attimezone = Some(&SESSION_TIMEZONE);
+        attimezone = Some(SESSION_TIMEZONE);
     }
 
     time = dt;
@@ -272,7 +271,7 @@ struct TimeZoneAbbrevTable {
 }
 #[derive(Clone)]
 struct DynamicZoneAbbrev {
-    _tz: *mut pg_tz,
+    _tz: Tz,
     _zone: &'static str,
 }
 
@@ -800,7 +799,7 @@ fn GetCurrentTimeUsec(tm: &mut pg_tm, fsec: &mut fsec_t, tzp: Option<&mut i32>) 
         tm,
         fsec,
         None,
-        Some(&SESSION_TIMEZONE),
+        Some(SESSION_TIMEZONE),
     )
     .is_err()
     {
@@ -1033,9 +1032,9 @@ pub fn DecodeDateTime(
     let mut isjulian = false;
     let mut is2digits = false;
     let mut bc = false;
-    let mut namedTz: Option<&pg_tz> = None;
-    let mut abbrevTz: Option<&pg_tz> = None;
-    let mut valtz: Option<&pg_tz> = None;
+    let mut namedTz: Option<Tz> = None;
+    let mut abbrevTz: Option<Tz> = None;
+    let mut valtz: Option<Tz> = None;
     let mut abbrev: Option<&str> = None;
     let mut cur_tm: pg_tm = pg_tm {
         tm_sec: 0,
@@ -1572,7 +1571,7 @@ pub fn DecodeDateTime(
                 if fmask.contains(FieldType::DtzMod) {
                     return Err(ParseError::BadFormat);
                 }
-                *tzp = DetermineTimeZoneOffset(tm, &SESSION_TIMEZONE);
+                *tzp = DetermineTimeZoneOffset(tm, SESSION_TIMEZONE);
             }
         }
     }
@@ -1586,7 +1585,7 @@ pub fn DecodeDateTime(
 ///
 /// Note: if the date is out of the range we can deal with, we return zero as the GMT offset and
 /// set `tm_isdst = 0`.  We don't throw an error here, though probably some higher-level code will.
-fn DetermineTimeZoneOffset(tm: &mut pg_tm, tzp: &pg_tz) -> i32 {
+fn DetermineTimeZoneOffset(tm: &mut pg_tm, tzp: Tz) -> i32 {
     let mut t: pg_time_t = 0;
     DetermineTimeZoneOffsetInternal(tm, tzp, &mut t)
 }
@@ -1608,8 +1607,8 @@ fn is_valid_julian(year: i32, month: i32) -> bool {
 ///
 /// Note: it might seem that we should use mktime() for this, but bitter experience teaches
 /// otherwise.  This code is much faster than most versions of mktime(), anyway.
-fn DetermineTimeZoneOffsetInternal(mut tm: &mut pg_tm, tzp: &pg_tz, tp: &mut pg_time_t) -> i32 {
-    fn inner(mut tm: &mut pg_tm, tzp: &pg_tz, tp: &mut pg_time_t) -> Result<i32, ()> {
+fn DetermineTimeZoneOffsetInternal(mut tm: &mut pg_tm, tzp: Tz, tp: &mut pg_time_t) -> i32 {
+    fn inner(mut tm: &mut pg_tm, tzp: Tz, tp: &mut pg_time_t) -> Result<i32, ()> {
         // First, generate the pg_time_t value corresponding to the given y/m/d/h/m/s taken as GMT
         // time.  If this overflows, punt and decide the timezone is GMT.  (For a valid Julian
         // date, integer overflow should be impossible with 64-bit pg_time_t, but let's check for
@@ -1728,7 +1727,7 @@ fn DetermineTimeZoneOffsetInternal(mut tm: &mut pg_tm, tzp: &pg_tz, tp: &mut pg_
 /// (However, that happens only if we can match the given abbreviation to some
 /// abbreviation that appears in the IANA timezone data.  Otherwise, we fall
 /// back to doing DetermineTimeZoneOffset().)
-fn DetermineTimeZoneAbbrevOffset(mut tm: &mut pg_tm, abbr: &str, tzp: &pg_tz) -> i32 {
+fn DetermineTimeZoneAbbrevOffset(mut tm: &mut pg_tm, abbr: &str, tzp: Tz) -> i32 {
     let mut t: pg_time_t = 0;
     let mut abbr_offset: i32 = 0;
     let mut abbr_isdst = false;
@@ -1753,7 +1752,7 @@ fn DetermineTimeZoneAbbrevOffset(mut tm: &mut pg_tm, abbr: &str, tzp: &pg_tz) ->
 fn DetermineTimeZoneAbbrevOffsetInternal(
     t: pg_time_t,
     abbr: &str,
-    tzp: &pg_tz,
+    tzp: Tz,
     offset: &mut i32,
     isdst: &mut bool,
 ) -> bool {
@@ -2282,7 +2281,7 @@ fn DecodeTimezone(str: &str, tzp: &mut i32) -> Result<(), ParseError> {
 /// Given string must be lowercased already.
 ///
 /// Implement a cache lookup since it is likely that dates will be related in format.
-fn DecodeTimezoneAbbrev(lowtoken: &str, offset: &mut i32, tz: &mut Option<&pg_tz>) -> FieldType {
+fn DecodeTimezoneAbbrev(lowtoken: &str, offset: &mut i32, tz: &mut Option<Tz>) -> FieldType {
     match &ZONE_ABBREV_TABLE {
         // TODO(petrosagg): original code seemed to imply that it can find truncated tokens
         // somehow. Investigate. Original comment:
@@ -2344,7 +2343,7 @@ fn DecodeSpecial(lowtoken: &str, val: &mut DateTokenValue) -> FieldType {
 }
 
 /// Helper subroutine to locate pg_tz timezone for a dynamic abbreviation.
-fn FetchDynamicTimeZone<'a>(_tbl: &'a TimeZoneAbbrevTable, _tp: &DateToken) -> Option<&'a pg_tz> {
+fn FetchDynamicTimeZone<'a>(_tbl: &'a TimeZoneAbbrevTable, _tp: &DateToken) -> Option<Tz> {
     // This is unimplemented because the C code was doing pointer weird pointer arithmetic to
     // relate the value of the token to an offset of a dynamic timezone definition in the zone
     // table.

@@ -15,7 +15,6 @@ mod tests {
 
         walk("tests/testdata/decode", |f| {
             f.run(|test_case| -> String {
-                println!("test_case: {}", &test_case.input);
                 format!("{:?}\n", parse_datetime(&test_case.input).and_then(decode))
             })
         });

@@ -7,6 +7,8 @@ edition = "2021"
 
 [dependencies]
 bitmask = "0.5"
+chrono-tz = { version = "0.8", features = ["std", "case-insensitive"] }
+chrono = "0.4"
 once_cell = "1"
 
 [dev-dependencies]

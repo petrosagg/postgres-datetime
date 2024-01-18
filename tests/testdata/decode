@@ -1,497 +1,497 @@
-parse
-(
-----
-Err(BadFormat)
-
-parse
-(,)
-----
-Err(BadFormat)
-
-parse
-{(,)}
-----
-Err(BadFormat)
-
-parse
-00:00
-----
-Ok((pg_tm { tm_sec: 0, tm_min: 0, tm_hour: 0, tm_mday: 0, tm_mon: 0, tm_year: 0, tm_wday: 0, tm_yday: 0, tm_isdst: None, tm_gmtoff: 0, tm_zone: None }, 0, 0, Date))
-
-parse
-00:01
-----
-Ok((pg_tm { tm_sec: 0, tm_min: 1, tm_hour: 0, tm_mday: 0, tm_mon: 0, tm_year: 0, tm_wday: 0, tm_yday: 0, tm_isdst: None, tm_gmtoff: 0, tm_zone: None }, 0, 0, Date))
-
-parse
-0001-01-01
-----
-Ok((pg_tm { tm_sec: 0, tm_min: 0, tm_hour: 0, tm_mday: 1, tm_mon: 1, tm_year: 1, tm_wday: 0, tm_yday: 0, tm_isdst: Some(false), tm_gmtoff: 0, tm_zone: None }, 0, 0, Date))
-
-parse
-0001-01-01 AD
-----
-Ok((pg_tm { tm_sec: 0, tm_min: 0, tm_hour: 0, tm_mday: 1, tm_mon: 1, tm_year: 1, tm_wday: 0, tm_yday: 0, tm_isdst: Some(false), tm_gmtoff: 0, tm_zone: None }, 0, 0, Date))
-
-parse
-0001-01-01 BC
-----
-Ok((pg_tm { tm_sec: 0, tm_min: 0, tm_hour: 0, tm_mday: 1, tm_mon: 1, tm_year: 0, tm_wday: 0, tm_yday: 0, tm_isdst: Some(false), tm_gmtoff: 0, tm_zone: None }, 0, 0, Date))
-
-parse
-0001-12-31 BC
-----
-Ok((pg_tm { tm_sec: 0, tm_min: 0, tm_hour: 0, tm_mday: 31, tm_mon: 12, tm_year: 0, tm_wday: 0, tm_yday: 0, tm_isdst: Some(false), tm_gmtoff: 0, tm_zone: None }, 0, 0, Date))
-
-parse
-0002-02-04
-----
-Ok((pg_tm { tm_sec: 0, tm_min: 0, tm_hour: 0, tm_mday: 4, tm_mon: 2, tm_year: 2, tm_wday: 0, tm_yday: 0, tm_isdst: Some(false), tm_gmtoff: 0, tm_zone: None }, 0, 0, Date))
-
-parse
-0002-12-31 BC
-----
-Ok((pg_tm { tm_sec: 0, tm_min: 0, tm_hour: 0, tm_mday: 31, tm_mon: 12, tm_year: -1, tm_wday: 0, tm_yday: 0, tm_isdst: Some(false), tm_gmtoff: 0, tm_zone: None }, 0, 0, Date))
-
-parse
-0004-12-25
-----
-Ok((pg_tm { tm_sec: 0, tm_min: 0, tm_hour: 0, tm_mday: 25, tm_mon: 12, tm_year: 4, tm_wday: 0, tm_yday: 0, tm_isdst: Some(false), tm_gmtoff: 0, tm_zone: None }, 0, 0, Date))
-
-parse
-0009-12-31
-----
-Ok((pg_tm { tm_sec: 0, tm_min: 0, tm_hour: 0, tm_mday: 31, tm_mon: 12, tm_year: 9, tm_wday: 0, tm_yday: 0, tm_isdst: Some(false), tm_gmtoff: 0, tm_zone: None }, 0, 0, Date))
-
-parse
-0010-01-01
-----
-Ok((pg_tm { tm_sec: 0, tm_min: 0, tm_hour: 0, tm_mday: 1, tm_mon: 1, tm_year: 10, tm_wday: 0, tm_yday: 0, tm_isdst: Some(false), tm_gmtoff: 0, tm_zone: None }, 0, 0, Date))
-
-parse
-0011-01-01 BC
-----
-Ok((pg_tm { tm_sec: 0, tm_min: 0, tm_hour: 0, tm_mday: 1, tm_mon: 1, tm_year: -10, tm_wday: 0, tm_yday: 0, tm_isdst: Some(false), tm_gmtoff: 0, tm_zone: None }, 0, 0, Date))
-
-parse
-0012-12-31 BC
-----
-Ok((pg_tm { tm_sec: 0, tm_min: 0, tm_hour: 0, tm_mday: 31, tm_mon: 12, tm_year: -11, tm_wday: 0, tm_yday: 0, tm_isdst: Some(false), tm_gmtoff: 0, tm_zone: None }, 0, 0, Date))
-
-parse
-00:30
-----
-Ok((pg_tm { tm_sec: 0, tm_min: 30, tm_hour: 0, tm_mday: 0, tm_mon: 0, tm_year: 0, tm_wday: 0, tm_yday: 0, tm_isdst: None, tm_gmtoff: 0, tm_zone: None }, 0, 0, Date))
-
-parse
-0055-06-17 BC
-----
-Ok((pg_tm { tm_sec: 0, tm_min: 0, tm_hour: 0, tm_mday: 17, tm_mon: 6, tm_year: -54, tm_wday: 0, tm_yday: 0, tm_isdst: Some(false), tm_gmtoff: 0, tm_zone: None }, 0, 0, Date))
-
-parse
-0055-08-10 BC
-----
-Ok((pg_tm { tm_sec: 0, tm_min: 0, tm_hour: 0, tm_mday: 10, tm_mon: 8, tm_year: -54, tm_wday: 0, tm_yday: 0, tm_isdst: Some(false), tm_gmtoff: 0, tm_zone: None }, 0, 0, Date))
-
-parse
-0055-6-10 15:44:17.71393 BC
-----
-Ok((pg_tm { tm_sec: 17, tm_min: 44, tm_hour: 15, tm_mday: 10, tm_mon: 6, tm_year: -54, tm_wday: 0, tm_yday: 0, tm_isdst: Some(false), tm_gmtoff: 0, tm_zone: None }, 713930, 0, Date))
-
-parse
-01:00
-----
-Ok((pg_tm { tm_sec: 0, tm_min: 0, tm_hour: 1, tm_mday: 0, tm_mon: 0, tm_year: 0, tm_wday: 0, tm_yday: 0, tm_isdst: None, tm_gmtoff: 0, tm_zone: None }, 0, 0, Date))
-
-parse
-0100-12-31 BC
-----
-Ok((pg_tm { tm_sec: 0, tm_min: 0, tm_hour: 0, tm_mday: 31, tm_mon: 12, tm_year: -99, tm_wday: 0, tm_yday: 0, tm_isdst: Some(false), tm_gmtoff: 0, tm_zone: None }, 0, 0, Date))
-
-parse
-0101-12-31 BC
-----
-Ok((pg_tm { tm_sec: 0, tm_min: 0, tm_hour: 0, tm_mday: 31, tm_mon: 12, tm_year: -100, tm_wday: 0, tm_yday: 0, tm_isdst: Some(false), tm_gmtoff: 0, tm_zone: None }, 0, 0, Date))
-
-parse
-01-01-1994
-----
-Err(MdFieldOverflow)
-
-parse
-01-01-1997
-----
-Err(MdFieldOverflow)
-
-parse
-01-01-1998
-----
-Err(MdFieldOverflow)
-
-parse
-01-01-2001
-----
-Err(MdFieldOverflow)
-
-parse
-01-01-2009
-----
-Err(MdFieldOverflow)
-
-parse
-01:02
-----
-Ok((pg_tm { tm_sec: 0, tm_min: 2, tm_hour: 1, tm_mday: 0, tm_mon: 0, tm_year: 0, tm_wday: 0, tm_yday: 0, tm_isdst: None, tm_gmtoff: 0, tm_zone: None }, 0, 0, Date))
-
-parse
-01/02/03
-----
-Ok((pg_tm { tm_sec: 0, tm_min: 0, tm_hour: 0, tm_mday: 3, tm_mon: 2, tm_year: 2001, tm_wday: 0, tm_yday: 0, tm_isdst: Some(false), tm_gmtoff: 0, tm_zone: None }, 0, 0, Date))
-
-parse
-01 08 1999
-----
-Err(MdFieldOverflow)
-
-parse
-01-08-1999
-----
-Err(MdFieldOverflow)
-
-parse
-01 08 99
-----
-Err(MdFieldOverflow)
-
-parse
-01-08-99
-----
-Err(MdFieldOverflow)
-
-parse
-01-17-1970
-----
-Err(MdFieldOverflow)
-
-parse
-01:20:30
-----
-Ok((pg_tm { tm_sec: 30, tm_min: 20, tm_hour: 1, tm_mday: 0, tm_mon: 0, tm_year: 0, tm_wday: 0, tm_yday: 0, tm_isdst: None, tm_gmtoff: 0, tm_zone: None }, 0, 0, Date))
-
-parse
-01:30
-----
-Ok((pg_tm { tm_sec: 0, tm_min: 30, tm_hour: 1, tm_mday: 0, tm_mon: 0, tm_year: 0, tm_wday: 0, tm_yday: 0, tm_isdst: None, tm_gmtoff: 0, tm_zone: None }, 0, 0, Date))
-
-parse
-01-31-1994
-----
-Err(MdFieldOverflow)
-
-parse
-02-13-2001
-----
-Err(MdFieldOverflow)
-
-parse
-02:30
-----
-Ok((pg_tm { tm_sec: 0, tm_min: 30, tm_hour: 2, tm_mday: 0, tm_mon: 0, tm_year: 0, tm_wday: 0, tm_yday: 0, tm_isdst: None, tm_gmtoff: 0, tm_zone: None }, 0, 0, Date))
-
-parse
-03:00
-----
-Ok((pg_tm { tm_sec: 0, tm_min: 0, tm_hour: 3, tm_mday: 0, tm_mon: 0, tm_year: 0, tm_wday: 0, tm_yday: 0, tm_isdst: None, tm_gmtoff: 0, tm_zone: None }, 0, 0, Date))
-
-parse
-03:30
-----
-Ok((pg_tm { tm_sec: 0, tm_min: 30, tm_hour: 3, tm_mday: 0, tm_mon: 0, tm_year: 0, tm_wday: 0, tm_yday: 0, tm_isdst: None, tm_gmtoff: 0, tm_zone: None }, 0, 0, Date))
-
-parse
-04:05:06
-----
-Ok((pg_tm { tm_sec: 6, tm_min: 5, tm_hour: 4, tm_mday: 0, tm_mon: 0, tm_year: 0, tm_wday: 0, tm_yday: 0, tm_isdst: None, tm_gmtoff: 0, tm_zone: None }, 0, 0, Date))
-
-parse
-05:00
-----
-Ok((pg_tm { tm_sec: 0, tm_min: 0, tm_hour: 5, tm_mday: 0, tm_mon: 0, tm_year: 0, tm_wday: 0, tm_yday: 0, tm_isdst: None, tm_gmtoff: 0, tm_zone: None }, 0, 0, Date))
-
-parse
-07:46:45 GMT+2
-----
-Err(BadFormat)
-
-parse
-07:46:45 GMT+3
-----
-Err(BadFormat)
-
-parse
-07:46:45 GMT+4
-----
-Err(BadFormat)
-
-parse
-08 01 1999
-----
-Err(MdFieldOverflow)
-
-parse
-08-01-1999
-----
-Err(MdFieldOverflow)
-
-parse
-08-01-2009
-----
-Err(MdFieldOverflow)
-
-parse
-08-01-2011
-----
-Err(MdFieldOverflow)
-
-parse
-08 01 99
-----
-Err(MdFieldOverflow)
-
-parse
-08-01-99
-----
-Err(MdFieldOverflow)
-
-parse
-08-31-2009
-----
-Err(MdFieldOverflow)
-
-parse
-08-31-2011
-----
-Err(MdFieldOverflow)
-
-parse
-08:55:08
-----
-Ok((pg_tm { tm_sec: 8, tm_min: 55, tm_hour: 8, tm_mday: 0, tm_mon: 0, tm_year: 0, tm_wday: 0, tm_yday: 0, tm_isdst: None, tm_gmtoff: 0, tm_zone: None }, 0, 0, Date))
-
-parse
-08:55:08 GMT+2
-----
-Err(BadFormat)
-
-parse
-08 Jan 1999
-----
-Ok((pg_tm { tm_sec: 0, tm_min: 0, tm_hour: 0, tm_mday: 8, tm_mon: 1, tm_year: 1999, tm_wday: 0, tm_yday: 0, tm_isdst: Some(false), tm_gmtoff: 0, tm_zone: None }, 0, 0, Date))
-
-parse
-08-Jan-1999
-----
-Ok((pg_tm { tm_sec: 0, tm_min: 0, tm_hour: 0, tm_mday: 8, tm_mon: 1, tm_year: 1999, tm_wday: 0, tm_yday: 0, tm_isdst: Some(false), tm_gmtoff: 0, tm_zone: None }, 0, 0, Date))
-
-parse
-08 Jan 99
-----
-Err(MdFieldOverflow)
-
-parse
-08-Jan-99
-----
-Err(MdFieldOverflow)
-
-parse
-10:00
-----
-Ok((pg_tm { tm_sec: 0, tm_min: 0, tm_hour: 10, tm_mday: 0, tm_mon: 0, tm_year: 0, tm_wday: 0, tm_yday: 0, tm_isdst: None, tm_gmtoff: 0, tm_zone: None }, 0, 0, Date))
-
-parse
-1000-12-31
-----
-Ok((pg_tm { tm_sec: 0, tm_min: 0, tm_hour: 0, tm_mday: 31, tm_mon: 12, tm_year: 1000, tm_wday: 0, tm_yday: 0, tm_isdst: Some(false), tm_gmtoff: 0, tm_zone: None }, 0, 0, Date))
-
-parse
-1001-01-01
-----
-Ok((pg_tm { tm_sec: 0, tm_min: 0, tm_hour: 0, tm_mday: 1, tm_mon: 1, tm_year: 1001, tm_wday: 0, tm_yday: 0, tm_isdst: Some(false), tm_gmtoff: 0, tm_zone: None }, 0, 0, Date))
-
-parse
-10-01-2011
-----
-Err(MdFieldOverflow)
-
-parse
-10:30 today
-----
-Err(MdFieldOverflow)
-
-parse
-10:57:11
-----
-Ok((pg_tm { tm_sec: 11, tm_min: 57, tm_hour: 10, tm_mday: 0, tm_mon: 0, tm_year: 0, tm_wday: 0, tm_yday: 0, tm_isdst: None, tm_gmtoff: 0, tm_zone: None }, 0, 0, Date))
-
-parse
-11:00
-----
-Ok((pg_tm { tm_sec: 0, tm_min: 0, tm_hour: 11, tm_mday: 0, tm_mon: 0, tm_year: 0, tm_wday: 0, tm_yday: 0, tm_isdst: None, tm_gmtoff: 0, tm_zone: None }, 0, 0, Date))
-
-parse
-11-01-2011
-----
-Err(MdFieldOverflow)
-
-parse
-[11:10, 23:00]
-----
-Err(BadFormat)
-
-parse
-1/18/1999
-----
-Err(MdFieldOverflow)
-
-parse
-12/23/1999
-----
-Err(MdFieldOverflow)
-
-parse
-12.27.2001 04:05:06.789+08
-----
-Err(MdFieldOverflow)
-
-parse
-12.27.2001 04:05:06.789-08
-----
-Err(MdFieldOverflow)
-
-parse
-12/27/2001 04:05:06.789-08
-----
-Err(MdFieldOverflow)
-
-parse
-12-31-2009
-----
-Err(MdFieldOverflow)
-
-parse
-12-31-2099
-----
-Err(MdFieldOverflow)
-
-parse
-12/31/294276
-----
-Err(MdFieldOverflow)
-
-parse
-12:34:56 yesterday
-----
-Ok((pg_tm { tm_sec: 56, tm_min: 34, tm_hour: 12, tm_mday: 30, tm_mon: 12, tm_year: 1899, tm_wday: 0, tm_yday: 0, tm_isdst: Some(false), tm_gmtoff: 0, tm_zone: None }, 0, 0, Date))
-
-parse
-16:00:00 tomorrow
-----
-Ok((pg_tm { tm_sec: 0, tm_min: 0, tm_hour: 16, tm_mday: 1, tm_mon: 1, tm_year: 1900, tm_wday: 0, tm_yday: 0, tm_isdst: Some(false), tm_gmtoff: 0, tm_zone: None }, 0, 0, Date))
-
-parse
-17:12:28.5
-----
-Ok((pg_tm { tm_sec: 28, tm_min: 12, tm_hour: 17, tm_mday: 0, tm_mon: 0, tm_year: 0, tm_wday: 0, tm_yday: 0, tm_isdst: None, tm_gmtoff: 0, tm_zone: None }, 500000, 0, Date))
-
-parse
-18/1/1999
-----
-Err(MdFieldOverflow)
-
-parse
-1/8/1999
-----
-Err(MdFieldOverflow)
-
-parse
-1900-12-31
-----
-Ok((pg_tm { tm_sec: 0, tm_min: 0, tm_hour: 0, tm_mday: 31, tm_mon: 12, tm_year: 1900, tm_wday: 0, tm_yday: 0, tm_isdst: Some(false), tm_gmtoff: 0, tm_zone: None }, 0, 0, Date))
-
-parse
-1901-01-01
-----
-Ok((pg_tm { tm_sec: 0, tm_min: 0, tm_hour: 0, tm_mday: 1, tm_mon: 1, tm_year: 1901, tm_wday: 0, tm_yday: 0, tm_isdst: Some(false), tm_gmtoff: 0, tm_zone: None }, 0, 0, Date))
-
-parse
-1902-01-01
-----
-Ok((pg_tm { tm_sec: 0, tm_min: 0, tm_hour: 0, tm_mday: 1, tm_mon: 1, tm_year: 1902, tm_wday: 0, tm_yday: 0, tm_isdst: Some(false), tm_gmtoff: 0, tm_zone: None }, 0, 0, Date))
-
-parse
-1942-07-23 03:05:09
-----
-Ok((pg_tm { tm_sec: 9, tm_min: 5, tm_hour: 3, tm_mday: 23, tm_mon: 7, tm_year: 1942, tm_wday: 0, tm_yday: 0, tm_isdst: Some(false), tm_gmtoff: 0, tm_zone: None }, 0, 0, Date))
-
-parse
-1957-06-13
-----
-Ok((pg_tm { tm_sec: 0, tm_min: 0, tm_hour: 0, tm_mday: 13, tm_mon: 6, tm_year: 1957, tm_wday: 0, tm_yday: 0, tm_isdst: Some(false), tm_gmtoff: 0, tm_zone: None }, 0, 0, Date))
-
-parse
-1970-01-01
-----
-Ok((pg_tm { tm_sec: 0, tm_min: 0, tm_hour: 0, tm_mday: 1, tm_mon: 1, tm_year: 1970, tm_wday: 0, tm_yday: 0, tm_isdst: Some(false), tm_gmtoff: 0, tm_zone: None }, 0, 0, Date))
-
-parse
-1970-01-01 00:00:00
-----
-Ok((pg_tm { tm_sec: 0, tm_min: 0, tm_hour: 0, tm_mday: 1, tm_mon: 1, tm_year: 1970, tm_wday: 0, tm_yday: 0, tm_isdst: Some(false), tm_gmtoff: 0, tm_zone: None }, 0, 0, Date))
-
-parse
-1970-01-01 00:00:00+00
-----
-Ok((pg_tm { tm_sec: 0, tm_min: 0, tm_hour: 0, tm_mday: 1, tm_mon: 1, tm_year: 1970, tm_wday: 0, tm_yday: 0, tm_isdst: None, tm_gmtoff: 0, tm_zone: None }, 0, 0, Date))
-
-parse
-1970-01-01 01:00:00
-----
-Ok((pg_tm { tm_sec: 0, tm_min: 0, tm_hour: 1, tm_mday: 1, tm_mon: 1, tm_year: 1970, tm_wday: 0, tm_yday: 0, tm_isdst: Some(false), tm_gmtoff: 0, tm_zone: None }, 0, 0, Date))
-
-parse
-1970-01-01 01:00:00+00
-----
-Ok((pg_tm { tm_sec: 0, tm_min: 0, tm_hour: 1, tm_mday: 1, tm_mon: 1, tm_year: 1970, tm_wday: 0, tm_yday: 0, tm_isdst: None, tm_gmtoff: 0, tm_zone: None }, 0, 0, Date))
-
-parse
-1970-01-17
-----
-Ok((pg_tm { tm_sec: 0, tm_min: 0, tm_hour: 0, tm_mday: 17, tm_mon: 1, tm_year: 1970, tm_wday: 0, tm_yday: 0, tm_isdst: Some(false), tm_gmtoff: 0, tm_zone: None }, 0, 0, Date))
-
-parse
-1970-03-20
-----
-Ok((pg_tm { tm_sec: 0, tm_min: 0, tm_hour: 0, tm_mday: 20, tm_mon: 3, tm_year: 1970, tm_wday: 0, tm_yday: 0, tm_isdst: Some(false), tm_gmtoff: 0, tm_zone: None }, 0, 0, Date))
-
-parse
-1970-03-20 04:30:00.00000
-----
-Ok((pg_tm { tm_sec: 0, tm_min: 30, tm_hour: 4, tm_mday: 20, tm_mon: 3, tm_year: 1970, tm_wday: 0, tm_yday: 0, tm_isdst: Some(false), tm_gmtoff: 0, tm_zone: None }, 0, 0, Date))
-
-parse
-1970-12-31
-----
-Ok((pg_tm { tm_sec: 0, tm_min: 0, tm_hour: 0, tm_mday: 31, tm_mon: 12, tm_year: 1970, tm_wday: 0, tm_yday: 0, tm_isdst: Some(false), tm_gmtoff: 0, tm_zone: None }, 0, 0, Date))
-
-parse
-1972-10-10 03:00
-----
-Ok((pg_tm { tm_sec: 0, tm_min: 0, tm_hour: 3, tm_mday: 10, tm_mon: 10, tm_year: 1972, tm_wday: 0, tm_yday: 0, tm_isdst: Some(false), tm_gmtoff: 0, tm_zone: None }, 0, 0, Date))
-
-parse
-1973-07-15 08:15:55.33+02
-----
-Ok((pg_tm { tm_sec: 55, tm_min: 15, tm_hour: 8, tm_mday: 15, tm_mon: 7, tm_year: 1973, tm_wday: 0, tm_yday: 0, tm_isdst: None, tm_gmtoff: 0, tm_zone: None }, 330000, -7200, Date))
+# parse
+# (
+# ----
+# Err(BadFormat)
+#
+# parse
+# (,)
+# ----
+# Err(BadFormat)
+#
+# parse
+# {(,)}
+# ----
+# Err(BadFormat)
+#
+# parse
+# 00:00
+# ----
+# Ok((pg_tm { tm_sec: 0, tm_min: 0, tm_hour: 0, tm_mday: 0, tm_mon: 0, tm_year: 0, tm_wday: 0, tm_yday: 0, tm_isdst: None, tm_gmtoff: 0, tm_zone: None }, 0, 0, Date))
+#
+# parse
+# 00:01
+# ----
+# Ok((pg_tm { tm_sec: 0, tm_min: 1, tm_hour: 0, tm_mday: 0, tm_mon: 0, tm_year: 0, tm_wday: 0, tm_yday: 0, tm_isdst: None, tm_gmtoff: 0, tm_zone: None }, 0, 0, Date))
+#
+# parse
+# 0001-01-01
+# ----
+# Ok((pg_tm { tm_sec: 0, tm_min: 0, tm_hour: 0, tm_mday: 1, tm_mon: 1, tm_year: 1, tm_wday: 0, tm_yday: 0, tm_isdst: Some(false), tm_gmtoff: 0, tm_zone: None }, 0, 0, Date))
+#
+# parse
+# 0001-01-01 AD
+# ----
+# Ok((pg_tm { tm_sec: 0, tm_min: 0, tm_hour: 0, tm_mday: 1, tm_mon: 1, tm_year: 1, tm_wday: 0, tm_yday: 0, tm_isdst: Some(false), tm_gmtoff: 0, tm_zone: None }, 0, 0, Date))
+#
+# parse
+# 0001-01-01 BC
+# ----
+# Ok((pg_tm { tm_sec: 0, tm_min: 0, tm_hour: 0, tm_mday: 1, tm_mon: 1, tm_year: 0, tm_wday: 0, tm_yday: 0, tm_isdst: Some(false), tm_gmtoff: 0, tm_zone: None }, 0, 0, Date))
+#
+# parse
+# 0001-12-31 BC
+# ----
+# Ok((pg_tm { tm_sec: 0, tm_min: 0, tm_hour: 0, tm_mday: 31, tm_mon: 12, tm_year: 0, tm_wday: 0, tm_yday: 0, tm_isdst: Some(false), tm_gmtoff: 0, tm_zone: None }, 0, 0, Date))
+#
+# parse
+# 0002-02-04
+# ----
+# Ok((pg_tm { tm_sec: 0, tm_min: 0, tm_hour: 0, tm_mday: 4, tm_mon: 2, tm_year: 2, tm_wday: 0, tm_yday: 0, tm_isdst: Some(false), tm_gmtoff: 0, tm_zone: None }, 0, 0, Date))
+#
+# parse
+# 0002-12-31 BC
+# ----
+# Ok((pg_tm { tm_sec: 0, tm_min: 0, tm_hour: 0, tm_mday: 31, tm_mon: 12, tm_year: -1, tm_wday: 0, tm_yday: 0, tm_isdst: Some(false), tm_gmtoff: 0, tm_zone: None }, 0, 0, Date))
+#
+# parse
+# 0004-12-25
+# ----
+# Ok((pg_tm { tm_sec: 0, tm_min: 0, tm_hour: 0, tm_mday: 25, tm_mon: 12, tm_year: 4, tm_wday: 0, tm_yday: 0, tm_isdst: Some(false), tm_gmtoff: 0, tm_zone: None }, 0, 0, Date))
+#
+# parse
+# 0009-12-31
+# ----
+# Ok((pg_tm { tm_sec: 0, tm_min: 0, tm_hour: 0, tm_mday: 31, tm_mon: 12, tm_year: 9, tm_wday: 0, tm_yday: 0, tm_isdst: Some(false), tm_gmtoff: 0, tm_zone: None }, 0, 0, Date))
+#
+# parse
+# 0010-01-01
+# ----
+# Ok((pg_tm { tm_sec: 0, tm_min: 0, tm_hour: 0, tm_mday: 1, tm_mon: 1, tm_year: 10, tm_wday: 0, tm_yday: 0, tm_isdst: Some(false), tm_gmtoff: 0, tm_zone: None }, 0, 0, Date))
+#
+# parse
+# 0011-01-01 BC
+# ----
+# Ok((pg_tm { tm_sec: 0, tm_min: 0, tm_hour: 0, tm_mday: 1, tm_mon: 1, tm_year: -10, tm_wday: 0, tm_yday: 0, tm_isdst: Some(false), tm_gmtoff: 0, tm_zone: None }, 0, 0, Date))
+#
+# parse
+# 0012-12-31 BC
+# ----
+# Ok((pg_tm { tm_sec: 0, tm_min: 0, tm_hour: 0, tm_mday: 31, tm_mon: 12, tm_year: -11, tm_wday: 0, tm_yday: 0, tm_isdst: Some(false), tm_gmtoff: 0, tm_zone: None }, 0, 0, Date))
+#
+# parse
+# 00:30
+# ----
+# Ok((pg_tm { tm_sec: 0, tm_min: 30, tm_hour: 0, tm_mday: 0, tm_mon: 0, tm_year: 0, tm_wday: 0, tm_yday: 0, tm_isdst: None, tm_gmtoff: 0, tm_zone: None }, 0, 0, Date))
+#
+# parse
+# 0055-06-17 BC
+# ----
+# Ok((pg_tm { tm_sec: 0, tm_min: 0, tm_hour: 0, tm_mday: 17, tm_mon: 6, tm_year: -54, tm_wday: 0, tm_yday: 0, tm_isdst: Some(false), tm_gmtoff: 0, tm_zone: None }, 0, 0, Date))
+#
+# parse
+# 0055-08-10 BC
+# ----
+# Ok((pg_tm { tm_sec: 0, tm_min: 0, tm_hour: 0, tm_mday: 10, tm_mon: 8, tm_year: -54, tm_wday: 0, tm_yday: 0, tm_isdst: Some(false), tm_gmtoff: 0, tm_zone: None }, 0, 0, Date))
+#
+# parse
+# 0055-6-10 15:44:17.71393 BC
+# ----
+# Ok((pg_tm { tm_sec: 17, tm_min: 44, tm_hour: 15, tm_mday: 10, tm_mon: 6, tm_year: -54, tm_wday: 0, tm_yday: 0, tm_isdst: Some(false), tm_gmtoff: 0, tm_zone: None }, 713930, 0, Date))
+#
+# parse
+# 01:00
+# ----
+# Ok((pg_tm { tm_sec: 0, tm_min: 0, tm_hour: 1, tm_mday: 0, tm_mon: 0, tm_year: 0, tm_wday: 0, tm_yday: 0, tm_isdst: None, tm_gmtoff: 0, tm_zone: None }, 0, 0, Date))
+#
+# parse
+# 0100-12-31 BC
+# ----
+# Ok((pg_tm { tm_sec: 0, tm_min: 0, tm_hour: 0, tm_mday: 31, tm_mon: 12, tm_year: -99, tm_wday: 0, tm_yday: 0, tm_isdst: Some(false), tm_gmtoff: 0, tm_zone: None }, 0, 0, Date))
+#
+# parse
+# 0101-12-31 BC
+# ----
+# Ok((pg_tm { tm_sec: 0, tm_min: 0, tm_hour: 0, tm_mday: 31, tm_mon: 12, tm_year: -100, tm_wday: 0, tm_yday: 0, tm_isdst: Some(false), tm_gmtoff: 0, tm_zone: None }, 0, 0, Date))
+#
+# parse
+# 01-01-1994
+# ----
+# Err(MdFieldOverflow)
+#
+# parse
+# 01-01-1997
+# ----
+# Err(MdFieldOverflow)
+#
+# parse
+# 01-01-1998
+# ----
+# Err(MdFieldOverflow)
+#
+# parse
+# 01-01-2001
+# ----
+# Err(MdFieldOverflow)
+#
+# parse
+# 01-01-2009
+# ----
+# Err(MdFieldOverflow)
+#
+# parse
+# 01:02
+# ----
+# Ok((pg_tm { tm_sec: 0, tm_min: 2, tm_hour: 1, tm_mday: 0, tm_mon: 0, tm_year: 0, tm_wday: 0, tm_yday: 0, tm_isdst: None, tm_gmtoff: 0, tm_zone: None }, 0, 0, Date))
+#
+# parse
+# 01/02/03
+# ----
+# Ok((pg_tm { tm_sec: 0, tm_min: 0, tm_hour: 0, tm_mday: 3, tm_mon: 2, tm_year: 2001, tm_wday: 0, tm_yday: 0, tm_isdst: Some(false), tm_gmtoff: 0, tm_zone: None }, 0, 0, Date))
+#
+# parse
+# 01 08 1999
+# ----
+# Err(MdFieldOverflow)
+#
+# parse
+# 01-08-1999
+# ----
+# Err(MdFieldOverflow)
+#
+# parse
+# 01 08 99
+# ----
+# Err(MdFieldOverflow)
+#
+# parse
+# 01-08-99
+# ----
+# Err(MdFieldOverflow)
+#
+# parse
+# 01-17-1970
+# ----
+# Err(MdFieldOverflow)
+#
+# parse
+# 01:20:30
+# ----
+# Ok((pg_tm { tm_sec: 30, tm_min: 20, tm_hour: 1, tm_mday: 0, tm_mon: 0, tm_year: 0, tm_wday: 0, tm_yday: 0, tm_isdst: None, tm_gmtoff: 0, tm_zone: None }, 0, 0, Date))
+#
+# parse
+# 01:30
+# ----
+# Ok((pg_tm { tm_sec: 0, tm_min: 30, tm_hour: 1, tm_mday: 0, tm_mon: 0, tm_year: 0, tm_wday: 0, tm_yday: 0, tm_isdst: None, tm_gmtoff: 0, tm_zone: None }, 0, 0, Date))
+#
+# parse
+# 01-31-1994
+# ----
+# Err(MdFieldOverflow)
+#
+# parse
+# 02-13-2001
+# ----
+# Err(MdFieldOverflow)
+#
+# parse
+# 02:30
+# ----
+# Ok((pg_tm { tm_sec: 0, tm_min: 30, tm_hour: 2, tm_mday: 0, tm_mon: 0, tm_year: 0, tm_wday: 0, tm_yday: 0, tm_isdst: None, tm_gmtoff: 0, tm_zone: None }, 0, 0, Date))
+#
+# parse
+# 03:00
+# ----
+# Ok((pg_tm { tm_sec: 0, tm_min: 0, tm_hour: 3, tm_mday: 0, tm_mon: 0, tm_year: 0, tm_wday: 0, tm_yday: 0, tm_isdst: None, tm_gmtoff: 0, tm_zone: None }, 0, 0, Date))
+#
+# parse
+# 03:30
+# ----
+# Ok((pg_tm { tm_sec: 0, tm_min: 30, tm_hour: 3, tm_mday: 0, tm_mon: 0, tm_year: 0, tm_wday: 0, tm_yday: 0, tm_isdst: None, tm_gmtoff: 0, tm_zone: None }, 0, 0, Date))
+#
+# parse
+# 04:05:06
+# ----
+# Ok((pg_tm { tm_sec: 6, tm_min: 5, tm_hour: 4, tm_mday: 0, tm_mon: 0, tm_year: 0, tm_wday: 0, tm_yday: 0, tm_isdst: None, tm_gmtoff: 0, tm_zone: None }, 0, 0, Date))
+#
+# parse
+# 05:00
+# ----
+# Ok((pg_tm { tm_sec: 0, tm_min: 0, tm_hour: 5, tm_mday: 0, tm_mon: 0, tm_year: 0, tm_wday: 0, tm_yday: 0, tm_isdst: None, tm_gmtoff: 0, tm_zone: None }, 0, 0, Date))
+#
+# parse
+# 07:46:45 GMT+2
+# ----
+# Err(BadFormat)
+#
+# parse
+# 07:46:45 GMT+3
+# ----
+# Err(BadFormat)
+#
+# parse
+# 07:46:45 GMT+4
+# ----
+# Err(BadFormat)
+#
+# parse
+# 08 01 1999
+# ----
+# Err(MdFieldOverflow)
+#
+# parse
+# 08-01-1999
+# ----
+# Err(MdFieldOverflow)
+#
+# parse
+# 08-01-2009
+# ----
+# Err(MdFieldOverflow)
+#
+# parse
+# 08-01-2011
+# ----
+# Err(MdFieldOverflow)
+#
+# parse
+# 08 01 99
+# ----
+# Err(MdFieldOverflow)
+#
+# parse
+# 08-01-99
+# ----
+# Err(MdFieldOverflow)
+#
+# parse
+# 08-31-2009
+# ----
+# Err(MdFieldOverflow)
+#
+# parse
+# 08-31-2011
+# ----
+# Err(MdFieldOverflow)
+#
+# parse
+# 08:55:08
+# ----
+# Ok((pg_tm { tm_sec: 8, tm_min: 55, tm_hour: 8, tm_mday: 0, tm_mon: 0, tm_year: 0, tm_wday: 0, tm_yday: 0, tm_isdst: None, tm_gmtoff: 0, tm_zone: None }, 0, 0, Date))
+#
+# parse
+# 08:55:08 GMT+2
+# ----
+# Err(BadFormat)
+#
+# parse
+# 08 Jan 1999
+# ----
+# Ok((pg_tm { tm_sec: 0, tm_min: 0, tm_hour: 0, tm_mday: 8, tm_mon: 1, tm_year: 1999, tm_wday: 0, tm_yday: 0, tm_isdst: Some(false), tm_gmtoff: 0, tm_zone: None }, 0, 0, Date))
+#
+# parse
+# 08-Jan-1999
+# ----
+# Ok((pg_tm { tm_sec: 0, tm_min: 0, tm_hour: 0, tm_mday: 8, tm_mon: 1, tm_year: 1999, tm_wday: 0, tm_yday: 0, tm_isdst: Some(false), tm_gmtoff: 0, tm_zone: None }, 0, 0, Date))
+#
+# parse
+# 08 Jan 99
+# ----
+# Err(MdFieldOverflow)
+#
+# parse
+# 08-Jan-99
+# ----
+# Err(MdFieldOverflow)
+#
+# parse
+# 10:00
+# ----
+# Ok((pg_tm { tm_sec: 0, tm_min: 0, tm_hour: 10, tm_mday: 0, tm_mon: 0, tm_year: 0, tm_wday: 0, tm_yday: 0, tm_isdst: None, tm_gmtoff: 0, tm_zone: None }, 0, 0, Date))
+#
+# parse
+# 1000-12-31
+# ----
+# Ok((pg_tm { tm_sec: 0, tm_min: 0, tm_hour: 0, tm_mday: 31, tm_mon: 12, tm_year: 1000, tm_wday: 0, tm_yday: 0, tm_isdst: Some(false), tm_gmtoff: 0, tm_zone: None }, 0, 0, Date))
+#
+# parse
+# 1001-01-01
+# ----
+# Ok((pg_tm { tm_sec: 0, tm_min: 0, tm_hour: 0, tm_mday: 1, tm_mon: 1, tm_year: 1001, tm_wday: 0, tm_yday: 0, tm_isdst: Some(false), tm_gmtoff: 0, tm_zone: None }, 0, 0, Date))
+#
+# parse
+# 10-01-2011
+# ----
+# Err(MdFieldOverflow)
+#
+# parse
+# 10:30 today
+# ----
+# Err(MdFieldOverflow)
+#
+# parse
+# 10:57:11
+# ----
+# Ok((pg_tm { tm_sec: 11, tm_min: 57, tm_hour: 10, tm_mday: 0, tm_mon: 0, tm_year: 0, tm_wday: 0, tm_yday: 0, tm_isdst: None, tm_gmtoff: 0, tm_zone: None }, 0, 0, Date))
+#
+# parse
+# 11:00
+# ----
+# Ok((pg_tm { tm_sec: 0, tm_min: 0, tm_hour: 11, tm_mday: 0, tm_mon: 0, tm_year: 0, tm_wday: 0, tm_yday: 0, tm_isdst: None, tm_gmtoff: 0, tm_zone: None }, 0, 0, Date))
+#
+# parse
+# 11-01-2011
+# ----
+# Err(MdFieldOverflow)
+#
+# parse
+# [11:10, 23:00]
+# ----
+# Err(BadFormat)
+#
+# parse
+# 1/18/1999
+# ----
+# Err(MdFieldOverflow)
+#
+# parse
+# 12/23/1999
+# ----
+# Err(MdFieldOverflow)
+#
+# parse
+# 12.27.2001 04:05:06.789+08
+# ----
+# Err(MdFieldOverflow)
+#
+# parse
+# 12.27.2001 04:05:06.789-08
+# ----
+# Err(MdFieldOverflow)
+#
+# parse
+# 12/27/2001 04:05:06.789-08
+# ----
+# Err(MdFieldOverflow)
+#
+# parse
+# 12-31-2009
+# ----
+# Err(MdFieldOverflow)
+#
+# parse
+# 12-31-2099
+# ----
+# Err(MdFieldOverflow)
+#
+# parse
+# 12/31/294276
+# ----
+# Err(MdFieldOverflow)
+#
+# parse
+# 12:34:56 yesterday
+# ----
+# Ok((pg_tm { tm_sec: 56, tm_min: 34, tm_hour: 12, tm_mday: 30, tm_mon: 12, tm_year: 1899, tm_wday: 0, tm_yday: 0, tm_isdst: Some(false), tm_gmtoff: 0, tm_zone: None }, 0, 0, Date))
+#
+# parse
+# 16:00:00 tomorrow
+# ----
+# Ok((pg_tm { tm_sec: 0, tm_min: 0, tm_hour: 16, tm_mday: 1, tm_mon: 1, tm_year: 1900, tm_wday: 0, tm_yday: 0, tm_isdst: Some(false), tm_gmtoff: 0, tm_zone: None }, 0, 0, Date))
+#
+# parse
+# 17:12:28.5
+# ----
+# Ok((pg_tm { tm_sec: 28, tm_min: 12, tm_hour: 17, tm_mday: 0, tm_mon: 0, tm_year: 0, tm_wday: 0, tm_yday: 0, tm_isdst: None, tm_gmtoff: 0, tm_zone: None }, 500000, 0, Date))
+#
+# parse
+# 18/1/1999
+# ----
+# Err(MdFieldOverflow)
+#
+# parse
+# 1/8/1999
+# ----
+# Err(MdFieldOverflow)
+#
+# parse
+# 1900-12-31
+# ----
+# Ok((pg_tm { tm_sec: 0, tm_min: 0, tm_hour: 0, tm_mday: 31, tm_mon: 12, tm_year: 1900, tm_wday: 0, tm_yday: 0, tm_isdst: Some(false), tm_gmtoff: 0, tm_zone: None }, 0, 0, Date))
+#
+# parse
+# 1901-01-01
+# ----
+# Ok((pg_tm { tm_sec: 0, tm_min: 0, tm_hour: 0, tm_mday: 1, tm_mon: 1, tm_year: 1901, tm_wday: 0, tm_yday: 0, tm_isdst: Some(false), tm_gmtoff: 0, tm_zone: None }, 0, 0, Date))
+#
+# parse
+# 1902-01-01
+# ----
+# Ok((pg_tm { tm_sec: 0, tm_min: 0, tm_hour: 0, tm_mday: 1, tm_mon: 1, tm_year: 1902, tm_wday: 0, tm_yday: 0, tm_isdst: Some(false), tm_gmtoff: 0, tm_zone: None }, 0, 0, Date))
+#
+# parse
+# 1942-07-23 03:05:09
+# ----
+# Ok((pg_tm { tm_sec: 9, tm_min: 5, tm_hour: 3, tm_mday: 23, tm_mon: 7, tm_year: 1942, tm_wday: 0, tm_yday: 0, tm_isdst: Some(false), tm_gmtoff: 0, tm_zone: None }, 0, 0, Date))
+#
+# parse
+# 1957-06-13
+# ----
+# Ok((pg_tm { tm_sec: 0, tm_min: 0, tm_hour: 0, tm_mday: 13, tm_mon: 6, tm_year: 1957, tm_wday: 0, tm_yday: 0, tm_isdst: Some(false), tm_gmtoff: 0, tm_zone: None }, 0, 0, Date))
+#
+# parse
+# 1970-01-01
+# ----
+# Ok((pg_tm { tm_sec: 0, tm_min: 0, tm_hour: 0, tm_mday: 1, tm_mon: 1, tm_year: 1970, tm_wday: 0, tm_yday: 0, tm_isdst: Some(false), tm_gmtoff: 0, tm_zone: None }, 0, 0, Date))
+#
+# parse
+# 1970-01-01 00:00:00
+# ----
+# Ok((pg_tm { tm_sec: 0, tm_min: 0, tm_hour: 0, tm_mday: 1, tm_mon: 1, tm_year: 1970, tm_wday: 0, tm_yday: 0, tm_isdst: Some(false), tm_gmtoff: 0, tm_zone: None }, 0, 0, Date))
+#
+# parse
+# 1970-01-01 00:00:00+00
+# ----
+# Ok((pg_tm { tm_sec: 0, tm_min: 0, tm_hour: 0, tm_mday: 1, tm_mon: 1, tm_year: 1970, tm_wday: 0, tm_yday: 0, tm_isdst: None, tm_gmtoff: 0, tm_zone: None }, 0, 0, Date))
+#
+# parse
+# 1970-01-01 01:00:00
+# ----
+# Ok((pg_tm { tm_sec: 0, tm_min: 0, tm_hour: 1, tm_mday: 1, tm_mon: 1, tm_year: 1970, tm_wday: 0, tm_yday: 0, tm_isdst: Some(false), tm_gmtoff: 0, tm_zone: None }, 0, 0, Date))
+#
+# parse
+# 1970-01-01 01:00:00+00
+# ----
+# Ok((pg_tm { tm_sec: 0, tm_min: 0, tm_hour: 1, tm_mday: 1, tm_mon: 1, tm_year: 1970, tm_wday: 0, tm_yday: 0, tm_isdst: None, tm_gmtoff: 0, tm_zone: None }, 0, 0, Date))
+#
+# parse
+# 1970-01-17
+# ----
+# Ok((pg_tm { tm_sec: 0, tm_min: 0, tm_hour: 0, tm_mday: 17, tm_mon: 1, tm_year: 1970, tm_wday: 0, tm_yday: 0, tm_isdst: Some(false), tm_gmtoff: 0, tm_zone: None }, 0, 0, Date))
+#
+# parse
+# 1970-03-20
+# ----
+# Ok((pg_tm { tm_sec: 0, tm_min: 0, tm_hour: 0, tm_mday: 20, tm_mon: 3, tm_year: 1970, tm_wday: 0, tm_yday: 0, tm_isdst: Some(false), tm_gmtoff: 0, tm_zone: None }, 0, 0, Date))
+#
+# parse
+# 1970-03-20 04:30:00.00000
+# ----
+# Ok((pg_tm { tm_sec: 0, tm_min: 30, tm_hour: 4, tm_mday: 20, tm_mon: 3, tm_year: 1970, tm_wday: 0, tm_yday: 0, tm_isdst: Some(false), tm_gmtoff: 0, tm_zone: None }, 0, 0, Date))
+#
+# parse
+# 1970-12-31
+# ----
+# Ok((pg_tm { tm_sec: 0, tm_min: 0, tm_hour: 0, tm_mday: 31, tm_mon: 12, tm_year: 1970, tm_wday: 0, tm_yday: 0, tm_isdst: Some(false), tm_gmtoff: 0, tm_zone: None }, 0, 0, Date))
+#
+# parse
+# 1972-10-10 03:00
+# ----
+# Ok((pg_tm { tm_sec: 0, tm_min: 0, tm_hour: 3, tm_mday: 10, tm_mon: 10, tm_year: 1972, tm_wday: 0, tm_yday: 0, tm_isdst: Some(false), tm_gmtoff: 0, tm_zone: None }, 0, 0, Date))
+#
+# parse
+# 1973-07-15 08:15:55.33+02
+# ----
+# Ok((pg_tm { tm_sec: 55, tm_min: 15, tm_hour: 8, tm_mday: 15, tm_mon: 7, tm_year: 1973, tm_wday: 0, tm_yday: 0, tm_isdst: None, tm_gmtoff: 0, tm_zone: None }, 330000, -7200, Date))
 
 parse
 1980-01-06 00:00 GMT
